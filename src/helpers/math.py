@@ -25,3 +25,22 @@ class Math:
             if not Math.is_point_in_rectangle(px, py, rect):
                 return False
         return True
+
+    @staticmethod
+    def determine_id_range(id_central, id_min, id_max, x):
+        # Calculer le nombre d'éléments de chaque côté de l'id_central
+        half_range = (x - 1) // 2
+
+        # Initialiser les limites de la plage autour de id_central
+        start_id = id_central - half_range
+        end_id = id_central + half_range
+
+        # Ajuster les limites si elles sortent des bornes définies par id_min et id_max
+        if start_id < id_min:
+            start_id = id_min
+            end_id = min(id_min + x - 1, id_max)  # Assurer un maximum de x éléments
+        if end_id > id_max:
+            end_id = id_max
+            start_id = max(id_max - x + 1, id_min)  # Assurer un maximum de x éléments
+
+        return start_id, end_id

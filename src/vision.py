@@ -1,10 +1,15 @@
 # venv/bin/python -m src.vision
 import os
 
-from .models.streamer import Streamer
+import django
 from dotenv import load_dotenv
 
+from .models.streamer import Streamer
+
 load_dotenv()
+
+os.environ['DJANGO_SETTINGS_MODULE'] = 'admin.settings'
+django.setup()
 
 check_all_records = os.getenv('CHECK_ALL_RECORDS') == 'True'
 verbose = os.getenv('VERBOSE') == 'True'

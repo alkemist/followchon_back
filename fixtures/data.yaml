@@ -1,0 +1,66 @@
+- model: configuration.family
+  pk: 1
+  fields:
+    index: 0
+    name: Guinea Pig
+- model: configuration.family
+  pk: 2
+  fields:
+    index: 1
+    name: Noisette
+- model: configuration.family
+  pk: 3
+  fields:
+    index: 2
+    name: Stitch
+- model: configuration.family
+  pk: 4
+  fields:
+    index: 3
+    name: Plate
+
+- model: configuration.zone
+  pk: 1
+  fields:
+    slug: clapier
+    name: Clapier
+    center_x: 0.42699724517906334
+    center_y: 0.07601877892248965
+    width: 0.16528925619834722
+    height: 0.14507498169180263
+- model: configuration.zone
+  pk: 2
+  fields:
+    slug: cachette
+    name: Cachette
+    center_x: 0.5730027548209367
+    center_y: 0.07657928015551248
+    width: 0.11937557392102838
+    height: 0.14395397922575698
+- model: configuration.zone
+  pk: 3
+  fields:
+    slug: foin
+    name: Foin
+    center_x: 0.7213039485766758
+    center_y: 0.10529537802265078
+    width: 0.17355371900826433
+    height: 0.19100091827364551
+- model: configuration.zone
+  pk: 4
+  fields:
+    slug: tunnel
+    name: Tunnel
+    center_x: 0.30020655163071497
+    center_y: 0.2543300984633369
+    width: 0.11488250652741505
+    height: 0.20887728459530022
+- model: configuration.zone
+  pk: 5
+  fields:
+    slug: fontaine
+    name: Fontaine
+    center_x: 0.19800994244672007
+    center_y: 0.7072414676347746
+    width: 0.38083961923879117
+    height: 0.5623249922025152

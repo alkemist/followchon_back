@@ -1,11 +1,11 @@
 import os
-import cv2
-import math
 import subprocess
 import time
 
-from ..helpers.file import FileHelper
+import cv2
+
 from .model import Model
+from ..helpers.file import FileHelper
 
 
 def process_status(process_name):
@@ -23,7 +23,6 @@ class Streamer:
             stream_path,
             model_path,
             records_directory,
-            captures_directory,
             capture_width,
             capture_height,
             frame_time_seconds,
@@ -47,7 +46,6 @@ class Streamer:
         self.stop = False
         self.stream_path = stream_path
         self.records_directory = records_directory
-        self.captures_directory = captures_directory
         self.frame_time_seconds = frame_time_seconds
         self.capture_min_conf = capture_min_conf
 
@@ -129,7 +127,6 @@ class Streamer:
                 if frame_time_elapsed > self.frame_time_seconds:
                     frame = self.model.detect(
                         frame,
-                        self.captures_directory,
                         self.save_enabled,
                         self.verbose
                     )

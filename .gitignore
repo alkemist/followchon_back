@@ -13,6 +13,12 @@ static/captures
 !static/captures/draft/labels/.gitignore
 !static/captures/verified/images/.gitignore
 !static/captures/verified/labels/.gitignore
+!static/captures/archived/images/.gitignore
+!static/captures/archived/labels/.gitignore
+
+records
+!records/.gitignore
+
 
 yolov8n.pt
 __pycache__

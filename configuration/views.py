@@ -1,0 +1,17 @@
+from rest_framework import permissions, viewsets
+
+from api.models import ReadOnlyViewSet
+from configuration.models import Family, Zone
+from configuration.serializers import FamilySerializer, ZoneSerializer
+
+
+class FamilyViewSet(ReadOnlyViewSet):
+    queryset = Family.objects.all().order_by('id')
+    serializer_class = FamilySerializer
+    permission_classes = []
+
+
+class ZoneViewSet(ReadOnlyViewSet):
+    queryset = Zone.objects.all().order_by('id')
+    serializer_class = ZoneSerializer
+    permission_classes = []

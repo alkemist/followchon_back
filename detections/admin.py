@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib import messages
 from django.utils.translation import ngettext
+from django_admin_relation_links import AdminChangeLinksMixin
 
 from .models import Capture
 from .models import Detection
@@ -11,45 +12,30 @@ class DetectionInline(admin.TabularInline):
     extra = 3
 
 
+@admin.register(Capture)
 class CaptureAdmin(admin.ModelAdmin):
     fieldsets = [
         ('Identification',
-         {'fields': ['date', 'photo_file', 'image_tag', 'verified'], 'classes': []}),
+         {'fields': ['date', 'photo_file', 'image_tag', 'status'], 'classes': []}),
     ]
-    list_display = ['date', 'verified', 'image_tag']
+    list_display = ['id', 'date', 'status', 'image_tag']
+    list_display_links = ['date']
+    readonly_fields = ['image_tag', 'status']
+    list_editable = []
     search_fields = ['date']
     ordering = ['-date']
-    list_filter = ['date', 'verified']
-    readonly_fields = ['image_tag']
-    actions = ['mark_as_verified', 'mark_as_draft']
+    list_filter = ['date', 'status']
+    actions = ['mark_as_draft', 'mark_as_verified', 'mark_as_archived']
     inlines = [
         DetectionInline,
     ]
 
-    @admin.action(description="Mark selected detections as verified")
-    def mark_as_verified(self, request, queryset):
-        updated = queryset.update(verified=True)
-
-        for item in queryset.iterator():
-            item.move_directory(True)
-
-        self.message_user(
-            request,
-            ngettext(
-                "%d detections was successfully marked as draft.",
-                "%d detections were successfully marked as draft.",
-                updated,
-            )
-            % updated,
-            messages.SUCCESS,
-        )
-
     @admin.action(description="Mark selected detections as draft")
     def mark_as_draft(self, request, queryset):
-        updated = queryset.update(verified=False)
-
         for item in queryset.iterator():
-            item.move_directory(False)
+            item.mark_as(Capture.DRAFT, True)
+
+        updated = queryset.update(status=Capture.DRAFT)
 
         self.message_user(
             request,
@@ -62,19 +48,62 @@ class CaptureAdmin(admin.ModelAdmin):
             messages.SUCCESS,
         )
 
+    @admin.action(description="Mark selected detections as verified")
+    def mark_as_verified(self, request, queryset):
+        for item in queryset.iterator():
+            item.mark_as(Capture.VERIFIED, True)
 
-class DetectionAdmin(admin.ModelAdmin):
+        updated = queryset.update(status=Capture.VERIFIED)
+
+        self.message_user(
+            request,
+            ngettext(
+                "%d detections was successfully marked as verified.",
+                "%d detections were successfully marked as verified.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Mark selected detections as archived")
+    def mark_as_archived(self, request, queryset):
+        for item in queryset.iterator():
+            item.mark_as(Capture.ARCHIVED, True)
+
+        updated = queryset.update(status=Capture.ARCHIVED)
+
+        self.message_user(
+            request,
+            ngettext(
+                "%d detections was successfully marked as archived.",
+                "%d detections were successfully marked as archived.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    def delete_queryset(self, request, queryset):
+        for item in queryset.iterator():
+            item.remove_files()
+
+        queryset.delete()
+
+
+@admin.register(Detection)
+class DetectionAdmin(AdminChangeLinksMixin, admin.ModelAdmin):
     fieldsets = [
         ('Identification',
          {'fields': ['capture', 'family', 'score'], 'classes': []}),
         ('Position', {'fields': ['zone', 'center_x', 'center_y', 'width', 'height'], 'classes': ['inline']}),
     ]
-    list_display = ['id', 'capture', 'family', 'zone', 'score',
+    list_display = ['id', 'capture_link', 'family', 'zone', 'score',
                     'center_x', 'center_y', 'width', 'height']
+    readonly_fields = ['capture']
+    list_editable = []
     search_fields = ['capture', 'family', 'zone']
     ordering = ['-id']
     list_filter = ['capture', 'family', 'zone']
-
-
-admin.site.register(Capture, CaptureAdmin)
-admin.site.register(Detection, DetectionAdmin)
+    list_display_links = ['id']
+    change_links = ['capture']
