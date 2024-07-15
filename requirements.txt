@@ -1,0 +1,13 @@
+setuptools~=70.3.0
+numpy~=1.26.4
+ultralytics~=8.2.41
+torch~=2.2.0
+torchvision~=0.17
+python-dotenv~=1.0.1
+ffmpeg~=1.4
+opencv-python~=4.10.0.84
+onnx~=1.16.1
+Django~=5.0.6
+django-admin~=2.0.2
+django_compressor~=4.5
+django-libsass~=0.9

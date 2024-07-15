@@ -1,0 +1,82 @@
+{% load compress %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr-FR" dir="ltr">
+    <head>
+        {% compress css %}
+            <link type="text/x-scss" href="{% static 'carousel.scss' %}" rel="stylesheet" media="screen">
+        {% endcompress %}
+        <script>
+            const detections = {{ detections|safe }};
+            console.log(detections);
+
+            window.addEventListener("load", (event) => {
+                const canvas = document.getElementById("canvas");
+
+                if(canvas) {
+                    detections.forEach((detection) => {
+                        const ctx = canvas.getContext("2d");
+                        ctx.beginPath();
+                        ctx.setLineDash([]);
+                        ctx.lineWidth = 4;
+                        ctx.fillStyle = "rgba(0,0,0,0.1)";
+                        ctx.strokeStyle = "rgba(0,0,0,1)";
+                        ctx.rect(
+                            detection.coords.x1,
+                            detection.coords.y1,
+                            detection.coords.x2 - detection.coords.x1,
+                            detection.coords.y2 - detection.coords.y1
+                        );
+                        ctx.fill();
+                        ctx.stroke();
+                    });
+                }
+            });
+        </script>
+    </head>
+    <body>
+        <section>
+            <div class="container">
+                {% if prev_id %}
+                    <a href="?id={{ prev_id }}" class="left navigation"><span>❰</span></a>
+                {% else %}
+                    <div class="left navigation"></div>
+                {% endif %}
+                <div class="carousel">
+                    {% for capture in captures %}
+                        <input type="radio" name="slides" {% if capture.id == current_id %}checked="checked"{% endif %} id="slide-{{ forloop.counter }}">
+                    {% endfor %}
+                    <ul class="carousel__slides">
+                        {% for capture in captures %}
+                            <li data-href="{% url 'front:detail' capture.id %}" class="carousel__slide">
+                                <figure>
+                                    <div>
+                                        <img src="{{ capture.photo_path }}" alt="">
+                                        {% if capture.id == current_id %}
+                                            <canvas id="canvas"  width="{{ size.0 }}" height="{{ size.1 }}"></canvas><!-- -->
+                                        {% endif %}
+                                    </div>
+                                </figure>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                    <ul class="carousel__thumbnails">
+                        {% for capture in captures %}
+                            <li>
+                                <label for="slide-{{ forloop.counter }}">
+                                        <img src="{{ capture.photo_path }}" alt="">
+                                </label>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% if next_id %}
+                    <a href="?id={{ next_id }}" class="right navigation"><span>❱</span></a>
+                {% else %}
+                    <div class="right navigation"></div>
+                {% endif %}
+            </div>
+        </section>
+    </body>
+</html>
+

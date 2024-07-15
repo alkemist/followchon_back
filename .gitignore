@@ -1,0 +1,18 @@
+###> phpstorm ###
+/.idea/
+/.sass-cache/
+###< phpstorm ###
+
+.env
+
+sqlite3.db
+
+static/CACHE
+static/captures
+!static/captures/draft/images/.gitignore
+!static/captures/draft/labels/.gitignore
+!static/captures/verified/images/.gitignore
+!static/captures/verified/labels/.gitignore
+
+yolov8n.pt
+__pycache__
