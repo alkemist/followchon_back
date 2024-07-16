@@ -4,16 +4,8 @@ import time
 
 import cv2
 
+from helpers.file import FileHelper
 from .model import Model
-from ..helpers.file import FileHelper
-
-
-def process_status(process_name):
-    try:
-        subprocess.check_output(["pgrep", process_name])
-        return True
-    except subprocess.CalledProcessError:
-        return False
 
 
 class Streamer:
@@ -35,6 +27,8 @@ class Streamer:
             verbose=False,
             show_stream=False,
     ):
+        self.capture_width = capture_width
+        self.capture_height = capture_height
         self.check_all_records = check_all_records
         self.delete_record = delete_record
         self.loop_enabled = loop_enabled
@@ -57,9 +51,6 @@ class Streamer:
                    f"-segment_time 60 -segment_format mkv -segment_atclocktime 1 -strftime 1 "
                    f"{self.records_directory}/%Y-%m-%d_%H-%M-%S.mkv")
 
-        # if self.verbose:
-        #     print('Start', command)
-
         return subprocess.Popen(command.split(" "),
                                 stdout=subprocess.PIPE,
                                 universal_newlines=True)
@@ -73,12 +64,11 @@ class Streamer:
         capture_time = time.time()
 
         while not self.stop:
-            return_code = process.poll()
             capture_time_elapsed = time.time() - capture_time
 
             if capture_time_elapsed >= 70:
                 if self.verbose:
-                    print('Restart recording', return_code, process_status('ffmpeg'), capture_time_elapsed)
+                    print('Restart recording')
                 process = self.record()
                 capture_time = time.time()
 
@@ -116,8 +106,8 @@ class Streamer:
         frame_time = 0
 
         cap = cv2.VideoCapture(camera_record_filename)
-        # cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        # cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 640)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.capture_width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.capture_height)
 
         while cap.isOpened() and not self.stop:
             frame_time_elapsed = time.time() - frame_time

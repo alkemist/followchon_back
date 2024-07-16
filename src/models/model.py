@@ -2,8 +2,8 @@ import time
 
 from ultralytics import YOLO
 
+from helpers.image import ImageHelper
 from .frame import Frame
-from ..helpers.image import ImageHelper
 
 
 class Model:

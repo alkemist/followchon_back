@@ -3,7 +3,7 @@ from rest_framework import serializers
 from configuration.models import Family, Zone
 from configuration.serializers import FamilySerializer, ZoneSerializer
 from detections.models import Capture, Detection
-from src.helpers.yolo import YoloHelper
+from helpers.yolo import YoloHelper
 
 
 class DetectionSerializer(serializers.ModelSerializer):

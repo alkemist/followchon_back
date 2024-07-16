@@ -8,8 +8,8 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 from configuration.models import Family, Zone
-from src.helpers.image import ImageHelper
-from src.helpers.yolo import YoloHelper
+from helpers.image import ImageHelper
+from helpers.yolo import YoloHelper
 
 
 class Capture(models.Model):

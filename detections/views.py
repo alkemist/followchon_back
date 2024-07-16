@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from api.models import UpdateViewSet
 from detections.models import Capture
 from detections.serializers import CaptureSerializer, CaptureHydratedSerializer
-from src.helpers.math import Math
+from helpers.math import Math
 
 
 class CaptureViewSet(UpdateViewSet):

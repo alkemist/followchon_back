@@ -1,13 +1,12 @@
 # venv/bin/python -m src.check
-import pathlib
 import os
+import pathlib
+
 import cv2
-import numpy
 from PIL import Image
 
-from .helpers.file import FileHelper
-from .helpers.image import ImageHelper
-from .helpers.array import ArrayHelper
+from helpers.file import FileHelper
+from helpers.image import ImageHelper
 
 labels_path = './live/backup/labels'
 images_path = './live/backup/images'
@@ -46,7 +45,6 @@ for annotation in annotations:
     #     file_annotation.write(
     #         "\n".join(lines_ok)
     #     )
-
 
 for image in images:
     name = pathlib.Path(image).stem

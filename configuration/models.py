@@ -4,9 +4,17 @@ from django.db import models
 class Family(models.Model):
     index = models.IntegerField(null=True)
     name = models.CharField(max_length=200)
+    tracked = models.BooleanField(default=False)
+    trigger = models.BooleanField(default=False)
+    parent = models.ForeignKey('Family', on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self):
         return self.name
+
+
+class Rule(models.Model):
+    score_min = models.IntegerField(default=60)
+    enabled = models.BooleanField(default=False)
 
 
 class Zone(models.Model):
@@ -17,6 +25,8 @@ class Zone(models.Model):
     center_y = models.FloatField(null=True, default=0)
     width = models.FloatField(null=True, default=0)
     height = models.FloatField(null=True, default=0)
+
+    trigger = models.BooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

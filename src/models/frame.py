@@ -1,6 +1,6 @@
+from detections.management.commands.vision_models.annotation import Annotation
 from detections.models import Capture
-from .annotation import Annotation
-from ..helpers.array import ArrayHelper
+from helpers.array import ArrayHelper
 
 
 class Frame:

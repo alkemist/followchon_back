@@ -6,7 +6,7 @@ import shutil
 
 from dotenv import load_dotenv
 
-from .helpers.file import FileHelper
+from helpers.file import FileHelper
 
 load_dotenv()
 

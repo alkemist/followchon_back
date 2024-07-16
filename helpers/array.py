@@ -10,3 +10,10 @@ class ArrayHelper:
     @staticmethod
     def sort(array, compare_fn):
         return sorted(array, key=cmp_to_key(compare_fn))
+
+    @staticmethod
+    def object_list_to_dict(object_list, property_key):
+        res_dict = {}
+        for item in object_list:
+            res_dict[getattr(item, property_key)] = item
+        return res_dict
