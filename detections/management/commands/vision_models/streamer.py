@@ -86,7 +86,7 @@ class Streamer:
         if process is not None:
             process.terminate()
 
-    def capture(self, camera_record_filename):
+    def capture(self, camera_record_filename: str):
         frame_time = 0
 
         cap = cv2.VideoCapture(camera_record_filename)

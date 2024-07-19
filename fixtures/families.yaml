@@ -1,0 +1,44 @@
+- model: configuration.family
+  pk: 1
+  fields:
+    index: 0
+    name: Guinea Pig
+    parent: null
+    is_tracked: false
+    is_trigger: false
+    is_abstract: true
+    is_unique: false
+    is_zoned: true
+- model: configuration.family
+  pk: 2
+  fields:
+    index: 1
+    name: Noisette
+    parent: 1
+    is_tracked: true
+    is_trigger: true
+    is_abstract: false
+    is_unique: true
+    is_zoned: true
+- model: configuration.family
+  pk: 3
+  fields:
+    index: 2
+    name: Stitch
+    parent: 1
+    is_tracked: true
+    is_trigger: true
+    is_abstract: false
+    is_unique: true
+    is_zoned: true
+- model: configuration.family
+  pk: 4
+  fields:
+    index: 3
+    name: Plate
+    parent: null
+    is_tracked: false
+    is_trigger: false
+    is_abstract: false
+    is_unique: false
+    is_zoned: false

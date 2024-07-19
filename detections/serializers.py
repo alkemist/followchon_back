@@ -14,7 +14,7 @@ class DetectionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Detection
-        fields = ['id', 'family', 'zone', 'score', 'family_id', 'zone_id', 'coords']
+        fields = ['id', 'family', 'zone', 'score', 'family_id', 'zone_id', 'coords', 'trigger']
 
 
 class CaptureHydratedSerializer(serializers.ModelSerializer):
@@ -45,7 +45,7 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
             size = instance.size()
             yoloPoints = YoloHelper.calc_yolo_points(
                 coords['x1'], coords['y1'], coords['x2'], coords['y2'],
-                size['w'], size['h']
+                size[0], size[1]
             )
 
             new_detection.center_x = yoloPoints['x_center']

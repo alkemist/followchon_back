@@ -1,35 +1,34 @@
 import os
 import pathlib
 import shutil
+from typing import cast
 
 import cv2
 from django.db import models
 from django.utils import timezone
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 
 from configuration.models import Family, Zone
+from detections.management.commands.vision_models.annotation import Annotation
 from helpers.image import ImageHelper
 from helpers.yolo import YoloHelper
 
 
 class Capture(models.Model):
+    class Statuses(models.TextChoices):
+        DRAFT = 'draft', _('Draft')
+        VERIFIED = 'verified', _('Verified')
+        ARCHIVED = 'archived', _('Archived')
+
     base_dir = 'static'
     static_dir = 'captures'
     images_dir = 'images'
     labels_dir = 'labels'
 
-    DRAFT = 'draft'
-    VERIFIED = 'verified'
-    ARCHIVED = 'archived'
-    STATUSES = {
-        DRAFT: 'Draft',
-        VERIFIED: 'Verified',
-        ARCHIVED: 'Archived',
-    }
-
     zones = Zone.objects.all()
 
-    status = models.CharField(null=True, max_length=200, choices=STATUSES, default=DRAFT)
+    status = models.CharField(null=True, max_length=200, choices=Statuses.choices, default=Statuses.DRAFT)
 
     photo_file = models.CharField(null=True, max_length=200)
 
@@ -40,10 +39,16 @@ class Capture(models.Model):
     def detections_ids(self):
         return self.detections
 
-    def write(self, frame, capture_width, capture_height, annotations):
-        self.status = self.DRAFT
+    def write(self, frame: cv2.typing.MatLike, capture_width: float, capture_height: float,
+              annotations: list[Annotation]):
+        self.status = Capture.Statuses.DRAFT
         self.date = timezone.now()
         self.photo_file = f"{self.date.strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg"
+
+        photo_dir = f"{self.file_dir(None, True)}{self.images_dir}"
+
+        if not os.path.exists(photo_dir):
+            os.makedirs(photo_dir)
 
         cv2.imwrite(
             self.photo_path(None, True),
@@ -60,14 +65,12 @@ class Capture(models.Model):
             detection.center_y = annotation.yolo_points['y_center']
             detection.width = annotation.yolo_points['w']
             detection.height = annotation.yolo_points['h']
-            detection.score = annotation.conf
+            detection.score = annotation.score
+            detection.zone = annotation.zone
+            detection.trigger = annotation.trigger
 
-            for zone in self.zones:
-                if zone.has_point((detection.center_x, detection.center_y)):
-                    detection.zone = zone
-                    break
+            detection.family = annotation.family
 
-            detection.family = Family.objects.get(index=annotation.cls)
             detection.save()
 
         file = pathlib.Path(self.label_path(None, True))
@@ -76,13 +79,9 @@ class Capture(models.Model):
 
     def size(self):
         im = cv2.imread(self.photo_path(None, True))
-        (w_img, h_img) = im.shape[1::-1]
-        return {
-            'w': w_img,
-            'h': h_img,
-        }
+        return im.shape[1::-1]
 
-    def mark_as(self, new_status, root=None):
+    def mark_as(self, new_status: str, root: bool = None):
         if new_status not in self.STATUSES.keys():
             return
 
@@ -98,10 +97,10 @@ class Capture(models.Model):
         if os.path.isfile(label_path):
             os.remove(label_path)
 
-    def file_dir(self, status=None, root=None):
+    def file_dir(self, status: str | None = None, root: bool = None):
         status = self.status if status is None else status
 
-        if status not in self.STATUSES.keys():
+        if status not in Capture.Statuses:
             return ""
 
         return (f"{self.base_dir + '/' if root is not None and root else ''}"
@@ -109,11 +108,11 @@ class Capture(models.Model):
                 f"{status}/"
                 )
 
-    def photo_path(self, status=None, root=None):
+    def photo_path(self, status: str = None, root: bool = None):
         return (f"{self.file_dir(status, root)}"
                 f"{self.images_dir}/{self.photo_file}")
 
-    def label_path(self, status, root=None):
+    def label_path(self, status: str = None, root: bool = None):
         capture_name = pathlib.Path(f"{self.photo_file}").stem
         return (f"{self.file_dir(status, root)}"
                 f"{self.labels_dir}/{capture_name}.txt")
@@ -130,23 +129,30 @@ class Capture(models.Model):
 
 
 class Detection(models.Model):
+    class Triggers(models.TextChoices):
+        MOVE = 'move', _('Move')
+        ZONE = 'zone', _('Zone')
+        FAMILY = 'family', _('Family')
+
     capture = models.ForeignKey(Capture, on_delete=models.CASCADE, related_name='detections')
     family = models.ForeignKey(Family, on_delete=models.RESTRICT)
     zone = models.ForeignKey(Zone, on_delete=models.SET_NULL, null=True)
 
-    center_x = models.FloatField(null=True, default=0)
-    center_y = models.FloatField(null=True, default=0)
-    width = models.FloatField(null=True, default=0)
-    height = models.FloatField(null=True, default=0)
+    center_x = models.FloatField(null=True)
+    center_y = models.FloatField(null=True)
+    width = models.FloatField(null=True)
+    height = models.FloatField(null=True)
 
-    score = models.IntegerField(null=True, default=0)
+    score = models.FloatField(null=True)
+    trigger = models.CharField(null=True, max_length=100, choices=Triggers.choices)
+
     coords = {'x1': 0, 'y1': 0, 'x2': 0, 'y2': 0}
 
     def __str__(self):
         return f"{self.family.name}{" in " + self.zone.name if self.zone else ''}"
 
-    def size(self):
-        return self.capture.size()
+    def size(self) -> tuple[int, int]:
+        return cast(self.capture, Capture).size()
 
     def coords(self):
         size = self.size()
@@ -155,6 +161,6 @@ class Detection(models.Model):
             y_center_norm=self.center_y,
             w_norm=self.width,
             h_norm=self.height,
-            w_img=size['w'],
-            h_img=size['h'],
+            w_img=size[0],
+            h_img=size[1],
         )

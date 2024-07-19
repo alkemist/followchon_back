@@ -12,20 +12,20 @@ class CustomAdminSite(AdminSite):
 
 @admin.register(Family)
 class FamilyAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'index', 'parent', 'tracked', 'trigger']
+    list_display = ['id', 'name', 'index', 'parent', 'is_tracked', 'is_trigger', 'is_abstract', 'is_unique', 'is_zoned']
     list_display_links = ['name']
     search_fields = ['index', 'name']
     ordering = ['index']
-    list_editable = ['tracked', 'trigger']
+    list_editable = ['is_tracked', 'is_trigger', 'is_abstract', 'is_unique', 'is_zoned']
 
 
 @admin.register(Zone)
 class ZoneAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'slug', 'trigger']
+    list_display = ['id', 'name', 'slug', 'is_trigger', 'is_ignored']
     list_display_links = ['name']
     search_fields = ['slug', 'name']
     ordering = ['id']
-    list_editable = ['trigger']
+    list_editable = ['is_trigger', 'is_ignored']
 
 
 admin_site = CustomAdminSite()

@@ -22,14 +22,14 @@ class ImageHelper:
 
     @staticmethod
     def trace_detected_box_coords(
-            img,
-            x1,
-            y1,
-            x2,
-            y2,
-            label,
-            score,
-            zone,
+            img: cv2.typing.MatLike,
+            x1: int,
+            y1: int,
+            x2: int,
+            y2: int,
+            label: str,
+            score: int,
+            zone: str,
             font_scale=2,
             color_text=(0, 255, 0),
             color_bg=(255, 0, 255),

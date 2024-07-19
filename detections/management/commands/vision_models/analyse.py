@@ -1,25 +1,56 @@
+import copy
+from typing import cast
+
+import cv2
+
+from configuration.models import Family, Zone
 from detections.management.commands.vision_models.annotation import Annotation
+from detections.models import Capture, Detection
 from helpers.array import ArrayHelper
 
 
 class Analyse:
 
-    def __init__(self, frame, families_dict, families_trigger_count, zones, capture_min_score, capture_width,
-                 capture_height):
+    def __init__(self, frame: cv2.typing.MatLike, last_detections_dict: dict[int, Zone],
+                 families_dict: dict[int, Family], zones: list[Zone],
+                 capture_min_score: float):
         self.frame = frame
 
+        capture_size = frame.shape[1::-1]
+
         self.capture_min_score = capture_min_score
-        self.capture_width = capture_width
-        self.capture_height = capture_height
+        self.capture_width = capture_size[0]
+        self.capture_height = capture_size[1]
         self.families_dict = families_dict
-        self.families_trigger_count = families_trigger_count
+        self.last_detections_dict = last_detections_dict
         self.zones = zones
 
         self.annotations = list()
         self.families_detect_count = {}
+        self.is_trigger = False
 
-    def detect(self, results):
+    def detect(self, results: list):
         frame_copy = self.frame.copy()
+
+        # Annoatation validations rules
+        # 1 - score minimal
+        # 2 - near group with hierarchical exclusions
+        # 3 - exclude duplicate unique family
+        # 3 - child with parent
+
+        # Capture validations rules
+        # One of annotation respect this rules :
+        # 1 - Family tracked and moved
+        # 2 - Family trigger or Zone trigger
+        # 3 - Zone not ignored
+
+        # tracked : check old position & capture movement
+        # trigger : trigger capture
+        # abstract : valid if is parent of other annotation
+        # unique : only one family annotation by capture
+        # zoned : check annotation zone
+
+        annotations = list()
 
         for r in results:
             boxes = r.boxes
@@ -28,31 +59,80 @@ class Analyse:
                 annotation = Annotation(box, self.capture_width, self.capture_height, self.families_dict, self.zones)
 
                 if annotation.score > self.capture_min_score:
-                    if annotation.family_index not in self.families_detect_count:
-                        self.families_detect_count[annotation.family_index] = 0
+                    annotations.append(annotation)
 
-                    self.families_detect_count[annotation.family_index] += 1
-                    self.annotations.append(annotation)
+        annotations = ArrayHelper.sort(
+            annotations, lambda a1, a2: a2.family.index - a1.family.index
+        )
 
-        trigger_verified = len(self.families_trigger_count.keys()) == 0
+        annotations_grouped: list[Annotation] = list()
+        for_index_grouped: list[int] = list()
+        family_id_grouped: list[int] = list()
 
-        if not trigger_verified:
-            for family_index in self.families_trigger_count.keys():
-                trigger_verified = (
-                        family_index in self.families_detect_count and
-                        self.families_trigger_count[family_index] == self.families_detect_count[family_index]
-                )
+        for index, annotation in enumerate(annotations):
+            if index not in for_index_grouped:
+                annotation_copy = copy.deepcopy(annotation)
+                for _index, _annotation in enumerate(annotations):
+                    if _index != index and _index not in for_index_grouped:
+                        if annotation_copy.is_near(_annotation):
+                            annotation_copy.add_parent(_annotation)
+                            for_index_grouped.append(_index)
 
-                if not trigger_verified:
-                    break
+                if not annotation_copy.family.is_unique or annotation_copy.family.id not in family_id_grouped:
+                    annotations_grouped.append(annotation_copy)
 
-        if trigger_verified:
-            trigger_verified = (
-                any([annotation.zone is not None and annotation.zone.trigger for annotation in self.annotations]))
+                    if annotation_copy.family.is_unique:
+                        family_id_grouped.append(annotation_copy.family.id)
 
-        self.annotations = ArrayHelper.sort(self.annotations, lambda a1, a2: a1.family_index - a2.family_index)
+        for annotation in annotations_grouped:
+            if annotation.is_valid():
+                self.annotations.append(annotation)
+
+                self.is_trigger = self.is_trigger_annotation(annotation)
+
+                if annotation.parent:
+                    self.annotations.append(annotation.parent)
+
+                    self.is_trigger = self.is_trigger_annotation(annotation.parent)
+
+        self.annotations = ArrayHelper.sort(
+            self.annotations, lambda a1, a2: a1.family.index - a2.family.index
+        )
 
         for annotation in self.annotations:
             frame_copy = annotation.trace(frame_copy)
 
         return frame_copy
+
+    def is_trigger_annotation(self, annotation: Annotation):
+        if annotation.family.is_tracked:
+            first_detection = annotation.family.id not in self.last_detections_dict
+            last_detection = self.last_detections_dict[annotation.family.id] \
+                if not first_detection else None
+
+            if (
+                    first_detection is True
+                    or annotation.zone is None and last_detection is not None
+                    or annotation.zone is not None and last_detection is None
+                    or annotation.zone is not None and last_detection is not None
+                    and last_detection.slug != annotation.zone.slug
+            ):
+                self.last_detections_dict[annotation.family.id] = annotation.zone
+                annotation.trigger = Detection.Triggers.MOVE
+                return True
+
+        if annotation.zone is not None and cast(Zone, annotation.zone).is_trigger:
+            annotation.trigger = Detection.Triggers.ZONE
+        elif annotation.family.is_trigger:
+            annotation.trigger = Detection.Triggers.FAMILY
+
+        return self.is_trigger or \
+            (
+                    annotation.trigger == Detection.Triggers.ZONE or
+                    annotation.trigger == Detection.Triggers.FAMILY
+            ) and \
+            (annotation.zone is None or not cast(Zone, annotation.zone).is_ignored)
+
+    def save(self):
+        capture = Capture()
+        capture.write(self.frame, self.capture_width, self.capture_height, self.annotations)

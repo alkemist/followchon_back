@@ -8,7 +8,7 @@ from detections.management.commands.vision_models.streamer import Streamer
 
 
 class Command(BaseCommand):
-    help = "Closes the specified poll for voting"
+    help = ""
 
     # def add_arguments(self, parser):
     #     parser.add_argument("poll_ids", nargs="+", type=int)

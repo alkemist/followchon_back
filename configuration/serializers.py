@@ -6,7 +6,7 @@ from configuration.models import Family, Zone
 class FamilyParentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Family
-        fields = ['id', 'index', 'name', 'tracked', 'trigger']
+        fields = ['id', 'index', 'name', 'is_tracked', 'is_trigger', 'is_abstract', 'is_unique', 'is_zoned']
 
 
 class FamilySerializer(serializers.ModelSerializer):
@@ -15,10 +15,10 @@ class FamilySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Family
-        fields = ['id', 'index', 'name', 'tracked', 'trigger', 'parent_id', 'parent']
+        fields = ['id', 'index', 'name', 'is_tracked', 'is_trigger', 'is_abstract', 'parent_id', 'parent']
 
 
 class ZoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Zone
-        fields = ['id', 'slug', 'name', 'trigger']
+        fields = ['id', 'slug', 'name', 'is_trigger', 'is_ignored']

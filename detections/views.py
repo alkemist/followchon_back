@@ -22,7 +22,7 @@ class CaptureViewSet(UpdateViewSet):
         if status is not None:
             queryset = queryset.filter(status=status)
         elif 'pk' not in self.kwargs:
-            queryset = queryset.filter(status=Capture.DRAFT)
+            queryset = queryset.filter(status=Capture.Statuses.DRAFT)
 
         return queryset
 
@@ -30,9 +30,9 @@ class CaptureViewSet(UpdateViewSet):
     def mark_as_draft(self, request, pk=None, *args, **kwargs):
         capture = self.get_object()
 
-        if capture.status != Capture.DRAFT:
-            capture.mark_as(Capture.DRAFT, True)
-            capture.status = Capture.DRAFT
+        if capture.status != Capture.Statuses.DRAFT:
+            capture.mark_as(Capture.Statuses.DRAFT, True)
+            capture.status = Capture.Statuses.DRAFT
             capture.save()
 
         return Response(CaptureHydratedSerializer(capture).data)
@@ -41,9 +41,9 @@ class CaptureViewSet(UpdateViewSet):
     def mark_as_verified(self, request, pk=None, *args, **kwargs):
         capture = self.get_object()
 
-        if capture.status != Capture.VERIFIED:
-            capture.mark_as(Capture.VERIFIED, True)
-            capture.status = Capture.VERIFIED
+        if capture.status != Capture.Statuses.VERIFIED:
+            capture.mark_as(Capture.Statuses.VERIFIED, True)
+            capture.status = Capture.Statuses.VERIFIED
             capture.save()
 
         return Response(CaptureHydratedSerializer(capture).data)
@@ -52,9 +52,9 @@ class CaptureViewSet(UpdateViewSet):
     def mark_as_archived(self, request, pk=None, *args, **kwargs):
         capture = self.get_object()
 
-        if capture.status != Capture.ARCHIVED:
-            capture.mark_as(Capture.ARCHIVED, True)
-            capture.status = Capture.ARCHIVED
+        if capture.status != Capture.Statuses.ARCHIVED:
+            capture.mark_as(Capture.Statuses.ARCHIVED, True)
+            capture.status = Capture.Statuses.ARCHIVED
             capture.save()
 
         return Response(CaptureHydratedSerializer(capture).data)

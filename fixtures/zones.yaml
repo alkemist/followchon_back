@@ -1,0 +1,66 @@
+- model: configuration.zone
+  pk: 1
+  fields:
+    slug: clapier
+    name: Clapier
+    center_x: 0.44114380899500283
+    center_y: 0.10858165216854834
+    width: 0.1349250416435313
+    height: 0.20729224504904684
+    is_trigger: false
+    is_ignored: false
+- model: configuration.zone
+  pk: 2
+  fields:
+    slug: cachette
+    name: Cachette
+    center_x: 0.5710716268739588
+    center_y: 0.10167191066691345
+    width: 0.12493059411438098
+    height: 0.19347276204577704
+    is_trigger: false
+    is_ignored: true
+- model: configuration.zone
+  pk: 3
+  fields:
+    slug: foin
+    name: Foin
+    center_x: 0.7245974458634092
+    center_y: 0.12783021778024556
+    width: 0.18212104386451955
+    height: 0.24578937627244127
+    is_trigger: false
+    is_ignored: true
+- model: configuration.zone
+  pk: 4
+  fields:
+    slug: piscine
+    name: Piscine
+    center_x: 0.30433656367545264
+    center_y: 0.3069899438583503
+    width: 0.1231425306168904
+    height: 0.2290085754827565
+    is_trigger: true
+    is_ignored: false
+- model: configuration.zone
+  pk: 5
+  fields:
+    slug: fontaine
+    name: Fontaine
+    center_x: 0.17036919189950347
+    center_y: 0.723704110315175
+    width: 0.33888404818322526
+    height: 0.539270766129764
+    is_trigger: true
+    is_ignored: false
+- model: configuration.zone
+  pk: 6
+  fields:
+    slug: bas
+    name: Bas
+    center_x: 0.6682398667406997
+    center_y: 0.7743846011475107
+    width: 0.649083842309828
+    height: 0.44123635017582835
+    is_trigger: false
+    is_ignored: false
