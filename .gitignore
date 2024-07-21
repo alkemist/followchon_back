@@ -9,15 +9,9 @@ sqlite3.db
 
 static/CACHE
 static/captures
-!static/captures/draft/images/.gitignore
-!static/captures/draft/labels/.gitignore
-!static/captures/verified/images/.gitignore
-!static/captures/verified/labels/.gitignore
-!static/captures/archived/images/.gitignore
-!static/captures/archived/labels/.gitignore
-
 records
-!records/.gitignore
+datasets
+runs
 
 
 yolov8n.pt
