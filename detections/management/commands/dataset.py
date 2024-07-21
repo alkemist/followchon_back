@@ -34,32 +34,18 @@ def copy_to(files, ext, src_dir, dst_dir):
 class Command(BaseCommand):
     help = ""
 
-    # def add_arguments(self, parser):
-    #     parser.add_argument("poll_ids", nargs="+", type=int)
-
     def handle(self, *args, **options):
-        # for poll_id in options["poll_ids"]:
-        #     try:
-        #         poll = Poll.objects.get(pk=poll_id)
-        #     except Poll.DoesNotExist:
-        #         raise CommandError('Poll "%s" does not exist' % poll_id)
-        #
-        #     poll.opened = False
-        #     poll.save()
-        #
-
         load_dotenv()
 
-        dataset_source_labels_path = './live/saved/labels'
-        dataset_source_images_path = './live/saved/images'
+        dataset_source_labels_path = './static/captures/saved/labels'
+        dataset_source_images_path = './static/captures/saved/images'
 
-        dataset_test_labels_path = './live/dataset/test/labels'
-        dataset_test_images_path = './live/dataset/test/images'
-        dataset_val_labels_path = './live/dataset/val/labels'
-        dataset_val_images_path = './live/dataset/val/images'
-
-        dataset_train_labels_path = './live/dataset/train/labels'
-        dataset_train_images_path = './live/dataset/train/images'
+        dataset_test_labels_path = './static/captures/dataset/test/labels'
+        dataset_test_images_path = './static/captures/dataset/test/images'
+        dataset_val_labels_path = './static/captures/dataset/val/labels'
+        dataset_val_images_path = './static/captures/dataset/val/images'
+        dataset_train_labels_path = './static/captures/dataset/train/labels'
+        dataset_train_images_path = './static/captures/dataset/train/images'
 
         dataset_test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
         dataset_val_percent = float(os.getenv('DATASET_VAL_PERCENT'))

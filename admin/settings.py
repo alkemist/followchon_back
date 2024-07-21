@@ -151,3 +151,5 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10
 }
+
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000

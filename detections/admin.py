@@ -9,7 +9,7 @@ from .models import Detection
 
 class DetectionInline(admin.TabularInline):
     model = Detection
-    extra = 3
+    extra = 0
 
 
 @admin.register(Capture)
@@ -98,8 +98,7 @@ class DetectionAdmin(AdminChangeLinksMixin, admin.ModelAdmin):
          {'fields': ['capture', 'family', 'score', 'trigger'], 'classes': []}),
         ('Position', {'fields': ['zone', 'center_x', 'center_y', 'width', 'height'], 'classes': ['inline']}),
     ]
-    list_display = ['id', 'capture_link', 'family', 'zone', 'score',
-                    'center_x', 'center_y', 'width', 'height', 'trigger']
+    list_display = ['id', 'capture_id', 'capture_link', 'family', 'zone', 'score', 'trigger']
     readonly_fields = ['capture']
     list_editable = []
     search_fields = ['capture', 'family', 'zone']

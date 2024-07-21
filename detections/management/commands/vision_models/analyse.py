@@ -70,7 +70,8 @@ class Analyse:
         family_id_grouped: list[int] = list()
 
         for index, annotation in enumerate(annotations):
-            if index not in for_index_grouped:
+            if index not in for_index_grouped and \
+                    (not annotation.family.is_unique or annotation.family.id not in family_id_grouped):
                 annotation_copy = copy.deepcopy(annotation)
                 for _index, _annotation in enumerate(annotations):
                     if _index != index and _index not in for_index_grouped:
@@ -78,11 +79,10 @@ class Analyse:
                             annotation_copy.add_parent(_annotation)
                             for_index_grouped.append(_index)
 
-                if not annotation_copy.family.is_unique or annotation_copy.family.id not in family_id_grouped:
-                    annotations_grouped.append(annotation_copy)
+                annotations_grouped.append(annotation_copy)
 
-                    if annotation_copy.family.is_unique:
-                        family_id_grouped.append(annotation_copy.family.id)
+                if annotation.family.is_unique:
+                    family_id_grouped.append(annotation.family.id)
 
         for annotation in annotations_grouped:
             if annotation.is_valid():
@@ -107,11 +107,10 @@ class Analyse:
     def is_trigger_annotation(self, annotation: Annotation):
         if annotation.family.is_tracked:
             first_detection = annotation.family.id not in self.last_detections_dict
-            last_detection = self.last_detections_dict[annotation.family.id] \
-                if not first_detection else None
+            last_detection = self.last_detections_dict.get(annotation.family.id, None)
 
             if (
-                    first_detection is True
+                    first_detection
                     or annotation.zone is None and last_detection is not None
                     or annotation.zone is not None and last_detection is None
                     or annotation.zone is not None and last_detection is not None

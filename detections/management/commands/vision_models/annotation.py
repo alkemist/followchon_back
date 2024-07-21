@@ -41,7 +41,7 @@ class Annotation:
 
         self.parent: Annotation | None = None
         self.nears: list[Annotation] = list()
-        self.tolerance_margin = (w_img / 10, h_img / 10)
+        self.tolerance_margin = (w_img / 20, h_img / 20)
 
     def is_near(self, annotation: Self):
         return abs(self.coord_point_tl[0] - annotation.coord_point_tl[0]) < self.tolerance_margin[0] and \
