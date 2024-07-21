@@ -1,6 +1,5 @@
 from rest_framework import viewsets, mixins
-
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.pagination import PageNumberPagination, LimitOffsetPagination
 
 
 class ReadOnlyViewSet(mixins.RetrieveModelMixin,
@@ -16,3 +15,14 @@ class UpdateViewSet(mixins.RetrieveModelMixin,
                     viewsets.GenericViewSet):
     # Replace rest_framework.viewsets.ModelViewSet
     pass
+
+
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 10000
+
+
+class CustomLimitOffsetPagination(LimitOffsetPagination):
+    limit_query_param = 'limit'
+    offset_query_param = 'offset'

@@ -1,26 +1,34 @@
-from django.db.models import Min, Max
+from django.db.models import Q
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
-from api.models import UpdateViewSet
+from api.models import UpdateViewSet, CustomLimitOffsetPagination
 from detections.models import Capture
-from detections.serializers import CaptureSerializer, CaptureHydratedSerializer
-from helpers.math import Math
+from detections.serializers import CaptureHydratedSerializer
 
 
 class CaptureViewSet(UpdateViewSet):
     queryset = Capture.objects.all()
     serializer_class = CaptureHydratedSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
+    # permission_classes = [IsAuthenticated, IsAdminUser]
+    pagination_class = CustomLimitOffsetPagination
     http_method_names = ['get', 'patch', 'head', 'options']
 
     def get_queryset(self):
         queryset = Capture.objects.all().order_by('-date')
 
+        id = self.request.query_params.get('id')
         status = self.request.query_params.get('status')
+        offset = self.request.query_params.get('offset')
+        limit = self.request.query_params.get('limit')
 
-        if status is not None:
+        if id is not None and id:
+            if int(offset) == 0 and int(limit) == 1:
+                queryset = queryset.filter(id=id)
+            else:
+                queryset = queryset.filter(~Q(id=id))
+
+        if status is not None and status:
             queryset = queryset.filter(status=status)
         elif 'pk' not in self.kwargs:
             queryset = queryset.filter(status=Capture.Statuses.DRAFT)
@@ -59,39 +67,3 @@ class CaptureViewSet(UpdateViewSet):
             capture.save()
 
         return Response(CaptureHydratedSerializer(capture).data)
-
-    @action(detail=False)
-    def carousel(self, request, *args, **kwargs):
-        by_page = 3
-
-        min_id = Capture.objects.aggregate(Min('id')).get('id__min')
-        max_id = Capture.objects.aggregate(Max('id')).get('id__max')
-        current_id = max_id if not request.GET.get("id") else int(request.GET.get("id"))
-
-        query_min_id, query_max_id = Math.determine_id_range(current_id, min_id, max_id, by_page)
-
-        capture = Capture.objects \
-            .prefetch_related('detections') \
-            .get(pk=current_id)
-
-        captures = \
-            Capture.objects \
-                .filter(id__gte=query_min_id, id__lte=query_max_id) \
-                .prefetch_related('detections') \
-                .order_by("-date")
-
-        captures = list(captures)
-
-        has_pages = len(captures) > 1
-
-        prev_id = current_id + 1 if has_pages and current_id < max_id else False
-        next_id = current_id - 1 if has_pages and current_id > min_id else False
-
-        return Response({
-            "capture": CaptureHydratedSerializer(capture).data,
-            "captures": CaptureSerializer(captures, many=True).data,
-            "has_items": len(captures) > 0,
-            "current_id": current_id,
-            "prev_id": prev_id,
-            "next_id": next_id,
-        })

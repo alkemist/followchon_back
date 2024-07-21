@@ -9,6 +9,7 @@
     is_abstract: true
     is_unique: false
     is_zoned: true
+    color: 6f4e37
 - model: configuration.family
   pk: 2
   fields:
@@ -20,6 +21,7 @@
     is_abstract: false
     is_unique: true
     is_zoned: true
+    color: e23e28
 - model: configuration.family
   pk: 3
   fields:
@@ -31,6 +33,7 @@
     is_abstract: false
     is_unique: true
     is_zoned: true
+    color: ffbf00
 - model: configuration.family
   pk: 4
   fields:
@@ -42,3 +45,4 @@
     is_abstract: false
     is_unique: false
     is_zoned: false
+    color: ffffff

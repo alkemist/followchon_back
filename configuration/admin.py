@@ -12,7 +12,8 @@ class CustomAdminSite(AdminSite):
 
 @admin.register(Family)
 class FamilyAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'index', 'parent', 'is_tracked', 'is_trigger', 'is_abstract', 'is_unique', 'is_zoned']
+    list_display = ['id', 'name', 'index', 'parent', 'color', 'is_tracked', 'is_trigger', 'is_abstract', 'is_unique',
+                    'is_zoned']
     list_display_links = ['name']
     search_fields = ['index', 'name']
     ordering = ['index']

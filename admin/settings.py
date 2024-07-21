@@ -33,7 +33,6 @@ ALLOWED_HOSTS = []
 INSTALLED_APPS = [
     'configuration.apps.ConfigurationConfig',
     'detections.apps.DetectionsConfig',
-    'front.apps.FrontConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,12 +42,14 @@ INSTALLED_APPS = [
     'compressor',
     'rest_framework',
     'rest_framework.authtoken',
+    'corsheaders',
     'django_extensions'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -162,9 +163,14 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.AdminRenderer',
         'rest_framework.renderers.DocumentationRenderer',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10
 }
+
+CORS_ALLOWED_ORIGINS = [
+    "https://localhost:4200",
+]
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 

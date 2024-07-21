@@ -21,12 +21,11 @@ from django.views.static import serve
 from admin import settings
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     re_path(
         r"^(?P<path>(?:favicon\.ico|manifest\.json|.*\.(?:js|css|json|png|jpg)))$",
         serve,
         {"document_root": settings.STATIC_ROOT},
     ),
     path('', include("api.urls")),
-    path('', include("front.urls")),
+    path('', admin.site.urls),
 ]

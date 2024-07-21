@@ -20,4 +20,10 @@ Update schema : `python manage.py makemigrations && python manage.py migrate`
 Create first admin user : `python manage.py createsuperuser`  
 Export
 data : `python manage.py dumpdata --format=yaml --exclude=admin --exclude=auth --exclude=sessions --exclude=contenttypes --exclude=detections`  
-Import data : `python manage.py loaddata data.yaml`  
+Import data : `python manage.py loaddata data.yaml`
+
+# Dev
+
+Start
+backoffice : `lsof -t -i tcp:8000 | xargs kill -9 && .venv/bin/python manage.py runserver_plus --cert-file ~/cert.pem --key-file ~/key.pem 8000`  
+Start vision : `.venv/bin/python manage.py vision`  

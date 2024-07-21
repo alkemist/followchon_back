@@ -4,6 +4,12 @@ from django.db import models
 
 
 class Family(models.Model):
+    class Colors(models.TextChoices):
+        Coffee = '6f4e37', 'Coffee'
+        ChillRed = 'e23e28', 'Chill red'
+        Amber = 'ffbf00', 'Amber'
+        White = 'ffffff', 'White'
+
     index = models.IntegerField(null=True)
     name = models.CharField(max_length=200)
     parent = models.ForeignKey('Family', on_delete=models.CASCADE, null=True, blank=True)
@@ -12,6 +18,7 @@ class Family(models.Model):
     is_abstract = models.BooleanField(default=False)
     is_unique = models.BooleanField(default=False)
     is_zoned = models.BooleanField(default=False)
+    color = models.CharField(null=True, max_length=100, choices=Colors.choices)
 
     class Meta:
         verbose_name_plural = "families"

@@ -6,13 +6,17 @@ from typing import cast
 import cv2
 from django.db import models
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
+from dotenv import load_dotenv
 
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.annotation import Annotation
 from helpers.image import ImageHelper
 from helpers.yolo import YoloHelper
+
+load_dotenv()
 
 
 class Capture(models.Model):
@@ -34,6 +38,7 @@ class Capture(models.Model):
 
     date = models.DateTimeField(default=timezone.now)
 
+    id = 0
     detections = []
 
     def detections_ids(self):
@@ -82,7 +87,7 @@ class Capture(models.Model):
         return im.shape[1::-1]
 
     def mark_as(self, new_status: str, root: bool = None):
-        if new_status not in self.STATUSES.keys():
+        if new_status not in Capture.Statuses:
             return
 
         shutil.move(self.photo_path(self.status, root), self.photo_path(new_status, root))
@@ -122,7 +127,12 @@ class Capture(models.Model):
                          '<img src="/%s" width="150" height="150" />'
                          '</a>' % (self.photo_path(), self.photo_path()))
 
-    image_tag.short_description = 'Image'
+    def front_url(self):
+        return format_html(
+            '<a target="_blank" href="{0}">{1}</a>',
+            f"{os.getenv('FRONT_URL')}?id={self.id}&status={self.status}",
+            'Annotate',
+        )
 
     def __str__(self):
         return f"{self.date}"
