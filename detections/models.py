@@ -152,7 +152,7 @@ class Detection(models.Model):
         return f"{self.family.name}{" in " + self.zone.name if self.zone else ''}"
 
     def size(self) -> tuple[int, int]:
-        return cast(self.capture, Capture).size()
+        return cast(self.capture, Capture).size(self.capture)
 
     def coords(self):
         size = self.size()

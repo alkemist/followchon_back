@@ -1,5 +1,6 @@
 from django.db.models import Min, Max
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from api.models import UpdateViewSet
@@ -11,7 +12,7 @@ from helpers.math import Math
 class CaptureViewSet(UpdateViewSet):
     queryset = Capture.objects.all()
     serializer_class = CaptureHydratedSerializer
-    permission_classes = []
+    permission_classes = [IsAuthenticated, IsAdminUser]
     http_method_names = ['get', 'patch', 'head', 'options']
 
     def get_queryset(self):

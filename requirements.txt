@@ -14,3 +14,6 @@ django-libsass~=0.9
 djangorestframework~=3.15.2
 django-cors-headers~=4.4.0
 django-admin-relation-links~=0.2.5
+werkzeug~=3.0.3
+django-extensions~=3.2.3
+pyOpenSSL~=24.2.1
