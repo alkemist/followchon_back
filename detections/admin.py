@@ -22,15 +22,16 @@ class CaptureAdmin(admin.ModelAdmin):
     list_display_links = ['date']
     readonly_fields = ['image_tag', 'status']
     list_editable = []
-    search_fields = ['date', 'photo_file']
+    search_fields = ['id', 'date', 'photo_file']
     ordering = ['-date']
     list_filter = ['date', 'status']
-    actions = ['mark_as_draft', 'mark_as_verified', 'mark_as_archived']
+    actions = ['mark_as_draft', 'mark_as_verified', 'mark_as_archived', 'mark_as_deleted']
     inlines = [
         DetectionInline,
     ]
+    list_per_page = 10
 
-    @admin.action(description="Mark selected detections as draft")
+    @admin.action(description="Mark selected captures as draft")
     def mark_as_draft(self, request, queryset):
         for item in queryset.iterator():
             item.mark_as(Capture.Statuses.DRAFT, True)
@@ -40,15 +41,15 @@ class CaptureAdmin(admin.ModelAdmin):
         self.message_user(
             request,
             ngettext(
-                "%d detections was successfully marked as draft.",
-                "%d detections were successfully marked as draft.",
+                "%d captures was successfully marked as draft.",
+                "%d captures were successfully marked as draft.",
                 updated,
             )
             % updated,
             messages.SUCCESS,
         )
 
-    @admin.action(description="Mark selected detections as verified")
+    @admin.action(description="Mark selected captures as verified")
     def mark_as_verified(self, request, queryset):
         for item in queryset.iterator():
             item.mark_as(Capture.Statuses.VERIFIED, True)
@@ -58,15 +59,15 @@ class CaptureAdmin(admin.ModelAdmin):
         self.message_user(
             request,
             ngettext(
-                "%d detections was successfully marked as verified.",
-                "%d detections were successfully marked as verified.",
+                "%d captures was successfully marked as verified.",
+                "%d captures were successfully marked as verified.",
                 updated,
             )
             % updated,
             messages.SUCCESS,
         )
 
-    @admin.action(description="Mark selected detections as archived")
+    @admin.action(description="Mark selected captures as archived")
     def mark_as_archived(self, request, queryset):
         for item in queryset.iterator():
             item.mark_as(Capture.Statuses.ARCHIVED, True)
@@ -76,8 +77,26 @@ class CaptureAdmin(admin.ModelAdmin):
         self.message_user(
             request,
             ngettext(
-                "%d detections was successfully marked as archived.",
-                "%d detections were successfully marked as archived.",
+                "%d captures was successfully marked as archived.",
+                "%d captures were successfully marked as archived.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Mark selected captures as deleted")
+    def mark_as_deleted(self, request, queryset):
+        for item in queryset.iterator():
+            item.mark_as(Capture.Statuses.DELETED, True)
+
+        updated = queryset.update(status=Capture.Statuses.DELETED)
+
+        self.message_user(
+            request,
+            ngettext(
+                "%d captures was successfully marked as deleted.",
+                "%d captures were successfully marked as deleted.",
                 updated,
             )
             % updated,
@@ -106,3 +125,4 @@ class DetectionAdmin(AdminChangeLinksMixin, admin.ModelAdmin):
     list_filter = ['family', 'zone', 'trigger']
     list_display_links = ['id']
     change_links = ['capture']
+    list_per_page = 100
