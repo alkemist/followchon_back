@@ -37,8 +37,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         load_dotenv()
 
-        dataset_source_labels_path = './static/captures/saved/labels'
-        dataset_source_images_path = './static/captures/saved/images'
+        dataset_source_labels_path = './static/captures/verified/labels'
+        dataset_source_images_path = './static/captures/verified/images'
 
         dataset_test_labels_path = './static/captures/dataset/test/labels'
         dataset_test_images_path = './static/captures/dataset/test/images'

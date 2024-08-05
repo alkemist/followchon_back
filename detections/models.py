@@ -27,6 +27,7 @@ class Capture(models.Model):
         DELETED = 'deleted', _('Deleted')
 
     STATUS_EDITABLE = 'editable'
+    STATUS_ALL = 'all'
 
     base_dir = 'static'
     static_dir = 'captures'
@@ -127,7 +128,7 @@ class Capture(models.Model):
 
     def image_tag(self):
         return mark_safe('<a href="/%s" target="_blank">'
-                         '<img src="/%s" width="150" height="150" />'
+                         '<img src="/%s" width="200" height="200" />'
                          '</a>' % (self.photo_path(), self.photo_path()))
 
     def front_url(self):
@@ -138,7 +139,7 @@ class Capture(models.Model):
         )
 
     def __str__(self):
-        return f"{self.date}"
+        return f"{self.date.strftime('%m/%d %H:%M:%S')}"
 
 
 class Detection(models.Model):
@@ -166,6 +167,14 @@ class Detection(models.Model):
 
     def size(self) -> tuple[int, int]:
         return cast(self.capture, Capture).size(self.capture)
+
+    def image_tag(self):
+        return mark_safe(
+            '<a href="/%s" target="_blank">'
+            '<img src="/%s" width="200" height="200" />'
+            '</a>' % (cast(self.capture, Capture).photo_path(self.capture),
+                      cast(self.capture, Capture).photo_path(self.capture))
+        )
 
     def coords(self):
         size = self.size()

@@ -25,6 +25,7 @@ Import data : `python manage.py loaddata data.yaml`
 # Dev
 
 Start
-backoffice : `lsof -t -i tcp:8000 | xargs kill -9 && .venv/bin/python manage.py runserver_plus --cert-file ~/cert.pem --key-file ~/key.pem 8000`  
+kill old backoffice : `lsof -t -i tcp:8000 | xargs kill -9`
+backoffice : `.venv/bin/python manage.py runserver_plus --cert-file ~/cert.pem --key-file ~/key.pem 8000`  
 Kill processus : `pkill -9 ffmpeg`  
 Start vision : `.venv/bin/python manage.py vision`  

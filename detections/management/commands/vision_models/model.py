@@ -4,7 +4,7 @@ import cv2
 from ultralytics import YOLO
 
 from configuration.models import Family, Zone
-from detections.management.commands.vision_models.analyse import Analyse
+from detections.management.commands.vision_models.capture_analyse import Capture_analyse
 from detections.models import Detection
 from helpers.array import ArrayHelper
 from helpers.image import ImageHelper
@@ -47,11 +47,11 @@ class Model:
 
         save_time_elapsed = time.time() - self.save_time
 
-        analyse = Analyse(frame, self.last_detections_dict, self.families_dict, self.zones,
-                          self.capture_min_score)
+        analyse = Capture_analyse(frame, self.last_detections_dict, self.families_dict, self.zones,
+                                  self.capture_min_score)
         frame = analyse.detect(results)
 
-        if analyse.is_trigger and save_time_elapsed > 1:
+        if analyse.is_triggered and save_time_elapsed > 1:
             analyse.save()
             self.save_time = time.time()
 

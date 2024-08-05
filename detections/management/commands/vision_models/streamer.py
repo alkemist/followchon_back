@@ -1,6 +1,7 @@
 import os
 import subprocess
 import time
+from datetime import datetime
 
 import cv2
 
@@ -35,7 +36,7 @@ class Streamer:
 
         self.stop = False
 
-    def record(self):
+    def begin_recording(self):
         command = (f"ffmpeg -hide_banner -y -loglevel error -rtsp_transport tcp -use_wallclock_as_timestamps "
                    f"1 -i {self.stream_path} -vcodec copy -acodec copy -f segment -reset_timestamps 1 "
                    f"-segment_time {self.record_time} -segment_format mkv -segment_atclocktime 1 -strftime 1 "
@@ -45,8 +46,15 @@ class Streamer:
                                 stdout=subprocess.PIPE,
                                 universal_newlines=True)
 
+    def stop_recording(self):
+        command = "pkill ffmpeg"
+
+        return subprocess.Popen(command.split(" "),
+                                stdout=subprocess.PIPE,
+                                universal_newlines=True)
+
     def start(self):
-        process = self.record() if self.loop_enabled else None
+        process = self.begin_recording() if self.loop_enabled else None
 
         capture_time = time.time()
 
@@ -59,15 +67,20 @@ class Streamer:
             if self.loop_enabled and capture_time_elapsed >= self.record_time + self.record_time_delay:
                 if self.verbose:
                     print('Restart recording')
-                process = self.record()
+                process = self.begin_recording()
                 capture_time = time.time()
+
+            if records_count > 10:
+                if self.verbose:
+                    print('Stop recording')
+                self.stop_recording()
 
             if records_count > 1 or not self.loop_enabled:
                 last_record = records[0]
                 camera_record_filename = f"{self.records_directory}/{last_record}"
 
                 if self.verbose:
-                    print(f"Next record : {last_record}")
+                    print(f"Next record : {last_record} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
                 self.capture(camera_record_filename)
 

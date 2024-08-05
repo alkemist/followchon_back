@@ -35,6 +35,9 @@ class CaptureViewSet(UpdateViewSet):
             if status is not None and status:
                 if status == Capture.STATUS_EDITABLE:
                     queryset = queryset.filter(Q(status=Capture.Statuses.DRAFT) | Q(status=Capture.Statuses.VERIFIED))
+                elif status == Capture.STATUS_ALL:
+                    queryset = queryset.filter(Q(status=Capture.Statuses.DRAFT) | Q(status=Capture.Statuses.VERIFIED)
+                                               | Q(status=Capture.Statuses.ARCHIVED))
                 else:
                     queryset = queryset.filter(status=status)
             else:

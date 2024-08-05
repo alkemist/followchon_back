@@ -117,12 +117,12 @@ class DetectionAdmin(AdminChangeLinksMixin, admin.ModelAdmin):
          {'fields': ['capture', 'family', 'score', 'trigger'], 'classes': []}),
         ('Position', {'fields': ['zone', 'center_x', 'center_y', 'width', 'height'], 'classes': ['inline']}),
     ]
-    list_display = ['id', 'capture_id', 'capture_link', 'family', 'zone', 'score', 'trigger']
+    list_display = ['id', 'capture_id', 'capture_link', 'image_tag', 'family', 'zone', 'score', 'trigger']
     readonly_fields = ['capture']
     list_editable = []
     search_fields = ['capture', 'family', 'zone']
     ordering = ['-id']
-    list_filter = ['family', 'zone', 'trigger']
+    list_filter = ['family', 'zone', 'trigger', 'capture__status', ('score', admin.EmptyFieldListFilter)]
     list_display_links = ['id']
     change_links = ['capture']
-    list_per_page = 100
+    list_per_page = 10

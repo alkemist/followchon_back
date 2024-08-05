@@ -9,7 +9,7 @@ from detections.models import Capture, Detection
 from helpers.array import ArrayHelper
 
 
-class Analyse:
+class Capture_analyse:
 
     def __init__(self, frame: cv2.typing.MatLike, last_detections_dict: dict[int, Zone],
                  families_dict: dict[int, Family], zones: list[Zone],
@@ -25,9 +25,9 @@ class Analyse:
         self.last_detections_dict = last_detections_dict
         self.zones = zones
 
-        self.annotations = list()
         self.families_detect_count = {}
-        self.is_trigger = False
+        self.is_triggered = False
+        self.annotations = list()
 
     def detect(self, results: list):
         frame_copy = self.frame.copy()
@@ -88,12 +88,12 @@ class Analyse:
             if annotation.is_valid():
                 self.annotations.append(annotation)
 
-                self.is_trigger = self.is_trigger_annotation(annotation)
+                self.is_triggered = self.is_trigger_annotation(annotation)
 
                 if annotation.parent:
                     self.annotations.append(annotation.parent)
 
-                    self.is_trigger = self.is_trigger_annotation(annotation.parent)
+                    self.is_triggered = self.is_trigger_annotation(annotation.parent)
 
         self.annotations = ArrayHelper.sort(
             self.annotations, lambda a1, a2: a1.family.index - a2.family.index
@@ -125,7 +125,7 @@ class Analyse:
         elif annotation.family.is_trigger:
             annotation.trigger = Detection.Triggers.FAMILY
 
-        return self.is_trigger or \
+        return self.is_triggered or \
             (
                     annotation.trigger == Detection.Triggers.ZONE or
                     annotation.trigger == Detection.Triggers.FAMILY
