@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from api.models import UpdateViewSet, CustomLimitOffsetPagination
 from detections.models import Capture
-from detections.serializers import CaptureHydratedSerializer
+from detections.serializers.serializers import CaptureHydratedSerializer
 
 
 class CaptureViewSet(UpdateViewSet):

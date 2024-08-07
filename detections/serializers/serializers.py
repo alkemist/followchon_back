@@ -3,7 +3,8 @@ import pathlib
 from rest_framework import serializers
 
 from configuration.models import Family, Zone
-from configuration.serializers import FamilySerializer, ZoneSerializer
+from configuration.serializers.family import FamilySerializer
+from configuration.serializers.serializers import ZoneSerializer
 from detections.models import Capture, Detection
 from helpers.yolo import YoloHelper
 

@@ -149,7 +149,7 @@ class Detection(models.Model):
         FAMILY = 'family', _('Family')
 
     capture = models.ForeignKey(Capture, on_delete=models.CASCADE, related_name='detections')
-    family = models.ForeignKey(Family, on_delete=models.RESTRICT)
+    family = models.ForeignKey(Family, on_delete=models.RESTRICT, related_name='detections')
     zone = models.ForeignKey(Zone, on_delete=models.SET_NULL, null=True, default=None)
 
     center_x = models.FloatField(null=True, default=0)
