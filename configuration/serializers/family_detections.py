@@ -9,7 +9,7 @@ class FamilyDetectionsSerializer(serializers.ModelSerializer):
     parent_id = serializers.PrimaryKeyRelatedField(queryset=Family.objects.all())
     parent = FamilyParentSerializer()
 
-    detections = DetectionFamilySerializer(many=True)
+    detections = DetectionFamilySerializer(many=True, read_only=True)
 
     class Meta:
         model = Family

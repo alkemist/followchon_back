@@ -2,4 +2,4 @@ train: train/images
 val: val/images
 test: test/images
 
-names: [ 'guinea pig', 'noisette', 'stitch' ]
+names: [ 'guinea pig', 'noisette', 'stitch', 'plate' ]
