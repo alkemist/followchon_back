@@ -124,11 +124,10 @@ LANGUAGES = [
     ('fr', _('French')),
 ]
 
-TIME_ZONE = 'Europe/Paris'
-
 USE_I18N = True
 
-USE_TZ = True
+USE_TZ = False
+TIME_ZONE = 'Europe/Paris'
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/

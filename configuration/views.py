@@ -31,11 +31,15 @@ class FamilyViewSet(ReadOnlyViewSet):
                 date = datetime.now()
 
             queryset = Family.objects.prefetch_related(
-                Prefetch('detections', queryset=Detection.objects.filter(
-                    capture__date__range=[
-                        date.replace(hour=0, minute=0, second=0),
-                        date.replace(hour=23, minute=59, second=59)
-                    ]))
+                Prefetch(
+                    'detections',
+                    queryset=Detection.objects.filter(
+                        capture__date__range=[
+                            date.replace(hour=0, minute=0, second=0),
+                            date.replace(hour=23, minute=59, second=59)
+                        ])
+                    .order_by('capture__date')
+                )
             )
 
         return queryset

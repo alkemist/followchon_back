@@ -117,6 +117,10 @@ class Capture(models.Model):
                 f"{status}/"
                 )
 
+    def photo_default_path(self, root: bool = None):
+        return (f"{self.file_dir(self.status, root)}"
+                f"{self.images_dir}/{self.photo_file}")
+
     def photo_path(self, status: str = None, root: bool = None):
         return (f"{self.file_dir(status, root)}"
                 f"{self.images_dir}/{self.photo_file}")
