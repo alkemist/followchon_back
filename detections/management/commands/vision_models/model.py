@@ -1,3 +1,4 @@
+import os
 import time
 
 import cv2
@@ -55,4 +56,4 @@ class Model:
             analyse.save()
             self.save_time = time.time()
 
-        return ImageHelper.resize_with_ratio(frame, self.capture_width, self.capture_height)
+        return ImageHelper.resize_with_ratio(frame, int(os.getenv('CAPTURE_WIDTH')), None)

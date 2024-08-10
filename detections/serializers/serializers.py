@@ -91,7 +91,9 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
         return instance
 
 
-class CaptureSerializer(serializers.ModelSerializer):
+class CaptureDateSerializer(serializers.ModelSerializer):
+    date_only = serializers.DateField()
+
     class Meta:
         model = Capture
-        fields = ['id', 'photo_path']
+        fields = ['date_only']

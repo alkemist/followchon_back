@@ -48,8 +48,7 @@ class Capture(models.Model):
     def detections_ids(self):
         return self.detections
 
-    def write(self, frame: cv2.typing.MatLike, capture_width: float, capture_height: float,
-              annotations: list[Annotation]):
+    def write(self, frame: cv2.typing.MatLike, annotations: list[Annotation]):
         self.status = Capture.Statuses.DRAFT
         self.date = timezone.now()
         self.photo_file = f"{self.date.strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg"
@@ -59,10 +58,7 @@ class Capture(models.Model):
         if not os.path.exists(photo_dir):
             os.makedirs(photo_dir)
 
-        cv2.imwrite(
-            self.photo_path(None, True),
-            ImageHelper.resize_with_ratio(frame, capture_width, capture_height)
-        )
+        self.resize(frame)
 
         self.save()
 
@@ -85,6 +81,18 @@ class Capture(models.Model):
         file = pathlib.Path(self.label_path(None, True))
         file.parent.mkdir(parents=True, exist_ok=True)
         file.write_text("\n".join([annotation.line for annotation in annotations]))
+
+    def resize(self, image):
+        cv2.imwrite(
+            self.photo_path(None, True),
+            ImageHelper.resize_with_ratio(image, int(os.getenv('CAPTURE_WIDTH')))
+        )
+
+    def resize_auto(self):
+        print(self.photo_path(None, True))
+        image = cv2.imread(self.photo_path(None, True))
+
+        self.resize(image)
 
     def size(self):
         im = cv2.imread(self.photo_path(None, True))
@@ -116,10 +124,6 @@ class Capture(models.Model):
                 f"{self.static_dir}/"
                 f"{status}/"
                 )
-
-    def photo_default_path(self, root: bool = None):
-        return (f"{self.file_dir(self.status, root)}"
-                f"{self.images_dir}/{self.photo_file}")
 
     def photo_path(self, status: str = None, root: bool = None):
         return (f"{self.file_dir(status, root)}"

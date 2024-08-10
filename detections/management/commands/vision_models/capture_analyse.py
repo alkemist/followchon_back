@@ -134,4 +134,4 @@ class Capture_analyse:
 
     def save(self):
         capture = Capture()
-        capture.write(self.frame, self.capture_width, self.capture_height, self.annotations)
+        capture.write(self.frame, self.annotations)

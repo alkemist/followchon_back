@@ -17,3 +17,6 @@ django-admin-relation-links~=0.2.5
 werkzeug~=3.0.3
 django-extensions~=3.2.3
 pyOpenSSL~=24.2.1
+django-imagekit~=5.0.0
+pillow~=10.4.0
+typing_extensions~=4.12.2

@@ -1,11 +1,12 @@
 from django.db.models import Q
+from django.db.models.functions import TruncDate
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from api.models import UpdateViewSet, CustomLimitOffsetPagination
 from detections.models import Capture
-from detections.serializers.serializers import CaptureHydratedSerializer
+from detections.serializers.serializers import CaptureHydratedSerializer, CaptureDateSerializer
 
 
 class CaptureViewSet(UpdateViewSet):
@@ -49,6 +50,15 @@ class CaptureViewSet(UpdateViewSet):
                 queryset = queryset.order_by('-date')
 
         return queryset
+
+    @action(detail=False)
+    def dates(self, request, *args, **kwargs):
+        captures = (Capture.objects.all()
+                    .annotate(date_only=TruncDate('date'))
+                    .values('date_only').distinct()
+                    .order_by('-date_only'))
+
+        return Response(CaptureDateSerializer(captures, many=True).data)
 
     @action(detail=True)
     def mark_as_draft(self, request, pk=None, *args, **kwargs):

@@ -25,11 +25,29 @@ class CaptureAdmin(admin.ModelAdmin):
     search_fields = ['id', 'date', 'photo_file']
     ordering = ['-date']
     list_filter = ['date', 'status']
-    actions = ['mark_as_draft', 'mark_as_verified', 'mark_as_archived', 'mark_as_deleted']
+    actions = ['resize', 'mark_as_draft', 'mark_as_verified', 'mark_as_archived', 'mark_as_deleted']
     inlines = [
         DetectionInline,
     ]
     list_per_page = 10
+
+    @admin.action(description="Resize image")
+    def resize(self, request, queryset):
+        for item in queryset.iterator():
+            item.resize_auto()
+
+        updated = len(queryset)
+
+        self.message_user(
+            request,
+            ngettext(
+                "%d capture resized.",
+                "%d captures resized.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
 
     @admin.action(description="Mark selected captures as draft")
     def mark_as_draft(self, request, queryset):
@@ -41,7 +59,7 @@ class CaptureAdmin(admin.ModelAdmin):
         self.message_user(
             request,
             ngettext(
-                "%d captures was successfully marked as draft.",
+                "%d capture was successfully marked as draft.",
                 "%d captures were successfully marked as draft.",
                 updated,
             )
@@ -59,7 +77,7 @@ class CaptureAdmin(admin.ModelAdmin):
         self.message_user(
             request,
             ngettext(
-                "%d captures was successfully marked as verified.",
+                "%d capture was successfully marked as verified.",
                 "%d captures were successfully marked as verified.",
                 updated,
             )
@@ -77,7 +95,7 @@ class CaptureAdmin(admin.ModelAdmin):
         self.message_user(
             request,
             ngettext(
-                "%d captures was successfully marked as archived.",
+                "%d capture was successfully marked as archived.",
                 "%d captures were successfully marked as archived.",
                 updated,
             )
@@ -95,7 +113,7 @@ class CaptureAdmin(admin.ModelAdmin):
         self.message_user(
             request,
             ngettext(
-                "%d captures was successfully marked as deleted.",
+                "%d capture was successfully marked as deleted.",
                 "%d captures were successfully marked as deleted.",
                 updated,
             )

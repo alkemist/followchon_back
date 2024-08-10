@@ -14,6 +14,7 @@ class DetectionFamilySerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     photo_path = serializers.SerializerMethodField()
+    capture_id = serializers.SerializerMethodField()
 
     def get_date(self, obj):
         return obj.capture.date
@@ -22,8 +23,12 @@ class DetectionFamilySerializer(serializers.ModelSerializer):
         return obj.capture.status
 
     def get_photo_path(self, obj):
-        return obj.capture.photo_default_path()
+        return obj.capture.photo_path()
+
+    def get_capture_id(self, obj):
+        return obj.capture.id
 
     class Meta:
         model = Detection
-        fields = ['id', 'zone', 'score', 'zone_id', 'trigger', 'date', 'status', 'photo_path']
+        fields = ['id', 'zone', 'score', 'zone_id', 'trigger', 'date', 'status', 'photo_path',
+                  'capture_id', ]
