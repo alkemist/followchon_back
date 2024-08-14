@@ -75,7 +75,7 @@ class Streamer:
                     print('Stop recording')
                 self.stop_recording()
 
-            if records_count > 1 or not self.loop_enabled:
+            if records_count > 1 or not self.loop_enabled and records_count > 0:
                 last_record = records[0]
                 camera_record_filename = f"{self.records_directory}/{last_record}"
 
