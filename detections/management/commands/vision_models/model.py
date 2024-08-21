@@ -6,6 +6,7 @@ from ultralytics import YOLO
 
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.capture_analyse import Capture_analyse
+from detections.management.commands.vision_models.hailo import Hailo
 from detections.models import Detection
 from helpers.array import ArrayHelper
 from helpers.image import ImageHelper
@@ -15,12 +16,11 @@ class Model:
 
     def __init__(self, model_path: str, capture_min_score: float, capture_width: int, capture_height: int,
                  verbose: bool):
-        self.model = YOLO(model_path, task='detect')
-
         self.capture_min_score = capture_min_score
         self.capture_width = capture_width
         self.capture_height = capture_height
         self.verbose = verbose
+        self.hailo_enabled = os.getenv('HAILO_ENABLED') == 'True'
 
         self.save_time = 0
 
@@ -43,8 +43,16 @@ class Model:
         self.last_detections_dict: dict[int, Zone] = (
             dict(map(lambda kv: (kv[0], kv[1].zone), last_detections_dict.items())))
 
+        if self.hailo_enabled:
+            self.model = YOLO(model_path)
+        else:
+            self.model = Hailo(model_path)
+
     def detect(self, frame: cv2.typing.MatLike):
-        results = self.model(frame, stream=True, verbose=False)
+        if self.hailo_enabled:
+            results = self.model(frame, stream=True, verbose=False)
+        else:
+            results = self.model.infer(frame)
 
         save_time_elapsed = time.time() - self.save_time
 
