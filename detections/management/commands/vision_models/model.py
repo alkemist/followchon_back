@@ -1,5 +1,6 @@
 import os
 import time
+from typing import cast
 
 import cv2
 from ultralytics import YOLO
@@ -44,15 +45,15 @@ class Model:
             dict(map(lambda kv: (kv[0], kv[1].zone), last_detections_dict.items())))
 
         if self.hailo_enabled:
-            self.model = YOLO(model_path)
-        else:
             self.model = Hailo(model_path)
+        else:
+            self.model = YOLO(model_path)
 
     def detect(self, frame: cv2.typing.MatLike):
         if self.hailo_enabled:
-            results = self.model(frame, stream=True, verbose=False)
+            results = cast(self.model, Hailo).infer(self.model, frame)
         else:
-            results = self.model.infer(frame)
+            results = self.model(frame, stream=True, verbose=False)
 
         save_time_elapsed = time.time() - self.save_time
 

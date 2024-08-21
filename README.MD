@@ -7,7 +7,7 @@ https://gist.github.com/rutcreate/c0041e842f858ceb455b748809763ddb
 ### Install environment
 
 `python3 -m venv .venv`
-`.venv/bin/python -m pip install -r requirements.txt`
+`.venv/bin/pip install -r requirements.txt`
 
 # Django
 

@@ -45,7 +45,10 @@ class CaptureViewSet(UpdateViewSet):
                 queryset = queryset.filter(status=Capture.Statuses.DRAFT)
 
             if sort_field is not None and sort_field and sort_value is not None:
-                queryset = queryset.order_by(f'{'-' if sort_value == 'desc' else ''}{sort_field}')
+                if sort_value == 'desc':
+                    sort_field = '-' + sort_field
+                    
+                queryset = queryset.order_by(sort_field)
             else:
                 queryset = queryset.order_by('-date')
 

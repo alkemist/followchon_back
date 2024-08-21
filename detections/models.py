@@ -170,9 +170,6 @@ class Detection(models.Model):
 
     coords = {'x1': 0, 'y1': 0, 'x2': 0, 'y2': 0}
 
-    def __str__(self):
-        return f"{self.family.name}{" in " + self.zone.name if self.zone else ''}"
-
     def size(self) -> tuple[int, int]:
         return cast(self.capture, Capture).size(self.capture)
 

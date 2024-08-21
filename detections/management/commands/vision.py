@@ -4,9 +4,6 @@ from dotenv import load_dotenv
 from detections.management.commands.vision_models.streamer import Streamer
 
 
-# from detections.models import Detection
-
-
 class Command(BaseCommand):
     help = ""
 
