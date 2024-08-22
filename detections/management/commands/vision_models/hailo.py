@@ -15,59 +15,56 @@ from hailo_platform import (
 class Hailo:
 
     def __init__(self, hef_path: str):
-        # self.capture_width = int(os.getenv('CAPTURE_WIDTH'))
+        self.target = VDevice()
+
+        # self.model = self.target.create_infer_model(hef_path)
+        # self.model = self.model.configure()
+        # print(self.model)
 
         # self.hef_path = hef_path
         # self.hef = HEF(hef_path)
         # #self.model = InferModel(InferModel, hef_path)
-        self.vdevice = VDevice()
-        # self.vdevice.configure(self.hef)
-        # print(self.vdevice.get_physical_devices())
-        # print(self.vdevice.loaded_network_groups)
-        # #self.control = Control(self.vdevice.get_physical_devices()[0])
-        self.model = self.vdevice.create_infer_model(hef_path)
+        # self.target.configure(self.hef)
+        # print(self.target.get_physical_devices())
+        # print(self.target.loaded_network_groups)
+        # #self.control = Control(self.target.get_physical_devices()[0])
         # self.model = model.configure()
-        # self.vdevice.release()
-
-        print(self.vdevice.loaded_network_groups)
+        # self.target.release()
 
         # The target can be used as a context manager ("with" statement) to ensure it's released on time.
         # Here it's avoided for the sake of simplicity
-        target = VDevice()
+        # target = VDevice()
 
         # Loading compiled HEFs to device:
         hef = HEF(hef_path)
 
         # Configure network groups
         configure_params = ConfigureParams.create_from_hef(hef=hef, interface=HailoStreamInterface.PCIe)
-        network_groups = target.configure(hef, configure_params)
+        network_groups = self.target.configure(hef, configure_params)
         network_group = network_groups[0]
         network_group_params = network_group.create_params()
 
-        print(network_group)
-        print(network_group_params)
-        print(self.model)
-        print(self.model.create_params())
-
         # Create input and output virtual streams params
-        # input_vstreams_params = InputVStreamParams.make(network_group, format_type=FormatType.FLOAT32)
-        input_vstreams_params = InputVStreamParams.make(self.model, format_type=FormatType.FLOAT32)
-        # output_vstreams_params = OutputVStreamParams.make(network_group, format_type=FormatType.UINT8)
-        output_vstreams_params = OutputVStreamParams.make(self.model, format_type=FormatType.UINT8)
+        input_vstreams_params = InputVStreamParams.make(network_group, format_type=FormatType.FLOAT32)
+        output_vstreams_params = OutputVStreamParams.make(network_group, format_type=FormatType.UINT8)
 
         # Define dataset params
         input_vstream_info = hef.get_input_vstream_infos()[0]
         output_vstream_info = hef.get_output_vstream_infos()[0]
 
-        # Generate random dataset
-        # dataset = np.random.randint(low, high, (num_of_images, image_height, image_width, channels)).astype(np.float32)
-
-        # self.network_group = network_group
-        # self.network_group_params = network_group_params
+        self.network_group = network_group
+        self.network_group_params = network_group_params
         self.input_vstream_info = input_vstream_info
         self.input_vstreams_params = input_vstreams_params
         self.output_vstream_info = output_vstream_info
         self.output_vstreams_params = output_vstreams_params
+
+        print(network_group)
+        print(network_group_params)
+        print(input_vstream_info)
+        print(input_vstreams_params)
+        print(output_vstream_info)
+        print(output_vstreams_params)
 
     def infer(self, frame: cv2.typing.MatLike):
         image_height, image_width, channels = self.input_vstream_info.shape  # 1024, 1024, 3
@@ -86,15 +83,13 @@ class Hailo:
         image_array = np.expand_dims(image_array, axis=0)
 
         # Infer
-        # with InferVStreams(self.network_group, self.input_vstreams_params,
-        with InferVStreams(self.model, self.input_vstreams_params,
+        with InferVStreams(self.network_group, self.input_vstreams_params,
                            self.output_vstreams_params) as infer_pipeline:
             input_data = {self.input_vstream_info.name: image_array}
-            # with self.network_group.activate(self.network_group_params):
-            with self.model.activate(self.model.create_params()):
+            with self.network_group.activate(self.network_group_params):
                 infer_results = infer_pipeline.infer(input_data)
                 # The result output tensor is infer_results[output_vstream_info.name]
                 print(f"Stream output shape is {infer_results[self.output_vstream_info.name].shape}")
 
-        self.vdevice.release()
+        self.target.release()
         return list()
