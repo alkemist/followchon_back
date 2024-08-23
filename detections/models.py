@@ -68,8 +68,8 @@ class Capture(models.Model):
 
             detection.center_x = annotation.yolo_points['x_center']
             detection.center_y = annotation.yolo_points['y_center']
-            detection.width = annotation.yolo_points['w']
-            detection.height = annotation.yolo_points['h']
+            detection.width = annotation.yolo_points['width']
+            detection.height = annotation.yolo_points['height']
             detection.score = annotation.score
             detection.zone = annotation.zone
             detection.trigger = annotation.trigger
@@ -89,7 +89,6 @@ class Capture(models.Model):
         )
 
     def resize_auto(self):
-        print(self.photo_path(None, True))
         image = cv2.imread(self.photo_path(None, True))
 
         self.resize(image)

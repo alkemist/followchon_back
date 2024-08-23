@@ -47,19 +47,24 @@ class Zone(models.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.point_tl = (
+        self.norm_point_tl = (
             cast(float, self.center_x) - cast(float, self.width) / 2,
             cast(float, self.center_y) - cast(float, self.height) / 2
         )
-        self.point_br = (
+        self.norm_point_br = (
             cast(float, self.center_x) + cast(float, self.width) / 2,
             cast(float, self.center_y) + cast(float, self.height) / 2
         )
 
     def has_point(self, point: tuple[int, int]) -> bool:
-        has_in_x = self.point_tl[0] <= point[0] <= self.point_br[0]
-        has_in_y = self.point_tl[1] <= point[1] <= self.point_br[1]
+        has_in_x = self.norm_point_tl[0] <= point[0] <= self.norm_point_br[0]
+        has_in_y = self.norm_point_tl[1] <= point[1] <= self.norm_point_br[1]
         return has_in_x and has_in_y
 
     def __str__(self):
         return self.name
+
+
+class Period(models.Model):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)

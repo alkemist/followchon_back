@@ -30,6 +30,9 @@ class Streamer:
         self.model = model
 
     def begin_recording(self):
+        if self.verbose:
+            print('Restart recording')
+
         command = (f"ffmpeg -hide_banner -y -loglevel error -rtsp_transport tcp -use_wallclock_as_timestamps "
                    f"1 -i {self.stream_path} -vcodec copy -acodec copy -f segment -reset_timestamps 1 "
                    f"-segment_time {self.record_time} -segment_format mkv -segment_atclocktime 1 -strftime 1 "
@@ -40,6 +43,9 @@ class Streamer:
                                 universal_newlines=True)
 
     def stop_recording(self):
+        if self.verbose:
+            print('Stop recording')
+
         command = "pkill ffmpeg"
 
         return subprocess.Popen(command.split(" "),
@@ -48,7 +54,6 @@ class Streamer:
 
     def start(self):
         process = self.begin_recording() if self.loop_enabled else None
-
         capture_time = time.time()
 
         while not self.stop:
@@ -58,14 +63,10 @@ class Streamer:
             capture_time_elapsed = time.time() - capture_time
 
             if self.loop_enabled and capture_time_elapsed >= self.record_time + self.record_time_delay:
-                if self.verbose:
-                    print('Restart recording')
                 process = self.begin_recording()
                 capture_time = time.time()
 
             if records_count > 10:
-                if self.verbose:
-                    print('Stop recording')
                 self.stop_recording()
 
             if records_count > 1 or not self.loop_enabled and records_count > 0:
@@ -78,7 +79,9 @@ class Streamer:
                 self.capture(camera_record_filename)
 
                 capture_time = time.time()
-                os.remove(camera_record_filename)
+
+                if os.path.isfile(camera_record_filename):
+                    os.remove(camera_record_filename)
 
                 if self.verbose:
                     print(f"End record : {last_record}")
@@ -108,6 +111,8 @@ class Streamer:
                     frame = self.model.infer(
                         frame,
                     )
+                    self.stop = self.model.stop
+
                     frame_time = time.time()
 
                     if self.show_stream:

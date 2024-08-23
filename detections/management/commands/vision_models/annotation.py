@@ -1,53 +1,53 @@
-import math
-
 import cv2
 from typing_extensions import Self
 
 from configuration.models import Family, Zone
+from detections.management.commands.vision_models.result_yolo import Result_yolo
 from helpers.image import ImageHelper
-from helpers.yolo import YoloHelper
 
 
 class Annotation:
 
-    def __init__(self, box, w_img: int, h_img: int, families_dict: dict[int, Family], zones: list[Zone]):
-        x1, y1, x2, y2 = box.xyxy[0]
+    def __init__(self, result: Result_yolo, families_dict: dict[int, Family], zones: list[Zone]):
 
-        self.score = math.ceil((box.conf[0] * 100)) / 100
-        family_index = int(box.cls[0])
-        self.family = families_dict[family_index]
+        self.score = result.score
+        self.family = families_dict[result.cls]
 
-        self.coord_point_tl = (float(x1), float(y1))
-        self.coord_point_br = (float(x2), float(y2))
+        self.ortho_point_tl = (result.ortho_tl_x, result.ortho_tl_y)
+        self.ortho_point_br = (result.ortho_br_x, result.ortho_br_y)
 
-        self.yolo_points = YoloHelper.calc_yolo_points(
-            self.coord_point_tl[0], self.coord_point_tl[1],
-            self.coord_point_br[0], self.coord_point_br[1],
-            w_img, h_img
-        )
+        self.yolo_points = {
+            'x_center': result.norm_x_center,
+            'y_center': result.norm_y_center,
+            'width': result.norm_width,
+            'height': result.norm_height,
+        }
 
         self.zone: Zone | None = None
         self.trigger: str | None = None
 
+        # ortho_x_center = result.ortho_tl_x + (result.ortho_br_x - result.ortho_tl_x / 2)
+        # ortho_y_center = result.ortho_tl_y + (result.ortho_br_y - result.ortho_tl_y / 2)
+
         if self.family.is_zoned:
             for zone in zones:
-                if zone.has_point((self.yolo_points['x_center'], self.yolo_points['y_center'])):
+                if zone.has_point((result.norm_x_center, result.norm_y_center)):
                     self.zone = zone
                     break
 
         self.line \
-            = (f"{family_index} {self.yolo_points['x_center']} {self.yolo_points['y_center']} " +
-               f"{self.yolo_points['w']} {self.yolo_points['h']}")
+            = (f"{result.cls} {result.norm_x_center} {result.norm_y_center} " +
+               f"{result.norm_width} {result.norm_height}")
 
         self.parent: Annotation | None = None
         self.nears: list[Annotation] = list()
-        self.tolerance_margin = (w_img / 20, h_img / 20)
+        self.tolerance_margin = (result.ref_width / 20, result.ref_height / 20)
 
     def is_near(self, annotation: Self):
-        return abs(self.coord_point_tl[0] - annotation.coord_point_tl[0]) < self.tolerance_margin[0] and \
-            abs(self.coord_point_tl[1] - annotation.coord_point_tl[1]) < self.tolerance_margin[1] and \
-            abs(self.coord_point_br[0] - annotation.coord_point_br[0]) < self.tolerance_margin[0] and \
-            abs(self.coord_point_br[1] - annotation.coord_point_br[1]) < self.tolerance_margin[1]
+        return abs(self.ortho_point_tl[0] - annotation.ortho_point_tl[0]) < self.tolerance_margin[0] and \
+            abs(self.ortho_point_tl[1] - annotation.ortho_point_tl[1]) < self.tolerance_margin[1] and \
+            abs(self.ortho_point_br[0] - annotation.ortho_point_br[0]) < self.tolerance_margin[0] and \
+            abs(self.ortho_point_br[1] - annotation.ortho_point_br[1]) < self.tolerance_margin[1]
 
     def add_parent(self, annotation: Self):
         if self.family.parent is not None and \
@@ -66,10 +66,10 @@ class Annotation:
     def trace(self, frame: cv2.typing.MatLike):
         return ImageHelper.trace_detected_box_coords(
             frame,
-            int(self.coord_point_tl[0]),
-            int(self.coord_point_tl[1]),
-            int(self.coord_point_br[0]),
-            int(self.coord_point_br[1]),
+            int(self.ortho_point_tl[0]),
+            int(self.ortho_point_tl[1]),
+            int(self.ortho_point_br[0]),
+            int(self.ortho_point_br[1]),
             self.family.name,
             self.score,
             self.zone.name if self.zone is not None else '',

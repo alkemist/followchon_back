@@ -1,5 +1,4 @@
 import copy
-import os
 from typing import cast
 
 import cv2
@@ -16,11 +15,6 @@ class Capture_analyse:
                  families_dict: dict[int, Family], zones: list[Zone]):
         self.frame = frame
 
-        capture_size = frame.shape[1::-1]
-
-        self.capture_min_score = float(os.getenv('CAPTURE_MIN_SCORE'))  # 0.03 < > 0.02
-        self.capture_width = capture_size[0]
-        self.capture_height = capture_size[1]
         self.families_dict = families_dict
         self.last_detections_dict = last_detections_dict
         self.zones = zones
@@ -52,14 +46,10 @@ class Capture_analyse:
 
         annotations = list()
 
-        for r in results:
-            boxes = r.boxes
+        for result in results:
+            annotation = Annotation(result, self.families_dict, self.zones)
 
-            for box in boxes:
-                annotation = Annotation(box, self.capture_width, self.capture_height, self.families_dict, self.zones)
-
-                if annotation.score > self.capture_min_score:
-                    annotations.append(annotation)
+            annotations.append(annotation)
 
         annotations = ArrayHelper.sort(
             annotations, lambda a1, a2: a2.family.index - a1.family.index

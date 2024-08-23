@@ -4,7 +4,7 @@ import cv2
 class ImageHelper:
 
     @staticmethod
-    def resize_with_ratio(img_origine, width=None, height=None, inter=cv2.INTER_AREA):
+    def resize_with_ratio(img_origine: cv2.typing.MatLike, width=None, height=None, inter=cv2.INTER_AREA):
         img_copy = img_origine.copy()
         (h, w) = img_copy.shape[:2]
 

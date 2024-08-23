@@ -38,5 +38,7 @@ class Model:
         self.last_detections_dict: dict[int, Zone] = (
             dict(map(lambda kv: (kv[0], kv[1].zone), last_detections_dict.items())))
 
+        self.stop = False
+
     def infer(self, frame: cv2.typing.MatLike):
         raise Exception('Infer not implemented')

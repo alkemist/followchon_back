@@ -67,13 +67,13 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
 
             new_detection.center_x = yolo_points['x_center']
             new_detection.center_y = yolo_points['y_center']
-            new_detection.width = yolo_points['w']
-            new_detection.height = yolo_points['h']
+            new_detection.width = yolo_points['width']
+            new_detection.height = yolo_points['height']
 
             lines.append(
                 (f"{new_detection.family.index} " +
                  f"{yolo_points['x_center']} {yolo_points['y_center']} " +
-                 f"{yolo_points['w']} {yolo_points['h']}")
+                 f"{yolo_points['width']} {yolo_points['height']}")
             )
 
             new_detection.save()
