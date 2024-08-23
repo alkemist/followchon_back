@@ -20,7 +20,7 @@ class Model_Hailo(Model):
 
     def __init__(self):
         super().__init__()
-        
+
         self.target = VDevice()
 
         # self.model = self.target.create_infer_model(hef_path)
@@ -52,6 +52,7 @@ class Model_Hailo(Model):
 
         # Create input and output virtual streams params
         input_vstreams_params = InputVStreamParams.make(network_group, format_type=FormatType.FLOAT32)
+        # output_vstreams_params = OutputVStreamParams.make(network_group, format_type=FormatType.FLOAT32)
         output_vstreams_params = OutputVStreamParams.make(network_group, format_type=FormatType.UINT8)
 
         # Define dataset params
