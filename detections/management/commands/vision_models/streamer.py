@@ -11,14 +11,13 @@ from helpers.file import FileHelper
 
 class Streamer:
 
-    def __init__(self):
+    def __init__(self, model: Model):
         self.stream_path = os.getenv('LIVE_STREAM_PATH')
 
-        self.verbose = os.getenv('VERBOSE') == 'True'
         self.loop_enabled = os.getenv('LOOP_ENABLED') == 'True'
         self.show_stream = os.getenv('SHOW_STREAM') == 'True'
         self.frame_time_seconds = float(os.getenv('FRAME_TIME_SECONDS'))  # 0.03 < > 0.02
-        self.capture_min_score = float(os.getenv('CAPTURE_MIN_SCORE'))  # 0.03 < > 0.02
+        self.verbose = os.getenv('VERBOSE') == 'True'
 
         self.records_directory = './records'
         self.record_time = 60
@@ -26,15 +25,9 @@ class Streamer:
         self.capture_width = 1024
         self.capture_height = 768
 
-        self.model = Model(
-            os.getenv('MODEL_PATH'),
-            self.capture_min_score,
-            self.capture_width,
-            self.capture_height,
-            self.verbose
-        )
-
         self.stop = False
+
+        self.model = model
 
     def begin_recording(self):
         command = (f"ffmpeg -hide_banner -y -loglevel error -rtsp_transport tcp -use_wallclock_as_timestamps "
@@ -112,7 +105,7 @@ class Streamer:
 
             if ret:
                 if frame_time_elapsed > self.frame_time_seconds:
-                    frame = self.model.detect(
+                    frame = self.model.infer(
                         frame,
                     )
                     frame_time = time.time()

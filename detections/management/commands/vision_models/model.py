@@ -1,32 +1,26 @@
 import os
-import time
-from typing import cast
 
 import cv2
-from ultralytics import YOLO
 
 from configuration.models import Family, Zone
-from detections.management.commands.vision_models.capture_analyse import Capture_analyse
-from detections.management.commands.vision_models.hailo import Hailo
 from detections.models import Detection
 from helpers.array import ArrayHelper
-from helpers.image import ImageHelper
 
 
 class Model:
 
-    def __init__(self, model_path: str, capture_min_score: float, capture_width: int, capture_height: int,
-                 verbose: bool):
-        self.capture_min_score = capture_min_score
-        self.capture_width = capture_width
-        self.capture_height = capture_height
-        self.verbose = verbose
-        self.hailo_enabled = os.getenv('HAILO_ENABLED') == 'True'
+    def __init__(self):
+        self.capture_min_score = float(os.getenv('CAPTURE_MIN_SCORE'))  # 0.03 < > 0.02
+        self.verbose = os.getenv('VERBOSE') == 'True'
+
+        self.capture_min_score = float(os.getenv('CAPTURE_MIN_SCORE'))  # 0.03 < > 0.02
+        self.verbose = os.getenv('VERBOSE') == 'True'
 
         self.save_time = 0
 
         self.families = Family.objects.all()
         self.zones = Zone.objects.all()
+        self.capture_width = int(os.getenv('CAPTURE_WIDTH'))
         self.families_dict = ArrayHelper.object_list_to_dict(self.families, 'index')
 
         last_detections = Detection.objects.raw(
@@ -44,25 +38,5 @@ class Model:
         self.last_detections_dict: dict[int, Zone] = (
             dict(map(lambda kv: (kv[0], kv[1].zone), last_detections_dict.items())))
 
-        if self.hailo_enabled:
-            self.model = Hailo(model_path)
-        else:
-            self.model = YOLO(model_path)
-
-    def detect(self, frame: cv2.typing.MatLike):
-        if self.hailo_enabled:
-            results = cast(self.model, Hailo).infer(self.model, frame)
-        else:
-            results = self.model(frame, stream=True, verbose=False)
-
-        save_time_elapsed = time.time() - self.save_time
-
-        analyse = Capture_analyse(frame, self.last_detections_dict, self.families_dict, self.zones,
-                                  self.capture_min_score)
-        frame = analyse.detect(results)
-
-        if analyse.is_triggered and save_time_elapsed > 1:
-            analyse.save()
-            self.save_time = time.time()
-
-        return ImageHelper.resize_with_ratio(frame, int(os.getenv('CAPTURE_WIDTH')), None)
+    def infer(self, frame: cv2.typing.MatLike):
+        raise Exception('Infer not implemented')

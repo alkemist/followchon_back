@@ -1,4 +1,5 @@
 import copy
+import os
 from typing import cast
 
 import cv2
@@ -12,13 +13,12 @@ from helpers.array import ArrayHelper
 class Capture_analyse:
 
     def __init__(self, frame: cv2.typing.MatLike, last_detections_dict: dict[int, Zone],
-                 families_dict: dict[int, Family], zones: list[Zone],
-                 capture_min_score: float):
+                 families_dict: dict[int, Family], zones: list[Zone]):
         self.frame = frame
 
         capture_size = frame.shape[1::-1]
 
-        self.capture_min_score = capture_min_score
+        self.capture_min_score = float(os.getenv('CAPTURE_MIN_SCORE'))  # 0.03 < > 0.02
         self.capture_width = capture_size[0]
         self.capture_height = capture_size[1]
         self.families_dict = families_dict

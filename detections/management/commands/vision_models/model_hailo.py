@@ -1,3 +1,5 @@
+import os
+
 import cv2
 import numpy as np
 from hailo_platform import (
@@ -11,10 +13,14 @@ from hailo_platform import (
     VDevice,
 )
 
+from detections.management.commands.vision_models.model import Model
 
-class Hailo:
 
-    def __init__(self, hef_path: str):
+class Model_Hailo(Model):
+
+    def __init__(self):
+        super().__init__()
+        
         self.target = VDevice()
 
         # self.model = self.target.create_infer_model(hef_path)
@@ -36,7 +42,7 @@ class Hailo:
         # target = VDevice()
 
         # Loading compiled HEFs to device:
-        hef = HEF(hef_path)
+        hef = HEF(os.getenv('MODEL_PATH'))
 
         # Configure network groups
         configure_params = ConfigureParams.create_from_hef(hef=hef, interface=HailoStreamInterface.PCIe)
