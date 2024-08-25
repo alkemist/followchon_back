@@ -53,7 +53,7 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
 
             size = instance.size()
             yolo_points = YoloHelper.calc_yolo_points(
-                coords['x1'], coords['y1'], coords['x2'], coords['y2'],
+                coords['tl_x'], coords['tl_y'], coords['br_x'], coords['br_y'],
                 size[0], size[1]
             )
 

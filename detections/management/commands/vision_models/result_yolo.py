@@ -24,12 +24,10 @@ class Result_yolo:
         self.norm_x_center = tl_x + self.norm_width / 2
         self.norm_y_center = tl_y + self.norm_height / 2
 
-        self.import_yolo(
-            self.norm_x_center,
-            self.norm_y_center,
-            self.norm_width,
-            self.norm_height
-        )
+        self.ortho_tl_x = tl_x * self.ref_width
+        self.ortho_tl_y = tl_y * self.ref_height
+        self.ortho_br_x = br_x * self.ref_width
+        self.ortho_br_y = br_y * self.ref_height
 
     def import_yolo(self, x_center, y_center, width, height):
         self.norm_x_center = x_center

@@ -1,5 +1,5 @@
 base:
-- base/yolov8.yaml
+- /local/shared_with_docker/hef_config_yolov8.yaml
 postprocessing:
   device_pre_post_layers:
     nms: true

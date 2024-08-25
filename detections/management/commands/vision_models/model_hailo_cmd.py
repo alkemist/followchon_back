@@ -1,9 +1,11 @@
 import os
 import time
 
+import PIL.Image
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
+from django.utils import timezone
 
 from detections.management.commands.vision_models.capture_analyse import Capture_analyse
 from detections.management.commands.vision_models.hailo_inference import HailoInference
@@ -13,10 +15,30 @@ from detections.management.commands.vision_models.result_yolo import Result_yolo
 PADDING_COLOR = (114, 114, 114)
 
 
-def preprocess(frame: cv2.typing.MatLike, model_w, model_h):
-    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    image = Image.fromarray(img)
+def expand2square(pil_img, background_color):
+    width, height = pil_img.size
+    if width == height:
+        return pil_img
+    elif width > height:
+        result = Image.new(pil_img.mode, (width, width), background_color)
+        result.paste(pil_img, (0, (width - height) // 2))
+        return result
+    else:
+        result = Image.new(pil_img.mode, (height, height), background_color)
+        result.paste(pil_img, ((height - width) // 2, 0))
+        return result
 
+
+def add_margin(pil_img, top, right, bottom, left, color):
+    width, height = pil_img.size
+    new_width = width + right + left
+    new_height = height + top + bottom
+    result = Image.new(pil_img.mode, (new_width, new_height), color)
+    result.paste(pil_img, (left, top))
+    return result
+
+
+def preprocess(image: PIL.Image.Image, model_w, model_h):
     """
     Resize image with unchanged aspect ratio using padding.
 
@@ -28,16 +50,20 @@ def preprocess(frame: cv2.typing.MatLike, model_w, model_h):
     Returns:
         PIL.Image.Image: Preprocessed and padded image.
     """
-    img_h, img_w = image.size
-    # Scale image
-    scale = min(model_w / img_w, model_h / img_h)
-    new_img_w, new_img_h = int(img_w * scale), int(img_h * scale)
-    image = image.resize((new_img_w, new_img_h), Image.Resampling.BICUBIC)
 
-    # Create a new padded image
-    padded_image = Image.new('RGB', (model_w, model_h), PADDING_COLOR)
-    padded_image.paste(image, ((model_w - new_img_w) // 2, (model_h - new_img_h) // 2))
-    return padded_image
+    width, height = image.size
+    padded_image = image.copy()
+
+    background_color = (0, 0, 0)
+
+    if width > height:
+        padded_image = Image.new(image.mode, (width, width), background_color)
+        padded_image.paste(image, (0, (width - height) // 2))
+    elif height < width:
+        padded_image = Image.new(image.mode, (height, height), background_color)
+        padded_image.paste(image, ((height - width) // 2, 0))
+
+    return padded_image.resize((model_w, model_h))
 
 
 class Model_Hailo_cmd(Model):
@@ -53,16 +79,14 @@ class Model_Hailo_cmd(Model):
         results = None
 
         try:
-            processed_image = preprocess(frame, self.width, self.height)
-            # processed_image = preprocess(frame, width, height)
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image = Image.fromarray(image)
 
-            # (width, height) = frame.shape[1::-1]
-            (height, width) = processed_image.size
+            processed_image = preprocess(image, self.width, self.height)
 
-            # infer_images = [np.array(processed_image)]
-            # raw_detections = self.hailo_inference.run(np.array(infer_images))
+            (width_original, height_original) = frame.shape[1::-1]
+            (height_resized, width_resized) = processed_image.size
 
-            # raw_detections = self.hailo_inference.run(np.array([np.array(processed_image)]))
             raw_detections = self.hailo_inference.run(np.array(processed_image))
 
             yolo_results = list()
@@ -77,32 +101,21 @@ class Model_Hailo_cmd(Model):
                     if score >= self.capture_min_score:
                         yolo_result = Result_yolo(
                             i,
-                            score,
-                            width,
-                            height
+                            float(score),
+                            width_resized,
+                            height_resized
                         )
 
-                        yolo_result.import_yolo(
-                            bbox[1],
-                            bbox[0],
-                            bbox[3],
-                            bbox[2],
+                        yolo_result.import_hailo(
+                            float(bbox[1]),
+                            float(bbox[0]),
+                            float(bbox[3]),
+                            float(bbox[2]),
                         )
 
                         yolo_results.append(yolo_result)
 
             if len(yolo_results) > 0:
-                # processed_image.save(f"static/captures/test/{timezone.now().strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg")
-                # draw = ImageDraw.Draw(processed_image)
-
-                # for result in yolo_results:
-                #     draw.rectangle([
-                #         (xmin * scale_factor, ymin * scale_factor), (xmax * scale_factor, ymax * scale_factor)], outline=color, width=2)
-
-                print('---------------------------------------------')
-                print(raw_detections[0])
-                print([' '.join(result.to_array()) for result in yolo_results])
-
                 save_time_elapsed = time.time() - self.save_time
 
                 analyse = Capture_analyse(
@@ -113,7 +126,29 @@ class Model_Hailo_cmd(Model):
                 image_result = analyse.detect(yolo_results)
 
                 if analyse.is_triggered and save_time_elapsed > 1:
-                    analyse.save()
+                    f_name = timezone.now().strftime('%Y-%m-%d_%H-%M-%S-%f')
+
+                    print('---------------------------------------------')
+                    print(raw_detections[0])
+                    print([' '.join(result.to_array()) for result in yolo_results])
+
+                    draw = ImageDraw.Draw(processed_image)
+
+                    for result in yolo_results:
+                        draw.rectangle(
+                            [
+                                # (result.bbox[0] * result.ref_width, result.bbox[1] * result.ref_height),
+                                # (result.bbox[2] * result.ref_width, result.bbox[3] * result.ref_height),
+                                (result.ortho_tl_x, result.ortho_tl_y),
+                                (result.ortho_br_x, result.ortho_br_y),
+                            ],
+                            outline=255,
+                            width=2
+                        )
+
+                    processed_image.save(f"static/captures/test/{f_name}.jpg")
+
+                    # analyse.save()
                     self.save_time = time.time()
 
         except Exception as error:

@@ -28,13 +28,13 @@ Import data : `python manage.py loaddata data.yaml`
 Start
 kill old backoffice : `lsof -t -i tcp:8000 | xargs kill -9`
 backoffice : `.venv/bin/python manage.py runserver_plus --cert-file ~/cert.pem --key-file ~/key.pem 8000`  
-Kill processus : `pkill -9 ffmpeg`  ls
+Kill processus : `pkill -9 ffmpeg`  
 Start vision : `.venv/bin/python manage.py vision`
 
 # Hailo
 
 Convert pt to onnx : `.venv/bin/python scripts/quantize.py models/guinea-pig-chons-v12`
 Convert onnx to hef :
-`hailomz compile --ckpt guinea-pig-chons-v12.onnx --hw-arch hailo8l  --calib-path data --yaml hef_config.yaml --classes 4 --performance`
+`hailomz compile --ckpt guinea-pig-chons-v12.onnx --hw-arch hailo8l  --calib-path data --yaml hef_config.yaml --classes 4`
 
 https://wiki.seeedstudio.com/tutorial_of_ai_kit_with_raspberrypi5_about_yolov8n_object_detection/
