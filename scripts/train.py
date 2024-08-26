@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 from datetime import datetime
 
 import torch
@@ -32,6 +33,7 @@ def end():
     model_train_last = f"{runs_dir}/{os.getenv('TRAIN_DATASET_NAME')}/weights/last.pt"
     model_pt = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.pt"
     model_onnx = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.onnx"
+    model_hef = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.hef"
 
     shutil.move(model_train_last, model_pt)
     print(f'Model yolo saved in {model_pt}')
@@ -39,7 +41,22 @@ def end():
     model = YOLO(model_pt)
     model.export(format="onnx")
 
+    command = (
+        f"docker exec -i  hailo_ai_sw_suite_2024-07_container hailomz compile "
+        f" --ckpt ../shared_with_docker/followchon_back/{model_onnx} "
+        f"--hw-arch hailo8l "
+        f"--calib-path ../shared_with_docker/followchon_back/{os.getenv('TRAIN_DATASET_PATH')}/train "
+        f"--yaml ../shared_with_docker/followchon_back/models/config/hef_config_yolov8n.yaml "
+        f"--classes 4 "
+        f"&& mv /local/workspace/yolov8n.hef ../shared_with_docker/followchon_back/{model_hef}"
+    )
+
+    subprocess.Popen(command.split(" "),
+                     stdout=subprocess.PIPE,
+                     universal_newlines=True)
+
     print(f'Model onnx saved in {model_onnx}')
+    print(f'Model hef saved in {model_hef}')
 
 
 if __name__ == '__main__':
