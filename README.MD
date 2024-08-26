@@ -36,5 +36,6 @@ Start vision : `.venv/bin/python manage.py vision`
 Convert pt to onnx : `.venv/bin/python scripts/quantize.py models/guinea-pig-chons-v12`
 Convert onnx to hef :
 `hailomz compile --ckpt guinea-pig-chons-v12.onnx --hw-arch hailo8l  --calib-path data --yaml hef_config.yaml --classes 4`
+`docker exec -i  hailo_ai_sw_suite_2024-07_container hailomz compile --ckpt ../shared_with_docker/followchon_back/models/guinea-pig-chons-v12.onnx --hw-arch hailo8l --calib-path ../shared_with_docker/followchon_back/datasets/chons-v12/train --yaml ../shared_with_docker/followchon_back/models/config/hef_config_yolov8n.yaml --classes 4`
 
 https://wiki.seeedstudio.com/tutorial_of_ai_kit_with_raspberrypi5_about_yolov8n_object_detection/
