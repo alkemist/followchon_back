@@ -1,19 +1,15 @@
 import os
+import time
 
+import PIL.Image
 import cv2
 import numpy as np
-from hailo_platform import (
-    HEF,
-    ConfigureParams,
-    FormatType,
-    HailoStreamInterface,
-    InferVStreams,
-    InputVStreamParams,
-    OutputVStreamParams,
-    VDevice,
-)
+from PIL import Image
 
+from detections.management.commands.vision_models.capture_analyse import Capture_analyse
+from detections.management.commands.vision_models.hailo_inference import HailoInference
 from detections.management.commands.vision_models.model import Model
+from detections.management.commands.vision_models.result_yolo import Result_yolo
 
 
 class Model_Hailo(Model):
@@ -21,82 +17,98 @@ class Model_Hailo(Model):
     def __init__(self):
         super().__init__()
 
-        self.target = VDevice()
+        self.hailo_inference = HailoInference(os.getenv('MODEL_PATH'))
+        self.height, self.width, _ = self.hailo_inference.get_input_shape()
+        self.capture_min_score = float(os.getenv('CAPTURE_MIN_SCORE'))
 
-        # self.model = self.target.create_infer_model(hef_path)
-        # self.model = self.model.configure()
-        # print(self.model)
+    def preprocess(self, image: PIL.Image.Image):
+        """
+        Resize image with unchanged aspect ratio using padding.
 
-        # self.hef_path = hef_path
-        # self.hef = HEF(hef_path)
-        # #self.model = InferModel(InferModel, hef_path)
-        # self.target.configure(self.hef)
-        # print(self.target.get_physical_devices())
-        # print(self.target.loaded_network_groups)
-        # #self.control = Control(self.target.get_physical_devices()[0])
-        # self.model = model.configure()
-        # self.target.release()
+        Args:
+            image (PIL.Image.Image): Input image.
+            model_w (int): Model input width.
+            model_h (int): Model input height.
 
-        # The target can be used as a context manager ("with" statement) to ensure it's released on time.
-        # Here it's avoided for the sake of simplicity
-        # target = VDevice()
+        Returns:
+            PIL.Image.Image: Preprocessed and padded image.
+        """
 
-        # Loading compiled HEFs to device:
-        hef = HEF(os.getenv('MODEL_PATH'))
+        width, height = image.size
+        padded_image = image.copy()
 
-        # Configure network groups
-        configure_params = ConfigureParams.create_from_hef(hef=hef, interface=HailoStreamInterface.PCIe)
-        network_groups = self.target.configure(hef, configure_params)
-        network_group = network_groups[0]
-        network_group_params = network_group.create_params()
+        background_color = (0, 0, 0)
 
-        # Create input and output virtual streams params
-        input_vstreams_params = InputVStreamParams.make(network_group, format_type=FormatType.FLOAT32)
-        # output_vstreams_params = OutputVStreamParams.make(network_group, format_type=FormatType.FLOAT32)
-        output_vstreams_params = OutputVStreamParams.make(network_group, format_type=FormatType.UINT8)
+        if width > height:
+            padded_image = Image.new(image.mode, (width, width), background_color)
+            padded_image.paste(image, (0, (width - height) // 2))
+        elif height < width:
+            padded_image = Image.new(image.mode, (height, height), background_color)
+            padded_image.paste(image, ((height - width) // 2, 0))
 
-        # Define dataset params
-        input_vstream_info = hef.get_input_vstream_infos()[0]
-        output_vstream_info = hef.get_output_vstream_infos()[0]
-
-        self.network_group = network_group
-        self.network_group_params = network_group_params
-        self.input_vstream_info = input_vstream_info
-        self.input_vstreams_params = input_vstreams_params
-        self.output_vstream_info = output_vstream_info
-        self.output_vstreams_params = output_vstreams_params
-
-        print(network_group)
-        print(network_group_params)
-        print(input_vstream_info)
-        print(input_vstreams_params)
-        print(output_vstream_info)
-        print(output_vstreams_params)
+        return padded_image.resize((self.width, self.height))
 
     def infer(self, frame: cv2.typing.MatLike):
-        image_height, image_width, channels = self.input_vstream_info.shape  # 1024, 1024, 3
+        results = None
 
-        frame_copy = frame.copy()
-        frame_copy.resize((image_width, image_height))
+        try:
+            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image = Image.fromarray(image)
 
-        # nparr = np.frombuffer(base64.b64decode(frame), np.uint8)
-        # img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)  # Decode as color image
-        gray_img = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # Convert to grayscale
-        gray_img_3channel = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)  # Convert back to 3 channels
+            processed_image = self.preprocess(image)
 
-        image_array = np.array(gray_img_3channel).astype(np.float32) / 255.0  # Normalisation
-        image_array = np.transpose(image_array, (2, 0, 1))  # Convertir en format CHW
-        # image_array = np.transpose(image_array, [0, 3, 1, 2])  # Convertir en format CHW
-        image_array = np.expand_dims(image_array, axis=0)
+            (width_original, height_original) = frame.shape[1::-1]
+            (height_resized, width_resized) = processed_image.size
 
-        # Infer
-        with InferVStreams(self.network_group, self.input_vstreams_params,
-                           self.output_vstreams_params) as infer_pipeline:
-            input_data = {self.input_vstream_info.name: image_array}
-            with self.network_group.activate(self.network_group_params):
-                infer_results = infer_pipeline.infer(input_data)
-                # The result output tensor is infer_results[output_vstream_info.name]
-                print(f"Stream output shape is {infer_results[self.output_vstream_info.name].shape}")
+            raw_detections = self.hailo_inference.run(np.array(processed_image))
 
-        self.target.release()
-        return list()
+            yolo_results = list()
+
+            for i, detection in enumerate(raw_detections[0]):
+                if len(detection) == 0:
+                    continue
+
+                for det in detection:
+                    bbox, score = det[:4], det[4]
+
+                    if score >= self.capture_min_score:
+                        yolo_result = Result_yolo(
+                            i,
+                            float(score),
+                            width_resized,
+                            height_resized
+                        )
+
+                        yolo_result.import_hailo(
+                            float(bbox[1]),
+                            float(bbox[0]),
+                            float(bbox[3]),
+                            float(bbox[2]),
+                        )
+
+                        yolo_results.append(yolo_result)
+
+            if len(yolo_results) > 0:
+                save_time_elapsed = time.time() - self.save_time
+
+                analyse = Capture_analyse(
+                    np.asarray(processed_image),
+                    self.last_detections_dict, self.families_dict, self.zones
+                )
+
+                image_result = analyse.detect(yolo_results)
+
+                if analyse.is_triggered and save_time_elapsed > 1:
+                    analyse.save()
+                    self.save_time = time.time()
+
+        except Exception as error:
+            self.stop = True
+            print("ERROR : ")
+            print(error)
+            print(results)
+
+        return frame
+
+    def destruct(self):
+        self.hailo_inference.release_device()

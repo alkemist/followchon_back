@@ -4,6 +4,7 @@
 ###< phpstorm ###
 
 .env
+.venv
 
 sqlite3.db
 

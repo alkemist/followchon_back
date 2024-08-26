@@ -16,6 +16,8 @@ class Command(BaseCommand):
         streamer = Streamer(model)
         streamer.start()
 
+        model.destruct()
+
         self.stdout.write(
             self.style.SUCCESS('Successfully finished')
         )
