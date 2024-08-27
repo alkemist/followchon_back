@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 
 import cv2
+from loguru import logger
 
 from detections.management.commands.vision_models.model import Model
 from helpers.file import FileHelper
@@ -32,9 +33,15 @@ class Streamer:
 
         self.model = model
 
-    def begin_recording(self):
+        logger.add(f"{os.getenv('LOG_DIRECTORY')}streamer.log", rotation="1 days", retention=7)
+
+    def log(self, message):
         if self.verbose:
-            print('Restart recording')
+            print(message)
+        else:
+            logger.info(message)
+
+    def begin_recording(self):
 
         command = (f"ffmpeg -hide_banner -y -loglevel error -rtsp_transport tcp -use_wallclock_as_timestamps "
                    f"1 -i {self.stream_path} -vcodec copy -acodec copy -f segment -reset_timestamps 1 "
@@ -48,8 +55,7 @@ class Streamer:
                                 universal_newlines=True)
 
     def stop_recording(self):
-        if self.verbose:
-            print('Stop recording')
+        self.log('Stop recording')
 
         command = "pkill ffmpeg"
 
@@ -71,22 +77,21 @@ class Streamer:
 
             if self.loop_enabled and capture_time_elapsed >= self.record_time + self.record_time_delay \
                     or not self.recording and datetime.now().hour >= self.min_hour:
-                if self.verbose:
-                    print(f"Restart recording : time={capture_time_elapsed} hour={datetime.now().hour}")
-                process = self.begin_recording()
+                self.log(f"Restart recording : time={capture_time_elapsed} hour={datetime.now().hour}")
+
+                self.begin_recording()
                 capture_time = time.time()
 
             if self.recording and (records_count > 10 or datetime.now().hour > self.max_hour):
-                if self.verbose:
-                    print(f"Stop recording : count={records_count} hour={datetime.now().hour}")
+                self.log(f"Stop recording : count={records_count} hour={datetime.now().hour}")
+
                 self.stop_recording()
 
             if records_count > 1 or not self.loop_enabled and records_count > 0:
                 last_record = records[0]
                 camera_record_filename = f"{self.records_directory}/{last_record}"
 
-                if self.verbose:
-                    print(f"Next record : {last_record} at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                # self.log(f"Next record : {last_record}")
 
                 self.capture(camera_record_filename)
 
@@ -95,8 +100,7 @@ class Streamer:
                 if os.path.isfile(camera_record_filename):
                     os.remove(camera_record_filename)
 
-                if self.verbose:
-                    print(f"End record : {last_record}")
+                # self.log(f"End record : {last_record}")
 
             elif not self.loop_enabled and records_count <= 1:
                 self.stop = True

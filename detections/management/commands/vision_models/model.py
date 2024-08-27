@@ -11,10 +11,8 @@ class Model:
 
     def __init__(self):
         self.capture_min_score = float(os.getenv('CAPTURE_MIN_SCORE'))  # 0.03 < > 0.02
-        self.verbose = os.getenv('VERBOSE') == 'True'
 
         self.capture_min_score = float(os.getenv('CAPTURE_MIN_SCORE'))  # 0.03 < > 0.02
-        self.verbose = os.getenv('VERBOSE') == 'True'
 
         self.save_time = 0
 
