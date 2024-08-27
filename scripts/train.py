@@ -12,50 +12,82 @@ load_dotenv()
 runs_dir = 'runs'
 models_dir = 'models'
 
+train_previous_path = os.getenv('TRAIN_MODEL_PATH')
+train_dataset_yaml_path = f"{os.getenv('TRAIN_DATASET_PATH')}/data.yaml"
+train_dataset_name = os.getenv('TRAIN_DATASET_NAME')
+train_device = os.getenv('TRAIN_DEVICE')
+
+model_train_last = f"{runs_dir}/{os.getenv('TRAIN_DATASET_NAME')}/weights/last.pt"
+model_pt = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.pt"
+model_onnx = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.onnx"
+model_hef = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.hef"
+
 
 def train():
-    model = YOLO(os.getenv('TRAIN_MODEL_PATH'))
+    model = YOLO(train_previous_path)
     model.train(
-        data=os.getenv('TRAIN_DATASET_PATH'),
+        data=train_dataset_yaml_path,
         epochs=50,
         imgsz=1024,
-        name=os.getenv('TRAIN_DATASET_NAME'),
+        name=train_dataset_name,
         verbose=True,
         save=False,
         project=runs_dir,
         exist_ok=True,
-        device=os.getenv('TRAIN_DEVICE'),
+        device=train_device,
         workers=8
     )
 
-
-def end():
-    model_train_last = f"{runs_dir}/{os.getenv('TRAIN_DATASET_NAME')}/weights/last.pt"
-    model_pt = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.pt"
-    model_onnx = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.onnx"
-    model_hef = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.hef"
-
     shutil.move(model_train_last, model_pt)
+
     print(f'Model yolo saved in {model_pt}')
 
+
+def export():
     model = YOLO(model_pt)
     model.export(format="onnx")
 
-    command = (
-        f"docker exec -i  hailo_ai_sw_suite_2024-07_container hailomz compile "
-        f" --ckpt ../shared_with_docker/followchon_back/{model_onnx} "
-        f"--hw-arch hailo8l "
-        f"--calib-path ../shared_with_docker/followchon_back/{os.getenv('TRAIN_DATASET_PATH')}/train "
-        f"--yaml ../shared_with_docker/followchon_back/models/config/hef_config_yolov8n.yaml "
-        f"--classes 4 "
-        f"&& mv /local/workspace/yolov8n.hef ../shared_with_docker/followchon_back/{model_hef}"
+    print(f'Model onnx saved in {model_onnx}')
+
+
+def execute(cmd):
+    print(f'Execute : {cmd}')
+
+    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+    for stdout_line in iter(popen.stdout.readline, ""):
+        yield stdout_line
+    popen.stdout.close()
+    return_code = popen.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, cmd)
+
+
+def build():
+    command_build = (
+        "docker",
+        "exec"
+        "-i hailo_ai_sw_suite_2024-07_container",
+        "hailomz compile",
+        f"--ckpt ../shared_with_docker/followchon_back/{model_onnx}",
+        "--hw-arch hailo8l",
+        "--calib-path ../shared_with_docker/followchon_back/{os.getenv('TRAIN_DATASET_PATH')}/train",
+        "--yaml ../shared_with_docker/followchon_back/models/config/hef_config_yolov8n.yaml",
+        "--classes 4"
     )
 
-    subprocess.Popen(command.split(" "),
-                     stdout=subprocess.PIPE,
-                     universal_newlines=True)
+    command_copy = (
+        "docker",
+        "exec"
+        "-i hailo_ai_sw_suite_2024-07_container",
+        "mv /local/workspace/yolov8n.hef ../shared_with_docker/followchon_back/{model_hef}"
+    )
 
-    print(f'Model onnx saved in {model_onnx}')
+    for path in execute(command_build):
+        print(path, end="")
+
+    for path in execute(command_copy):
+        print(path, end="")
+
     print(f'Model hef saved in {model_hef}')
 
 
@@ -67,11 +99,8 @@ if __name__ == '__main__':
 
     print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    try:
-        train()
-    except PermissionError:
-        print('Permission error')
-
-    end()
+    # train()
+    # export()
+    build()
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
