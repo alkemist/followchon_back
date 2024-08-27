@@ -45,5 +45,8 @@ Convert onnx to hef :
 # Server
 
 Deployment statics files : `.venv/bin/python manage.py collectstatic`
-`cd /home/jaden/Projects/followchon_back/`
-`venv/bin/uwsgi --http :8080 --home /home/jaden/Projects/followchon_back/venv --chdir /home/jaden/Projects/followchon_back/ -w /home/jaden/Projects/followchon_back/admin.wsgi`
+Authorization port : `sudo ufw allow 8000`
+
+# Links
+
+https://www.digitalocean.com/community/tutorials/how-to-serve-django-applications-with-uwsgi-and-nginx-on-ubuntu-16-04#setting-up-the-uwsgi-application-server

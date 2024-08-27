@@ -14,6 +14,8 @@ class UpdateViewSet(mixins.RetrieveModelMixin,
                     mixins.UpdateModelMixin,
                     viewsets.GenericViewSet):
     # Replace rest_framework.viewsets.ModelViewSet
+    # authentication_classes = [SessionAuthentication, BasicAuthentication]
+    # permission_classes = [IsAuthenticated]
     pass
 
 

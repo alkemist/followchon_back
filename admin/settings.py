@@ -169,22 +169,39 @@ REST_FRAMEWORK = {
 
 ALLOWED_HOSTS = [
     "localhost",
-    "192.168.0.24"
+    "192.168.0.24",
+    "88.137.200.111",
+    "beeper.synology.me",
+    "pi.jaden-achain.local",
+    "pi.jaden-achain.dev",
 ]
 
 CORS_ALLOWED_ORIGINS = [
+    "https://localhost",
     "https://localhost:4200",
+    "https://192.168.0.24",
+    "https://88.137.200.111",
+    "https://beeper.synology.me",
+    "https://chons.jaden-achain.local",
+    "https://chons.jaden-achain.dev",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "http://192.168.0.24",
+    "https://localhost",
+    "https://192.168.0.24",
+    "https://88.137.200.111",
+    "https://beeper.synology.me",
+    "https://pi.jaden-achain.local",
+    "https://pi.jaden-achain.dev",
+    "https://chons.jaden-achain.local",
+    "https://chons.jaden-achain.dev",
 ]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
 
-SECURE_SSL_REDIRECT = False
+SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 

@@ -18,13 +18,11 @@ from django.contrib import admin
 from django.urls import path, include, re_path
 from django.views.static import serve
 
-from admin import settings
-
 urlpatterns = [
     re_path(
         r"^(?P<path>(?:favicon\.ico|manifest\.json|.*\.(?:js|css|json|png|jpg)))$",
         serve,
-        {"document_root": settings.STATIC_ROOT},
+        {"document_root": ''},
     ),
     path('', include("api.urls")),
     path('', admin.site.urls),

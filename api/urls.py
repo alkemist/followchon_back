@@ -1,5 +1,6 @@
 from django.urls import include, path
 from rest_framework import routers
+from rest_framework.authtoken import views
 
 from configuration import views as views_configuration
 from detections import views as views_detections
@@ -12,6 +13,7 @@ router.register(r'captures', views_detections.CaptureViewSet)
 
 app_name = "api"
 urlpatterns = [
+    path('api-token-auth/', views.obtain_auth_token),
     path('api-auth/', include('rest_framework.urls')),
     path('api/', include(router.urls)),
 ]
