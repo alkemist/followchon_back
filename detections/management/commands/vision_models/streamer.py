@@ -4,7 +4,6 @@ import time
 from datetime import datetime
 
 import cv2
-from loguru import logger
 
 from detections.management.commands.vision_models.model import Model
 from helpers.file import FileHelper
@@ -33,13 +32,13 @@ class Streamer:
 
         self.model = model
 
-        logger.add(f"{os.getenv('LOG_DIRECTORY')}streamer.log", rotation="1 days", retention=7)
+        # logger.add(f"{os.getenv('LOG_DIRECTORY')}streamer.log", rotation="1 days", retention=7)
 
     def log(self, message):
         if self.verbose:
             print(message)
-        else:
-            logger.info(message)
+        # else:
+        #    logger.info(message)
 
     def begin_recording(self):
 

@@ -17,6 +17,9 @@ static/rest_framework
 records
 datasets
 runs
+logs
+hailort.*.log
+hailort.log
 
 models/config/yolov8n_nms_config_tmp.json
 
