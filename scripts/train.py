@@ -95,8 +95,8 @@ if __name__ == '__main__':
 
     print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    # train()
-    # export()
+    train()
+    export()
     build()
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
