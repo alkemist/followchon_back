@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 
 import cv2
+from loguru import logger
 
 from detections.management.commands.vision_models.model import Model
 from helpers.file import FileHelper
@@ -24,49 +25,56 @@ class Streamer:
         self.records_directory = './records'
         self.record_time = 60
         self.record_time_delay = 10
+        self.max_records = 10
         self.capture_width = 1024
         self.capture_height = 768
 
         self.stop = False
-        self.recording = False
+        self.is_recording = False
 
         self.model = model
 
-        # logger.add(f"{os.getenv('LOG_DIRECTORY')}streamer.log", rotation="1 days", retention=7)
+        logger.add(f"{os.getenv('LOG_DIRECTORY')}streamer.log", rotation="1 days", retention=7)
 
     def log(self, message):
         if self.verbose:
             print(message)
-        # else:
-        #    logger.info(message)
+        else:
+            logger.info(message)
 
-    def begin_recording(self):
-
+    def begin_recording(self) -> object | None:
         command = (f"ffmpeg -hide_banner -y -loglevel error -rtsp_transport tcp -use_wallclock_as_timestamps "
                    f"1 -i {self.stream_path} -vcodec copy -acodec copy -f segment -reset_timestamps 1 "
                    f"-segment_time {self.record_time} -segment_format mkv -segment_atclocktime 1 -strftime 1 "
                    f"{self.records_directory}/%Y-%m-%d_%H-%M-%S.mkv")
 
-        self.recording = True
+        self.is_recording = True
 
         return subprocess.Popen(command.split(" "),
                                 stdout=subprocess.PIPE,
                                 universal_newlines=True)
 
     def stop_recording(self):
-        self.log('Stop recording')
-
         command = "pkill ffmpeg"
 
-        self.recording = False
+        self.is_recording = False
 
         return subprocess.Popen(command.split(" "),
                                 stdout=subprocess.PIPE,
                                 universal_newlines=True)
 
+    def is_recording_ok(self, records_count):
+        return self.min_hour <= datetime.now().hour <= self.max_hour and records_count <= self.max_records
+
     def start(self):
-        process = self.begin_recording() if self.loop_enabled else None
-        capture_time = time.time()
+        records = FileHelper.list_files(self.records_directory, r'.*\.(mkv)$')
+        records_count = len(records)
+        capture_time = 0
+
+        if self.loop_enabled and self.is_recording_ok(records_count):
+            self.log(f"Start recording")
+            self.begin_recording()
+            capture_time = time.time()
 
         while not self.stop:
             records = FileHelper.list_files(self.records_directory, r'.*\.(mkv)$')
@@ -74,23 +82,31 @@ class Streamer:
 
             capture_time_elapsed = time.time() - capture_time
 
-            if self.loop_enabled and capture_time_elapsed >= self.record_time + self.record_time_delay \
-                    or not self.recording and datetime.now().hour >= self.min_hour:
-                self.log(f"Restart recording : time={capture_time_elapsed} hour={datetime.now().hour}")
+            if (
+                    self.loop_enabled and capture_time_elapsed >= self.record_time + self.record_time_delay
+                    or not self.is_recording
+            ) and self.is_recording_ok(records_count):
+                self.log(
+                    f"Start recording : time={capture_time_elapsed}/{self.record_time + self.record_time_delay} "
+                    f"hour={datetime.now().hour}/{self.min_hour}-{self.max_hour}"
+                )
 
                 self.begin_recording()
                 capture_time = time.time()
 
-            if self.recording and (records_count > 10 or datetime.now().hour > self.max_hour):
-                self.log(f"Stop recording : count={records_count} hour={datetime.now().hour}")
+            if self.is_recording and not self.is_recording_ok(records_count):
+                self.log(
+                    f"Stop recording : count={records_count}/{self.max_records} "
+                    f"hour={datetime.now().hour}/{self.min_hour}-{self.max_hour}"
+                )
 
                 self.stop_recording()
 
-            if records_count > 1 or not self.loop_enabled and records_count > 0:
+            if records_count > 1 or (not self.loop_enabled or not self.is_recording) and records_count > 0:
                 last_record = records[0]
                 camera_record_filename = f"{self.records_directory}/{last_record}"
 
-                self.log(f"Next record : {last_record}")
+                # self.log(f"Next record : {last_record}")
 
                 self.capture(camera_record_filename)
 
@@ -99,7 +115,7 @@ class Streamer:
                 if os.path.isfile(camera_record_filename):
                     os.remove(camera_record_filename)
 
-                self.log(f"End record : {last_record}")
+                # self.log(f"End record : {last_record}")
 
             elif not self.loop_enabled and records_count <= 1:
                 self.stop = True
@@ -107,8 +123,8 @@ class Streamer:
         if self.show_stream:
             cv2.destroyAllWindows()
 
-        if process is not None:
-            process.terminate()
+        if self.loop_enabled and self.is_recording:
+            self.stop_recording()
 
     def capture(self, camera_record_filename: str):
         frame_time = 0

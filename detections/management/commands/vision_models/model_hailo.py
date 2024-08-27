@@ -10,6 +10,7 @@ from detections.management.commands.vision_models.capture_analyse import Capture
 from detections.management.commands.vision_models.hailo_inference import HailoInference
 from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.result_yolo import Result_yolo
+from helpers.image import ImageHelper
 
 
 class Model_Hailo(Model):
@@ -38,26 +39,32 @@ class Model_Hailo(Model):
         padded_image = image.copy()
 
         background_color = (0, 0, 0)
+        padding = (0, 0)
 
         if width > height:
             padded_image = Image.new(image.mode, (width, width), background_color)
-            padded_image.paste(image, (0, (width - height) // 2))
+            padding = (0, (width - height) // 2)
         elif height < width:
             padded_image = Image.new(image.mode, (height, height), background_color)
-            padded_image.paste(image, ((height - width) // 2, 0))
+            padding = ((height - width) // 2, 0)
 
-        return padded_image.resize((self.width, self.height))
+        padded_image.paste(image, padding)
+
+        return (
+            padding,
+            padded_image.size,
+            padded_image.resize((self.width, self.height)),
+        )
 
     def infer(self, frame: cv2.typing.MatLike):
         results = None
 
         try:
-            image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            image = Image.fromarray(image)
+            image_pil = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            image_pil = Image.fromarray(image_pil)
 
-            processed_image = self.preprocess(image)
+            (padding, padded_size, processed_image) = self.preprocess(image_pil)
 
-            (width_original, height_original) = frame.shape[1::-1]
             (height_resized, width_resized) = processed_image.size
 
             raw_detections = self.hailo_inference.run(np.array(processed_image))
@@ -79,7 +86,9 @@ class Model_Hailo(Model):
                             height_resized
                         )
 
-                        yolo_result.import_hailo(
+                        yolo_result.import_hailo_without_padding(
+                            padded_size,
+                            padding,
                             float(bbox[1]),
                             float(bbox[0]),
                             float(bbox[3]),
@@ -92,11 +101,11 @@ class Model_Hailo(Model):
                 save_time_elapsed = time.time() - self.save_time
 
                 analyse = Capture_analyse(
-                    np.asarray(processed_image),
+                    frame,
                     self.last_detections_dict, self.families_dict, self.zones
                 )
 
-                image_result = analyse.detect(yolo_results)
+                frame = analyse.detect(yolo_results)
 
                 if analyse.is_triggered and save_time_elapsed > 1:
                     analyse.save()
@@ -108,7 +117,7 @@ class Model_Hailo(Model):
             print(error)
             print(results)
 
-        return frame
+        return ImageHelper.resize_with_ratio(frame, self.capture_width, None)
 
     def destruct(self):
         self.hailo_inference.release_device()

@@ -18,6 +18,25 @@ class Result_yolo:
         self.ortho_br_x = None
         self.ortho_br_y = None
 
+    def import_hailo_without_padding(self, padded_size: (int, int), padding: (int, int), tl_x, tl_y, br_x, br_y):
+        tl_x_ortho = tl_x * padded_size[0]
+        tl_x_ortho_trunc = tl_x_ortho - padding[0]
+        tl_x = tl_x_ortho_trunc / (padded_size[0] - (padding[0] * 2))
+
+        br_x_ortho = br_x * padded_size[0]
+        br_x_ortho_trunc = br_x_ortho - padding[0]
+        br_x = br_x_ortho_trunc / (padded_size[0] - (padding[0] * 2))
+
+        tl_y_ortho = tl_y * padded_size[1]
+        tl_y_ortho_trunc = tl_y_ortho - padding[1]
+        tl_y = tl_y_ortho_trunc / (padded_size[1] - (padding[1] * 2))
+
+        br_y_ortho = br_y * padded_size[1]
+        br_y_ortho_trunc = br_y_ortho - padding[1]
+        br_y = br_y_ortho_trunc / (padded_size[1] - (padding[1] * 2))
+
+        self.import_hailo(tl_x, tl_y, br_x, br_y)
+
     def import_hailo(self, tl_x, tl_y, br_x, br_y):
         self.norm_width = br_x - tl_x
         self.norm_height = br_y - tl_y
