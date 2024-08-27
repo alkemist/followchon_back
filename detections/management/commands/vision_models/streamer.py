@@ -91,7 +91,7 @@ class Streamer:
                 last_record = records[0]
                 camera_record_filename = f"{self.records_directory}/{last_record}"
 
-                # self.log(f"Next record : {last_record}")
+                self.log(f"Next record : {last_record}")
 
                 self.capture(camera_record_filename)
 
@@ -100,7 +100,7 @@ class Streamer:
                 if os.path.isfile(camera_record_filename):
                     os.remove(camera_record_filename)
 
-                # self.log(f"End record : {last_record}")
+                self.log(f"End record : {last_record}")
 
             elif not self.loop_enabled and records_count <= 1:
                 self.stop = True

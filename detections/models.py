@@ -124,7 +124,7 @@ class Capture(models.Model):
                 f"{status}/"
                 )
 
-    def photo_path(self, status: str = None, root: bool = None):
+    def photo_path(self, status: str = None, root: bool = True):
         return (f"{self.file_dir(status, root)}"
                 f"{self.images_dir}/{self.photo_file}")
 
@@ -136,7 +136,7 @@ class Capture(models.Model):
     def image_tag(self):
         return mark_safe('<a href="/%s" target="_blank">'
                          '<img src="/%s" width="200" height="200" />'
-                         '</a>' % (self.photo_path(), self.photo_path()))
+                         '</a>' % (self.photo_path(root=True), self.photo_path(root=True)))
 
     def front_url(self):
         return format_html(

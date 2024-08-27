@@ -31,17 +31,6 @@ backoffice : `.venv/bin/python manage.py runserver_plus --cert-file ~/cert.pem -
 Kill processus : `pkill -9 ffmpeg`  
 Start vision : `.venv/bin/python manage.py vision`
 
-# Hailo
-
-Convert pt to onnx : `.venv/bin/python scripts/quantize.py models/guinea-pig-chons-v12`
-Convert onnx to hef :
-`hailomz compile --ckpt guinea-pig-chons-v12.onnx --hw-arch hailo8l  --calib-path data --yaml hef_config.yaml --classes 4`
-
-`wsl -e ./scripts/train.sh`
-`cd /mnt/c/Users/Salon/Hailo/`
-`./hailo_ai_sw_suite_docker_run.sh --resume`
-`docker exec -i  hailo_ai_sw_suite_2024-07_container hailomz compile --ckpt ../shared_with_docker/followchon_back/models/guinea-pig-chons-v12.onnx --hw-arch hailo8l --calib-path ../shared_with_docker/followchon_back/datasets/chons-v12/train --yaml ../shared_with_docker/followchon_back/models/config/hef_config_yolov8n.yaml --classes 4 && mv /local/workspace/yolov8n.hef ../shared_with_docker/followchon_back/models/guinea-pig-chons-v12.hef`
-
 # Server
 
 Deployment statics files : `.venv/bin/python manage.py collectstatic`
