@@ -3,8 +3,6 @@ import os
 import time
 
 import cv2
-from PIL import ImageDraw, Image
-from django.utils import timezone
 from ultralytics import YOLO
 
 from detections.management.commands.vision_models.capture_analyse import Capture_analyse
@@ -56,30 +54,7 @@ class Model_YOLO(Model):
             analyse = Capture_analyse(frame, self.last_detections_dict, self.families_dict, self.zones)
             frame = analyse.detect(yolo_results)
 
-            print([' '.join(result.to_array()) for result in yolo_results])
-            print(len(yolo_results), analyse.is_triggered, save_time_elapsed)
-
-            f_name = timezone.now().strftime('%Y-%m-%d_%H-%M-%S-%f')
-
-            processed_image = Image.fromarray(frame)
-            draw = ImageDraw.Draw(processed_image)
-
-            for result in yolo_results:
-                draw.rectangle(
-                    [
-                        (result.ortho_tl_x, result.ortho_tl_y),
-                        (result.ortho_br_x, result.ortho_br_y),
-                    ],
-                    outline=255,
-                    width=2
-                )
-
-            processed_image.save(f"static/captures/test/{f_name}.jpg")
-
             if analyse.is_triggered and save_time_elapsed > 1:
-                print(results)
-                print([' '.join(result.to_array()) for result in yolo_results])
-
                 analyse.save()
                 self.save_time = time.time()
 
