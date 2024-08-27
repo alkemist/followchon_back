@@ -18,6 +18,8 @@ class Streamer:
         self.show_stream = os.getenv('SHOW_STREAM') == 'True'
         self.frame_time_seconds = float(os.getenv('FRAME_TIME_SECONDS'))  # 0.03 < > 0.02
         self.verbose = os.getenv('VERBOSE') == 'True'
+        self.min_hour = int(os.getenv('CAPTURE_MIN_HOUR'))
+        self.max_hour = int(os.getenv('CAPTURE_MAX_HOUR'))
 
         self.records_directory = './records'
         self.record_time = 60
@@ -26,6 +28,7 @@ class Streamer:
         self.capture_height = 768
 
         self.stop = False
+        self.recording = False
 
         self.model = model
 
@@ -38,6 +41,8 @@ class Streamer:
                    f"-segment_time {self.record_time} -segment_format mkv -segment_atclocktime 1 -strftime 1 "
                    f"{self.records_directory}/%Y-%m-%d_%H-%M-%S.mkv")
 
+        self.recording = True
+
         return subprocess.Popen(command.split(" "),
                                 stdout=subprocess.PIPE,
                                 universal_newlines=True)
@@ -47,6 +52,8 @@ class Streamer:
             print('Stop recording')
 
         command = "pkill ffmpeg"
+
+        self.recording = False
 
         return subprocess.Popen(command.split(" "),
                                 stdout=subprocess.PIPE,
@@ -62,11 +69,16 @@ class Streamer:
 
             capture_time_elapsed = time.time() - capture_time
 
-            if self.loop_enabled and capture_time_elapsed >= self.record_time + self.record_time_delay:
+            if self.loop_enabled and capture_time_elapsed >= self.record_time + self.record_time_delay \
+                    or not self.recording and datetime.now().hour >= self.min_hour:
+                if self.verbose:
+                    print(f"Restart recording : time={capture_time_elapsed} hour={datetime.now().hour}")
                 process = self.begin_recording()
                 capture_time = time.time()
 
-            if records_count > 10:
+            if self.recording and (records_count > 10 or datetime.now().hour > self.max_hour):
+                if self.verbose:
+                    print(f"Stop recording : count={records_count} hour={datetime.now().hour}")
                 self.stop_recording()
 
             if records_count > 1 or not self.loop_enabled and records_count > 0:

@@ -64,22 +64,18 @@ def execute(cmd):
 
 def build():
     command_build = (
-        "docker",
-        "exec"
-        "-i hailo_ai_sw_suite_2024-07_container",
-        "hailomz compile",
-        f"--ckpt ../shared_with_docker/followchon_back/{model_onnx}",
-        "--hw-arch hailo8l",
-        "--calib-path ../shared_with_docker/followchon_back/{os.getenv('TRAIN_DATASET_PATH')}/train",
-        "--yaml ../shared_with_docker/followchon_back/models/config/hef_config_yolov8n.yaml",
-        "--classes 4"
+        "docker", "exec", "-i", "hailo_ai_sw_suite_2024-07_container",
+        "hailomz", "compile",
+        "--ckpt", f"../shared_with_docker/followchon_back/{model_onnx}",
+        "--hw-arch", "hailo8l",
+        "--calib-path", f"../shared_with_docker/followchon_back/{os.getenv('TRAIN_DATASET_PATH')}/train",
+        "--yaml", "../shared_with_docker/followchon_back/models/config/hef_config_yolov8n.yaml",
+        "--classes", "4",
     )
 
     command_copy = (
-        "docker",
-        "exec"
-        "-i hailo_ai_sw_suite_2024-07_container",
-        "mv /local/workspace/yolov8n.hef ../shared_with_docker/followchon_back/{model_hef}"
+        "docker", "exec", "-i", "hailo_ai_sw_suite_2024-07_container",
+        "mv", "/local/workspace/yolov8n.hef", f"../shared_with_docker/followchon_back/{model_hef}"
     )
 
     for path in execute(command_build):
