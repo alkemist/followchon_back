@@ -1,5 +1,4 @@
 import math
-import os
 import time
 
 import cv2
@@ -16,8 +15,15 @@ class Model_YOLO(Model):
     def __init__(self):
         super().__init__()
 
-        self.model = YOLO(os.getenv('MODEL_PATH'))
-        self.capture_min_score = float(os.getenv('CAPTURE_MIN_SCORE'))  # 0.03 < > 0.02
+        self.check_model()
+
+    def check_model(self):
+        super().fill_params()
+
+        if self.model is None or not self.check_param('vision_model_version', self.model_version):
+            super().reload()
+
+            self.model = YOLO(self.model_path)
 
     def infer(self, frame: cv2.typing.MatLike):
         results = self.model(frame, stream=True, verbose=False)
@@ -31,7 +37,7 @@ class Model_YOLO(Model):
                 cls = int(box.cls[0])
                 score = math.ceil((box.conf[0] * 100)) / 100
 
-                if score >= self.capture_min_score:
+                if score >= self.min_score:
                     yolo_result = Result_yolo(
                         cls,
                         score,

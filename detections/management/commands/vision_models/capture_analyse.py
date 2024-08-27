@@ -1,4 +1,5 @@
 import copy
+import time
 from typing import cast
 
 import cv2
@@ -125,3 +126,5 @@ class Capture_analyse:
     def save(self):
         capture = Capture()
         capture.write(self.frame, self.annotations)
+
+        time.sleep(1)

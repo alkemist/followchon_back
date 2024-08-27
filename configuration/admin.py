@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin import AdminSite
 
-from configuration.models import Zone, Family
+from configuration.models import Zone, Family, Parameter
 
 
 class CustomAdminSite(AdminSite):
@@ -27,6 +27,16 @@ class ZoneAdmin(admin.ModelAdmin):
     search_fields = ['slug', 'name']
     ordering = ['id']
     list_editable = ['is_trigger', 'is_ignored']
+
+
+@admin.register(Parameter)
+class ParameterAdmin(admin.ModelAdmin):
+    fields = ['slug', 'name', 'value']
+    list_display = ['id', 'name', 'slug', 'value']
+    search_fields = ['name', 'slug', 'value']
+    ordering = ['id']
+    list_display_links = ['id', 'name']
+    list_editable = ['slug', 'value']
 
 
 admin_site = CustomAdminSite()

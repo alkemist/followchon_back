@@ -27,11 +27,6 @@ class Family(models.Model):
         return self.name
 
 
-class Rule(models.Model):
-    score_min = models.IntegerField(default=60)
-    enabled = models.BooleanField(default=False)
-
-
 class Zone(models.Model):
     slug = models.CharField(max_length=200)
     name = models.CharField(max_length=200)
@@ -51,6 +46,7 @@ class Zone(models.Model):
             cast(float, self.center_x) - cast(float, self.width) / 2,
             cast(float, self.center_y) - cast(float, self.height) / 2
         )
+
         self.norm_point_br = (
             cast(float, self.center_x) + cast(float, self.width) / 2,
             cast(float, self.center_y) + cast(float, self.height) / 2
@@ -65,6 +61,23 @@ class Zone(models.Model):
         return self.name
 
 
+class Rule(models.Model):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
 class Period(models.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+
+class Parameter(models.Model):
+    slug = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, default='', null=True)
+    value = models.CharField(max_length=200, default='', null=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def __str__(self):
+        return self.name

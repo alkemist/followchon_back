@@ -1,4 +1,3 @@
-import os
 import time
 
 import PIL.Image
@@ -18,9 +17,22 @@ class Model_Hailo(Model):
     def __init__(self):
         super().__init__()
 
-        self.hailo_inference = HailoInference(os.getenv('MODEL_PATH'))
-        self.height, self.width, _ = self.hailo_inference.get_input_shape()
-        self.capture_min_score = float(os.getenv('CAPTURE_MIN_SCORE'))
+        self.height = None
+        self.width = None
+
+        self.check_model()
+
+    def check_model(self):
+        super().fill_params()
+
+        if self.model is None or not self.check_param('vision_model_version', self.model_version):
+            super().reload()
+
+            if self.model is not None:
+                self.destruct()
+
+            self.model = HailoInference(self.model_path)
+            self.height, self.width, _ = self.model.get_input_shape()
 
     def preprocess(self, image: PIL.Image.Image):
         """
@@ -67,7 +79,7 @@ class Model_Hailo(Model):
 
             (height_resized, width_resized) = processed_image.size
 
-            raw_detections = self.hailo_inference.run(np.array(processed_image))
+            raw_detections = self.model.run(np.array(processed_image))
 
             yolo_results = list()
 
@@ -78,7 +90,7 @@ class Model_Hailo(Model):
                 for det in detection:
                     bbox, score = det[:4], det[4]
 
-                    if score >= self.capture_min_score:
+                    if score >= self.min_score:
                         yolo_result = Result_yolo(
                             i,
                             float(score),
@@ -120,4 +132,4 @@ class Model_Hailo(Model):
         return ImageHelper.resize_with_ratio(frame, self.capture_width, None)
 
     def destruct(self):
-        self.hailo_inference.release_device()
+        self.model.release_device()

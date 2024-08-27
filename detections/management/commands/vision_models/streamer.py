@@ -6,6 +6,7 @@ from datetime import datetime
 import cv2
 from loguru import logger
 
+from configuration.models import Parameter
 from detections.management.commands.vision_models.model import Model
 from helpers.file import FileHelper
 
@@ -18,13 +19,12 @@ class Streamer:
         self.loop_enabled = os.getenv('LOOP_ENABLED') == 'True'
         self.show_stream = os.getenv('SHOW_STREAM') == 'True'
         self.frame_time_seconds = float(os.getenv('FRAME_TIME_SECONDS'))  # 0.03 < > 0.02
-        self.verbose = os.getenv('VERBOSE') == 'True'
-        self.min_hour = int(os.getenv('CAPTURE_MIN_HOUR'))
-        self.max_hour = int(os.getenv('CAPTURE_MAX_HOUR'))
 
         self.records_directory = './records'
         self.record_time = 60
-        self.record_time_delay = 10
+        self.record_time_delay = 50
+        self.min_records_capture = 1
+        self.min_records_recording = 2
         self.max_records = 10
         self.capture_width = 1024
         self.capture_height = 768
@@ -34,13 +34,17 @@ class Streamer:
 
         self.model = model
 
-        logger.add(f"{os.getenv('LOG_DIRECTORY')}streamer.log", rotation="1 days", retention=7)
+        self.params_dict: dict[int, Parameter] = {}
 
-    def log(self, message):
-        if self.verbose:
+    def log(self, message, channel=''):
+        if os.getenv('VERBOSE') == 'True':
             print(message)
         else:
-            logger.info(message)
+            match channel:
+                case 'error':
+                    logger.error(message)
+                case _:
+                    logger.info(message)
 
     def begin_recording(self) -> object | None:
         command = (f"ffmpeg -hide_banner -y -loglevel error -rtsp_transport tcp -use_wallclock_as_timestamps "
@@ -64,9 +68,15 @@ class Streamer:
                                 universal_newlines=True)
 
     def is_recording_ok(self, records_count):
-        return self.min_hour <= datetime.now().hour <= self.max_hour and records_count <= self.max_records
+        return (
+                self.model.min_hour <= datetime.now().hour <= self.model.max_hour and
+                (self.is_recording and records_count <= self.max_records or
+                 not self.is_recording and records_count <= self.min_records_recording)
+        )
 
     def start(self):
+        self.log(f"Vision started")
+
         records = FileHelper.list_files(self.records_directory, r'.*\.(mkv)$')
         records_count = len(records)
         capture_time = 0
@@ -83,26 +93,28 @@ class Streamer:
             capture_time_elapsed = time.time() - capture_time
 
             if (
-                    self.loop_enabled and capture_time_elapsed >= self.record_time + self.record_time_delay
+                    self.loop_enabled and capture_time_elapsed >= self.record_time_delay
                     or not self.is_recording
             ) and self.is_recording_ok(records_count):
                 self.log(
-                    f"Start recording : time={capture_time_elapsed}/{self.record_time + self.record_time_delay} "
-                    f"hour={datetime.now().hour}/{self.min_hour}-{self.max_hour}"
+                    f"Start recording : time={capture_time_elapsed}/{self.record_time_delay} "
+                    f"hour={datetime.now().hour}/{self.model.min_hour}-{self.model.max_hour} "
+                    f"count={records_count}/{self.max_records}"
                 )
 
                 self.begin_recording()
                 capture_time = time.time()
 
-            if self.is_recording and not self.is_recording_ok(records_count):
+            if self.is_recording and records_count >= self.max_records:
                 self.log(
-                    f"Stop recording : count={records_count}/{self.max_records} "
-                    f"hour={datetime.now().hour}/{self.min_hour}-{self.max_hour}"
+                    f"Stop recording : count={records_count}/{self.max_records}"
                 )
+                time.sleep(10)
 
                 self.stop_recording()
 
-            if records_count > 1 or (not self.loop_enabled or not self.is_recording) and records_count > 0:
+            if records_count > self.min_records_capture or (
+                    not self.loop_enabled or not self.is_recording) and records_count > 0:
                 last_record = records[0]
                 camera_record_filename = f"{self.records_directory}/{last_record}"
 
@@ -118,6 +130,18 @@ class Streamer:
                 # self.log(f"End record : {last_record}")
 
             elif not self.loop_enabled and records_count <= 1:
+                self.stop = True
+            else:
+                time.sleep(10)
+
+            self.model.check_model()
+
+            if self.model.check_param('vision_enabled', '0') or datetime.now().hour > self.model.max_hour:
+                self.log(
+                    f"Vision stopped : "
+                    f"vision_enabled={self.model.get_param('vision_enabled')} "
+                    f"hour={datetime.now().hour}/{self.model.min_hour}-{self.model.max_hour}"
+                )
                 self.stop = True
 
         if self.show_stream:
@@ -142,6 +166,7 @@ class Streamer:
                     frame = self.model.infer(
                         frame,
                     )
+
                     self.stop = self.model.stop
 
                     frame_time = time.time()

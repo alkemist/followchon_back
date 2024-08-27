@@ -1,7 +1,6 @@
 import numpy as np
 from hailo_platform import (HEF, VDevice, HailoStreamInterface, InferVStreams, ConfigureParams,
                             InputVStreamParams, OutputVStreamParams, FormatType)
-from loguru import logger
 
 
 class HailoInference:
@@ -58,10 +57,10 @@ class HailoInference:
         input_vstream_info = self.hef.get_input_vstream_infos()
         output_vstream_info = self.hef.get_output_vstream_infos()
 
-        for layer_info in input_vstream_info:
-            logger.info(f'Input layer: {layer_info.name} {layer_info.shape} {layer_info.format.type}')
-        for layer_info in output_vstream_info:
-            logger.info(f'Output layer: {layer_info.name} {layer_info.shape} {layer_info.format.type}')
+        # for layer_info in input_vstream_info:
+        #     logger.info(f'Input layer: {layer_info.name} {layer_info.shape} {layer_info.format.type}')
+        # for layer_info in output_vstream_info:
+        #     logger.info(f'Output layer: {layer_info.name} {layer_info.shape} {layer_info.format.type}')
 
         return input_vstream_info, output_vstream_info
 
