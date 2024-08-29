@@ -19,6 +19,7 @@ from django.urls import path, include, re_path
 from django.views.static import serve
 
 urlpatterns = [
+    path('', include('pwa.urls')),
     re_path(
         r"^(?P<path>(?:favicon\.ico|manifest\.json|.*\.(?:js|css|json|png|jpg)))$",
         serve,

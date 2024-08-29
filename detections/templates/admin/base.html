@@ -1,11 +1,13 @@
 {% extends 'admin/base.html' %}
+{% load pwa %}
 
 {% block extrastyle %}
-    {{ block.super }}
-    {% load compress %}
-    {% load static %}
+{{ block.super }}
+{% load compress %}
+{% load static %}
 
-    {% compress css %}
-        <link type="text/x-scss" href="{% static 'style.scss' %}" rel="stylesheet" media="screen">
-    {% endcompress %}
+{% compress css %}
+<link type="text/x-scss" href="{% static 'style.scss' %}" rel="stylesheet" media="screen">
+{% endcompress %}
+{% progressive_web_app_meta %}
 {% endblock %}

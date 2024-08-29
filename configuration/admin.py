@@ -5,8 +5,8 @@ from configuration.models import Zone, Family, Parameter, Log
 
 
 class CustomAdminSite(AdminSite):
-    admin.site.site_title = 'Followchon'
-    admin.site.site_header = 'Followchon'
+    admin.site.site_title = 'Pichon'
+    admin.site.site_header = 'Pichon'
     admin.site.index_title = 'Administration'
 
 

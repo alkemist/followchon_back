@@ -15,7 +15,7 @@ class Command(BaseCommand):
         load_dotenv()
 
         logger.add(f"{os.getenv('LOG_DIRECTORY')}vision_hailo.log", format="{time} | {level} | {message}",
-                   rotation="1 days", retention=7)
+                   rotation="1 day", retention=7)
 
         model = None
 
