@@ -1,6 +1,7 @@
 from typing import cast
 
 from django.db import models
+from django.utils import timezone
 
 
 class Family(models.Model):
@@ -81,3 +82,30 @@ class Parameter(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Log(models.Model):
+    version = models.IntegerField(default=0, null=True)
+
+    date = models.DateTimeField(default=timezone.now)
+    source = models.CharField(max_length=200, default='', null=True)
+    level = models.CharField(max_length=200, default='', null=True)
+    event = models.CharField(max_length=200, default='', null=True)
+    info = models.CharField(max_length=200, default='', null=True)
+
+    temp = models.FloatField(null=True, default=0)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def create(self, version, source, level, event, info, temp):
+        self.version = version
+        self.source = source
+        self.level = level
+        self.event = event
+        self.info = info
+        self.temp = temp
+        self.save()
+
+    def __str__(self):
+        return f"{self.date} {self.level} {self.event} {self.info}"

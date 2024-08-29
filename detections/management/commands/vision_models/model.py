@@ -19,6 +19,7 @@ class Model:
         self.min_hour = 0
         self.max_hour = 0
         self.max_records = 0
+        self.max_temp = 0
         self.pause_minutes = 0
         self.frame_seconds = 0
         self.stop = False
@@ -69,12 +70,13 @@ class Model:
     def fill_params(self):
         self.get_params()
 
-        self.model_version = self.get_param('vision_model_version')
+        self.model_version = int(self.get_param('vision_model_version'))
         self.min_score = float(self.get_param('vision_score_min'))
         self.min_hour = int(self.get_param('vision_hour_min'))
         self.max_hour = int(self.get_param('vision_hour_max'))
         self.max_records = int(self.get_param('vision_records_max'))
         self.pause_minutes = int(self.get_param('vision_pause_minutes'))
+        self.max_temp = int(self.get_param('vision_temp_max'))
         self.frame_seconds = float(self.get_param('vision_frame_seconds'))  # 0.03 < > 0.02
         self.loop_enabled = self.get_param('vision_loop_enabled') == '1'
         self.stop = self.get_param('vision_stop') == '1'

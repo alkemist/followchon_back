@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin import AdminSite
 
-from configuration.models import Zone, Family, Parameter
+from configuration.models import Zone, Family, Parameter, Log
 
 
 class CustomAdminSite(AdminSite):
@@ -37,6 +37,18 @@ class ParameterAdmin(admin.ModelAdmin):
     ordering = ['slug']
     list_display_links = ['name', 'slug']
     list_editable = ['value']
+
+
+@admin.register(Log)
+class LogAdmin(admin.ModelAdmin):
+    readonly_fields = ['date', 'source', 'version', 'level', 'event', 'info', 'temp']
+    list_display = ['date', 'source', 'version', 'level', 'event', 'info', 'temp']
+    search_fields = ['date', 'source', 'version', 'level', 'event', 'info', 'temp']
+    list_filter = ['date', 'source', 'version', 'level', 'event']
+    ordering = ['-id']
+    list_display_links = ['date']
+    list_editable = []
+    list_per_page = 100
 
 
 admin_site = CustomAdminSite()
