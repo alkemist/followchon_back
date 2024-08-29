@@ -32,11 +32,11 @@ class ZoneAdmin(admin.ModelAdmin):
 @admin.register(Parameter)
 class ParameterAdmin(admin.ModelAdmin):
     fields = ['slug', 'name', 'value']
-    list_display = ['id', 'name', 'slug', 'value']
+    list_display = ['name', 'slug', 'value']
     search_fields = ['name', 'slug', 'value']
-    ordering = ['id']
-    list_display_links = ['id', 'name']
-    list_editable = ['slug', 'value']
+    ordering = ['slug']
+    list_display_links = ['name', 'slug']
+    list_editable = ['value']
 
 
 admin_site = CustomAdminSite()

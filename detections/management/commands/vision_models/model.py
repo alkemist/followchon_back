@@ -12,12 +12,17 @@ class Model:
 
     def __init__(self):
         self.model = None
+        self.current_model_version = ''
         self.model_version = ''
         self.model_path = ''
         self.min_score = 0
         self.min_hour = 0
         self.max_hour = 0
+        self.max_records = 0
+        self.pause_minutes = 0
+        self.frame_seconds = 0
         self.stop = False
+        self.loop_enabled = False
         self.params_dict = {}
 
         self.save_time = 0
@@ -27,16 +32,6 @@ class Model:
         self.zones = []
         self.families_dict = {}
         self.last_detections_dict = {}
-
-    def log(self, message, channel=''):
-        if os.getenv('VERBOSE') == 'True':
-            print(message)
-        else:
-            match channel:
-                case 'error':
-                    logger.error(message)
-                case _:
-                    logger.info(message)
 
     def get_params(self):
         parameters = Parameter.objects.all()
@@ -48,12 +43,10 @@ class Model:
         if param in self.params_dict:
             return self.params_dict[param].value
 
-        self.log(f'Param "{param}" not exist', "error")
+        logger.error(f'Param "{param}" not exist')
         return None
 
-    def fill_params(self):
-        self.get_params()
-
+    def fill_objects(self):
         self.families = Family.objects.all()
         self.zones = Zone.objects.all()
         self.families_dict = ArrayHelper.object_list_to_dict(self.families, 'index')
@@ -73,23 +66,28 @@ class Model:
         self.last_detections_dict: dict[int, Zone] = (
             dict(map(lambda kv: (kv[0], kv[1].zone), last_detections_dict.items())))
 
-        self.min_score = float(self.get_param('vision_min_score'))
-        self.min_hour = int(self.get_param('vision_min_hour'))
-        self.max_hour = int(self.get_param('vision_max_hour'))
+    def fill_params(self):
+        self.get_params()
 
-    def check_param(self, param, value) -> bool:
-        return self.get_param(param) == value
-
-    def reload(self):
         self.model_version = self.get_param('vision_model_version')
+        self.min_score = float(self.get_param('vision_score_min'))
+        self.min_hour = int(self.get_param('vision_hour_min'))
+        self.max_hour = int(self.get_param('vision_hour_max'))
+        self.max_records = int(self.get_param('vision_records_max'))
+        self.pause_minutes = int(self.get_param('vision_pause_minutes'))
+        self.frame_seconds = float(self.get_param('vision_frame_seconds'))  # 0.03 < > 0.02
+        self.loop_enabled = self.get_param('vision_loop_enabled') == '1'
+        self.stop = self.get_param('vision_stop') == '1'
 
-        self.log(f'Load model version "{self.model_version}"')
-
-        self.model_path = (f"{os.getenv('MODEL_DIR')}/"
-                           f"{os.getenv('MODEL_PREFIX')}{self.model_version}.{os.getenv('MODEL_EXT')}")
+    def get_model_path(self):
+        return (f"{os.getenv('MODEL_DIR')}/"
+                f"{os.getenv('MODEL_PREFIX')}{self.current_model_version}.{os.getenv('MODEL_EXT')}")
 
     def infer(self, frame: cv2.typing.MatLike):
         raise Exception('Infer not implemented')
 
     def check_model(self):
         raise Exception('Check model not implemented')
+
+    def release(self):
+        return False

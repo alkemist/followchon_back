@@ -1,3 +1,10 @@
+from functools import partial
+
+import numpy as np
+from hailo_platform import (HEF, VDevice, FormatType, HailoSchedulingAlgorithm)
+from loguru import logger
+
+
 class HailoAsyncInference:
     def __init__(self, hef_path, batch_size=1, output_type='FLOAT32'):
         """
@@ -43,6 +50,9 @@ class HailoAsyncInference:
             logger.error(f'Inference error: {completion_info.exception}')
         else:
             self.output_results.append(bindings.output().get_buffer()[0])
+
+    def remove_last_output_results(self):
+        return self.output_results.pop()
 
     def _get_vstream_info(self):
         """

@@ -2,6 +2,7 @@ import math
 import time
 
 import cv2
+from loguru import logger
 from ultralytics import YOLO
 
 from detections.management.commands.vision_models.capture_analyse import Capture_analyse
@@ -18,10 +19,13 @@ class Model_YOLO(Model):
         self.check_model()
 
     def check_model(self):
+        super().fill_objects()
         super().fill_params()
 
-        if self.model is None or not self.check_param('vision_model_version', self.model_version):
-            super().reload()
+        if self.model is None or not self.current_model_version != self.model_version:
+            self.current_model_version = self.model_version
+
+            logger.info(f'Load model version "{self.current_model_version}"')
 
             self.model = YOLO(self.model_path)
 

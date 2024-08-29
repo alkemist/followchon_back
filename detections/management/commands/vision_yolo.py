@@ -21,7 +21,3 @@ class Command(BaseCommand):
 
         streamer = Streamer(model)
         streamer.start()
-
-        self.stdout.write(
-            self.style.SUCCESS('Successfully finished')
-        )

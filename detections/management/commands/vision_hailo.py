@@ -17,13 +17,16 @@ class Command(BaseCommand):
         logger.add(f"{os.getenv('LOG_DIRECTORY')}vision_hailo.log", format="{time} | {level} | {message}",
                    rotation="1 days", retention=7)
 
-        model = Model_Hailo()
+        model = None
 
-        streamer = Streamer(model)
-        streamer.start()
+        try:
+            model = Model_Hailo()
 
-        model.destruct()
+            streamer = Streamer(model)
+            streamer.start()
 
-        self.stdout.write(
-            self.style.SUCCESS('Successfully finished')
-        )
+        except Exception as error:
+            if model is not None:
+                model.release()
+
+            logger.error(error)
