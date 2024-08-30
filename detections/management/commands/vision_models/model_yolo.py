@@ -1,11 +1,9 @@
 import math
-import time
 
 import cv2
 from loguru import logger
 from ultralytics import YOLO
 
-from detections.management.commands.vision_models.capture_analyse import Capture_analyse
 from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.result_yolo import Result_yolo
 from helpers.image import ImageHelper
@@ -29,7 +27,8 @@ class Model_YOLO(Model):
 
             self.model = YOLO(self.model_path)
 
-    def infer(self, frame: cv2.typing.MatLike):
+    def infer(self, frame: cv2.typing.MatLike, frame_count, datestr):
+        saved = False
         results = self.model(frame, stream=True, verbose=False)
 
         (width, height) = frame.shape[1::-1]
@@ -58,14 +57,6 @@ class Model_YOLO(Model):
 
                     yolo_results.append(yolo_result)
 
-        if len(yolo_results) > 0:
-            save_time_elapsed = time.time() - self.save_time
+        (frame, saved) = self.analyze(frame, frame_count, datestr, yolo_results)
 
-            analyse = Capture_analyse(frame, self.last_detections_dict, self.families_dict, self.zones)
-            frame = analyse.detect(yolo_results)
-
-            if analyse.is_triggered and save_time_elapsed > 1:
-                analyse.save()
-                self.save_time = time.time()
-
-        return ImageHelper.resize_with_ratio(frame, self.capture_width, None)
+        return ImageHelper.resize_with_ratio(frame, self.capture_width, None), saved

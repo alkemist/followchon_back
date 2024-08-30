@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from pathlib import Path
 
+from django.conf.locale.fr import formats as fr_formats
 from django.utils.translation import gettext_lazy as _
 from dotenv import load_dotenv
 
@@ -118,6 +119,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
+
+DATETIME_FORMAT = "%d %B %Y %H:%M:%S"
+fr_formats.DATETIME_FORMAT = "j F Y H:i:s"
 
 LANGUAGE_CODE = 'fr-FR'
 

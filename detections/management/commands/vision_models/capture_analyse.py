@@ -1,4 +1,6 @@
 import copy
+import re
+from datetime import datetime
 from typing import cast
 
 import cv2
@@ -11,9 +13,19 @@ from helpers.array import ArrayHelper
 
 class Capture_analyse:
 
-    def __init__(self, frame: cv2.typing.MatLike, last_detections_dict: dict[int, Zone],
+    def __init__(self, frame: cv2.typing.MatLike, datestr, frame_count, last_detections_dict: dict[int, Zone],
                  families_dict: dict[int, Family], zones: list[Zone]):
         self.frame = frame
+
+        date_values = re.split('[-_]', datestr)
+        self.date_capture = datetime(
+            int(date_values[0]),
+            int(date_values[1]),
+            int(date_values[2]),
+            int(date_values[3]),
+            int(date_values[4]),
+            frame_count,
+        )
 
         self.families_dict = families_dict
         self.last_detections_dict = last_detections_dict
@@ -124,4 +136,4 @@ class Capture_analyse:
 
     def save(self):
         capture = Capture()
-        capture.write(self.frame, self.annotations)
+        capture.write(self.frame, self.date_capture, self.annotations)

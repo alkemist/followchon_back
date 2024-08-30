@@ -140,7 +140,8 @@ class DetectionAdmin(AdminChangeLinksMixin, admin.ModelAdmin):
     list_editable = []
     search_fields = ['capture__id', 'family__id', 'zone__id']
     ordering = ['-capture_id', 'family__index']
-    list_filter = ['family', 'zone', 'trigger', 'capture__status', ('score', admin.EmptyFieldListFilter)]
+    list_filter = ['capture__date', 'capture__status', 'family', 'zone', 'trigger',
+                   ('score', admin.EmptyFieldListFilter)]
     list_display_links = ['id']
     change_links = ['capture']
     list_per_page = 10

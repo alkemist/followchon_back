@@ -1,6 +1,7 @@
 import os
 import pathlib
 import shutil
+from datetime import datetime
 from typing import cast
 
 import cv2
@@ -48,9 +49,9 @@ class Capture(models.Model):
     def detections_ids(self):
         return self.detections
 
-    def write(self, frame: cv2.typing.MatLike, annotations: list[Annotation]):
+    def write(self, frame: cv2.typing.MatLike, date: datetime, annotations: list[Annotation]):
         self.status = Capture.Statuses.DRAFT
-        self.date = timezone.now()
+        self.date = date
         self.photo_file = f"{self.date.strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg"
 
         photo_dir = f"{self.file_dir(None, True)}{self.images_dir}"

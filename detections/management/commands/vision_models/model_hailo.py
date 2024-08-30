@@ -1,12 +1,9 @@
-import time
-
 import PIL.Image
 import cv2
 import numpy as np
 from PIL import Image
 from loguru import logger
 
-from detections.management.commands.vision_models.capture_analyse import Capture_analyse
 from detections.management.commands.vision_models.hailo_inference_async import HailoAsyncInference
 from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.result_yolo import Result_yolo
@@ -72,13 +69,17 @@ class Model_Hailo(Model):
             padded_image.resize((self.width, self.height)),
         )
 
-    def infer(self, frame: cv2.typing.MatLike):
+    def infer(self, frame: cv2.typing.MatLike, frame_count, datestr):
+        saved = False
         image_pil = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image_pil = Image.fromarray(image_pil)
 
         (padding, padded_size, processed_image) = self.preprocess(image_pil)
 
         (height_resized, width_resized) = processed_image.size
+
+        if self.model is None:
+            self.check_model()
 
         raw_detections = self.model.run(np.array(processed_image))
 
@@ -117,25 +118,12 @@ class Model_Hailo(Model):
 
                             yolo_results.append(yolo_result)
 
-                if len(yolo_results) > 0:
-                    save_time_elapsed = time.time() - self.save_time
-
-                    analyse = Capture_analyse(
-                        frame,
-                        self.last_detections_dict, self.families_dict, self.zones
-                    )
-
-                    frame = analyse.detect(yolo_results)
-
-                    if analyse.is_triggered and save_time_elapsed > 1:
-                        analyse.save()
-                        self.save_time = time.time()
-
+                (frame, saved) = self.analyze(frame, frame_count, datestr, yolo_results)
         else:
             # No traitement
             logger.info(f"Queue empty")
 
-        return ImageHelper.resize_with_ratio(frame, self.capture_width, None)
+        return ImageHelper.resize_with_ratio(frame, self.capture_width, None), saved
 
     def release(self):
         if self.model is not None:
