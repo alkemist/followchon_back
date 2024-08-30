@@ -1,6 +1,5 @@
 import os
 import subprocess
-import threading
 import time
 from datetime import datetime
 
@@ -166,12 +165,15 @@ class Streamer:
                         f"temp={self.temp}° "
                     )
 
-                    self.stop_recording()
-                    self.begin_recording()
+                    # self.stop_recording()
+                    # self.begin_recording()
 
                 self.model.release()
 
-                threading.Event().wait(self.model.pause_minutes * 60)
+                time.sleep(self.model.pause_minutes * 60)
+                # threading.Event().wait(self.model.pause_minutes * 60)
+
+                self.last_capture_seconds = time.time()
 
                 if self.is_hour_ok():
                     records_count = len(FileHelper.list_files(self.records_directory, r'.*\.(mkv)$'))
