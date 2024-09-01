@@ -87,6 +87,17 @@ def build():
     print(f'Model hef saved in {model_hef}')
 
 
+def commit():
+    for path in execute(('git', 'add', model_pt, model_onnx, model_hef)):
+        print(path, end="")
+
+    for path in execute(('git', 'commit', '-m', os.getenv('TRAIN_DATASET_NAME'))):
+        print(path, end="")
+
+    for path in execute(('git', 'push')):
+        print(path, end="")
+
+
 if __name__ == '__main__':
     if torch.cuda.is_available():
         print(":D GPU is available")
@@ -95,8 +106,9 @@ if __name__ == '__main__':
 
     print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    train()
-    export()
-    build()
+    # train()
+    # export()
+    # build()
+    commit()
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
