@@ -1,8 +1,11 @@
 import os
+import statistics
 import subprocess
 import time
 from datetime import datetime
+from math import floor
 from pathlib import Path
+from time import sleep
 
 import cv2
 from loguru import logger
@@ -36,6 +39,11 @@ class Streamer:
         self.model = model
 
         self.vcgm = Vcgencmd()
+        self.temp = 0
+        self.temps: dict[str, float] = {}
+
+        self.delay_start = 0
+        self.delays = []
 
         self.params_dict: dict[int, Parameter] = {}
 
@@ -53,10 +61,14 @@ class Streamer:
 
         Log().create(self.model.current_model_version, 'vision', level, event, info, temp)
 
+    def secondsToMMSS(self, seconds: float):
+        minutes, seconds = divmod(round(seconds), 60)
+        return '%d:%02d' % (minutes, seconds)
+
     def begin_recording(self, records_count=None) -> object | None:
         if records_count is not None:
-            info = f"records={records_count}/{self.model.max_records} "
-            f"hour={datetime.now().hour}h/{self.model.min_hour}h-{self.model.max_hour}h "
+            info = (f"records={records_count}/{self.model.max_records} " +
+                    f"hour={datetime.now().hour}h/{self.model.min_hour}h-{self.model.max_hour}h ")
 
             self.log(
                 'Start recording',
@@ -84,6 +96,17 @@ class Streamer:
                                 stdout=subprocess.PIPE,
                                 universal_newlines=True)
 
+    def add_temperature(self, force=False):
+        hour = datetime.now().hour
+        minute = floor(datetime.now().minute / 10)
+
+        key = f"{hour}:{minute}"
+
+        self.temp = self.vcgm.measure_temp()
+
+        if force or key not in self.temps:
+            self.temps[key] = round(self.temp, 1)
+
     def is_hour_ok(self):
         return self.model.min_hour <= datetime.now().hour <= self.model.max_hour
 
@@ -102,6 +125,9 @@ class Streamer:
         records_count = 0
 
         while not self.stop:
+
+            self.add_temperature()
+
             records = FileHelper.list_files(self.records_directory, r'.*\.(mkv)$')
             records_count = len(records)
 
@@ -111,7 +137,8 @@ class Streamer:
                     f"records={records_count}/{self.model.max_records} "
                     f"frame_seconds={self.model.frame_seconds}s "
                     f"fps={self.model.fps} "
-                    f"pause={self.model.pause_minutes}m ",
+                    f"pause_capture={self.model.pause_capture_seconds}s "
+                    f"pause_records={self.model.pause_records_minutes}m "
                     "warning"
                 )
 
@@ -133,11 +160,13 @@ class Streamer:
                 last_record = records[0]
                 camera_record_filename = f"{self.records_directory}/{last_record}"
 
+                self.delay_start = time.time()
                 self.capture(camera_record_filename)
 
                 self.last_capture_seconds = time.time()
 
                 if not self.stop and os.path.isfile(camera_record_filename):
+                    self.delays.append(round(time.time() - self.delay_start))
                     os.remove(camera_record_filename)
 
             elif not self.model.loop_enabled and records_count <= 1:
@@ -152,26 +181,61 @@ class Streamer:
             if (self.model.loop_enabled and (
                     records_count <= self.min_records_capture or self.vcgm.measure_temp() > self.model.max_temp
             ) and self.is_recording and not datetime.now().hour >= self.model.max_hour):
+                logger.info(
+                    'Sleeping : '
+                    f"records={records_count}/{self.model.max_records} "
+                    f"frame_seconds={self.model.frame_seconds}s "
+                    f"fps={self.model.fps} "
+                    f"pause_capture={self.model.pause_capture_seconds}s "
+                    f"pause_records={self.model.pause_records_minutes}m "
+                    f"recording={self.is_recording} "
+                    f"temp={self.vcgm.measure_temp()}° "
+                    f"time_ave={self.secondsToMMSS(statistics.fmean(self.delays))} "
+                )
 
+                self.add_temperature(True)
                 self.model.release()
 
-                time.sleep(self.model.pause_minutes * 60)
+                sleep(self.model.pause_records_minutes * 60)
 
+                self.add_temperature(True)
                 self.last_capture_seconds = time.time()
                 records_count = self.get_records_count()
 
-                if self.is_recording_ok() and records_count < self.min_records_recording:
+                logger.info(
+                    'Awakened : '
+                    f"records={records_count}/{self.model.max_records} "
+                    f"frame_seconds={self.model.frame_seconds}s "
+                    f"fps={self.model.fps} "
+                    f"pause_capture={self.model.pause_capture_seconds}s "
+                    f"pause_records={self.model.pause_records_minutes}m "
+                    f"recording={self.is_recording} "
+                    f"temp={self.vcgm.measure_temp()}° "
+                )
+
+                if self.is_recording_ok(records_count) and records_count < self.model.pause_records_minutes:
                     self.log(
                         'Restart recording',
                         f"records={records_count}/{self.model.max_records} "
                         f"frame_seconds={self.model.frame_seconds}s "
                         f"fps={self.model.fps} "
-                        f"pause={self.model.pause_minutes}m "
+                        f"pause_capture={self.model.pause_capture_seconds}s "
+                        f"pause_records={self.model.pause_records_minutes}m "
                         f"recording={self.is_recording} "
+                        f"time_ave={self.secondsToMMSS(statistics.fmean(self.delays))} "
                         ,
                         'warning'
                     )
                     self.begin_recording()
+
+            if not self.is_recording and datetime.now().hour < self.model.min_hour:
+                logger.info(
+                    'Waiting : '
+                    f"records={records_count}/{self.model.max_records} "
+                    f"recording={self.is_recording} "
+                    f"temp={self.vcgm.measure_temp()}° "
+                )
+                sleep(self.model.pause_records_minutes * 60)
 
             if self.model.stop or datetime.now().hour > self.model.max_hour:
                 self.log(
@@ -180,6 +244,29 @@ class Streamer:
                     f"stop={self.model.stop} "
                     f"hour={datetime.now().hour}h/{self.model.min_hour}h-{self.model.max_hour}h "
                 )
+
+                if len(self.delays) > 0:
+                    self.log(
+                        'Processing',
+                        f"pause_capture={self.model.pause_capture_seconds}s "
+                        f"frame_seconds={self.model.frame_seconds}s "
+                        f"fps={self.model.fps} "
+                        f"time_ave={self.secondsToMMSS(statistics.fmean(self.delays))} "
+                        f"time_med={self.secondsToMMSS(statistics.median(self.delays))} "
+                        f"time_min={self.secondsToMMSS(min(self.delays))} "
+                        f"time_max={self.secondsToMMSS(max(self.delays))} "
+                    )
+
+                if len(self.temps.values()) > 0:
+                    self.log(
+                        'Temperature',
+                        f"pause_records={self.model.pause_records_minutes}m "
+                        f"temp_ave={round(statistics.fmean(self.temps.values()), 2)}° "
+                        f"temp_med={statistics.median(self.temps.values())}° "
+                        f"temp_min={min(self.temps.values())}° "
+                        f"temp_max={max(self.temps.values())}° "
+                    )
+
                 self.stop = True
             else:
                 self.model.check_model()
@@ -197,9 +284,11 @@ class Streamer:
         self.model.release()
 
     def capture(self, camera_record_filename: str):
+        self.model.fill_params()
+
         self.last_frame_seconds = 0
         file_date = Path(camera_record_filename).stem
-        frame_count = 0
+        frame_saved_count = 0
 
         cap = cv2.VideoCapture(camera_record_filename)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.capture_width)
@@ -207,17 +296,21 @@ class Streamer:
         cap.set(cv2.CAP_PROP_FPS, self.model.fps)
 
         while cap.isOpened() and not self.stop:
+
             frame_seconds_elapsed = time.time() - self.last_frame_seconds
             ret, frame = cap.read()
 
             if ret:
                 # Si l'appareil n'est pas assez rapide pour analyser toutes les images
                 if frame_seconds_elapsed > self.model.frame_seconds:
-                    saved = self.infer(frame, frame_count, file_date)
+                    saved = self.infer(frame, frame_saved_count, file_date)
                     self.last_frame_seconds = time.time()
 
                     if saved:
-                        frame_count = frame_count + 1
+                        frame_saved_count = frame_saved_count + 1
+
+                    if self.model.pause_capture_seconds:
+                        sleep(self.model.pause_capture_seconds)
             else:
                 break
 
@@ -231,7 +324,6 @@ class Streamer:
             datestr
         )
 
-        self.model.fill_params()
         self.stop = self.model.stop
 
         self.last_frame_seconds = time.time()

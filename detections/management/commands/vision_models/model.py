@@ -23,7 +23,8 @@ class Model:
         self.max_records = 0
         self.max_temp = 0
         self.alert_temp = 0
-        self.pause_minutes = 0
+        self.pause_records_minutes = 0
+        self.pause_capture_seconds = 0
         self.frame_seconds = 0
         self.fps = 0
         self.stop = False
@@ -79,7 +80,8 @@ class Model:
         self.min_hour = int(self.get_param('vision_hour_min'))
         self.max_hour = int(self.get_param('vision_hour_max'))
         self.max_records = int(self.get_param('vision_records_max'))
-        self.pause_minutes = int(self.get_param('vision_pause_minutes'))
+        self.pause_records_minutes = int(self.get_param('vision_pause_records_minutes'))
+        self.pause_capture_seconds = float(self.get_param('vision_pause_capture_seconds'))
         self.max_temp = int(self.get_param('vision_temp_max'))
         self.alert_temp = int(self.get_param('vision_temp_alert'))
         self.frame_seconds = float(self.get_param('vision_frame_seconds'))  # 0.03 < > 0.02
