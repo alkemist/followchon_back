@@ -9,6 +9,7 @@ from vcgencmd import Vcgencmd
 from configuration.models import Log
 from detections.management.commands.vision_models.model_hailo import Model_Hailo
 from detections.management.commands.vision_models.streamer import Streamer
+from detections.management.commands.vision_models.supervisor import Supervisor
 
 
 class Command(BaseCommand):
@@ -21,11 +22,12 @@ class Command(BaseCommand):
                    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
                    rotation="1 day", retention=7)
 
+        supervisor = Supervisor()
         model = None
         streamer = None
 
         try:
-            model = Model_Hailo()
+            model = Model_Hailo(supervisor)
 
             streamer = Streamer(model)
             streamer.start()
@@ -38,7 +40,7 @@ class Command(BaseCommand):
 
             ex_type, ex_value, ex_traceback = sys.exc_info()
             Log().create(
-                model.current_model_version,
+                supervisor.current_model_version,
                 'vision',
                 'error',
                 type(error).__name__,

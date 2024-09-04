@@ -6,29 +6,27 @@ from ultralytics import YOLO
 
 from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.result_yolo import Result_yolo
+from detections.management.commands.vision_models.supervisor import Supervisor
 from helpers.image import ImageHelper
 
 
 class Model_YOLO(Model):
 
-    def __init__(self):
-        super().__init__()
-
-        self.check_model()
+    def __init__(self, supervisor: Supervisor):
+        super().__init__(supervisor)
 
     def check_model(self):
         super().fill_objects()
-        super().fill_params()
+        self.supervisor.fill_params()
 
-        if self.model is None or not self.current_model_version != self.model_version:
-            self.current_model_version = self.model_version
+        if self.model is None or not self.supervisor.current_model_version != self.supervisor.model_version:
+            self.supervisor.current_model_version = self.supervisor.model_version
 
-            logger.info(f'Load model version "{self.current_model_version}"')
+            logger.info(f'Load model version "{self.supervisor.current_model_version}"')
 
-            self.model = YOLO(self.model_path)
+            self.model = YOLO(self.supervisor.model_path)
 
     def infer(self, frame: cv2.typing.MatLike, frame_count, datestr):
-        saved = False
         results = self.model(frame, stream=True, verbose=False)
 
         (width, height) = frame.shape[1::-1]
@@ -40,7 +38,7 @@ class Model_YOLO(Model):
                 cls = int(box.cls[0])
                 score = math.ceil((box.conf[0] * 100)) / 100
 
-                if score >= self.min_score:
+                if score >= self.supervisor.score_min:
                     yolo_result = Result_yolo(
                         cls,
                         score,

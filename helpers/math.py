@@ -1,4 +1,4 @@
-class Math:
+class MathHelper:
 
     @staticmethod
     def is_point_in_rectangle(px, py, rect):
@@ -22,7 +22,7 @@ class Math:
     @staticmethod
     def are_points_inside_rectangle(points, rect):
         for (px, py) in points:
-            if not Math.is_point_in_rectangle(px, py, rect):
+            if not MathHelper.is_point_in_rectangle(px, py, rect):
                 return False
         return True
 

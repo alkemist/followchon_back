@@ -7,32 +7,31 @@ from loguru import logger
 from detections.management.commands.vision_models.hailo_inference_async import HailoAsyncInference
 from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.result_yolo import Result_yolo
+from detections.management.commands.vision_models.supervisor import Supervisor
 from helpers.image import ImageHelper
 
 
 class Model_Hailo(Model):
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, supervisor: Supervisor):
+        super().__init__(supervisor)
 
         self.height = None
         self.width = None
 
-        self.check_model()
-
     def check_model(self):
         super().fill_objects()
-        super().fill_params()
+        self.supervisor.fill_params()
 
-        if self.model is None or self.current_model_version != self.model_version:
+        if self.model is None or self.supervisor.current_model_version != self.supervisor.model_version:
             if self.model is not None:
                 self.release()
 
-            self.current_model_version = self.model_version
+            self.supervisor.current_model_version = self.supervisor.model_version
 
-            logger.info(f'Load model version "{self.current_model_version}"')
+            logger.info(f'Load model version "{self.supervisor.current_model_version}"')
 
-            self.model = HailoAsyncInference(super().get_model_path())
+            self.model = HailoAsyncInference(self.supervisor.get_model_path())
             self.height, self.width, _ = self.model.get_input_shape()
 
     def preprocess(self, image: PIL.Image.Image):
@@ -41,8 +40,6 @@ class Model_Hailo(Model):
 
         Args:
             image (PIL.Image.Image): Input image.
-            model_w (int): Model input width.
-            model_h (int): Model input height.
 
         Returns:
             PIL.Image.Image: Preprocessed and padded image.
@@ -99,7 +96,7 @@ class Model_Hailo(Model):
                     for det in detection:
                         bbox, score = det[:4], det[4]
 
-                        if score >= self.min_score:
+                        if score >= self.supervisor.score_min:
                             yolo_result = Result_yolo(
                                 i,
                                 float(score),

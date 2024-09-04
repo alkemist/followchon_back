@@ -2,34 +2,19 @@ import os
 import time
 
 import cv2
-from loguru import logger
 
-from configuration.models import Family, Zone, Parameter
+from configuration.models import Family, Zone
 from detections.management.commands.vision_models.capture_analyse import Capture_analyse
+from detections.management.commands.vision_models.supervisor import Supervisor
 from detections.models import Detection
 from helpers.array import ArrayHelper
 
 
 class Model:
 
-    def __init__(self):
+    def __init__(self, supervisor: Supervisor):
+        self.supervisor = supervisor
         self.model = None
-        self.current_model_version = ''
-        self.model_version = ''
-        self.model_path = ''
-        self.min_score = 0
-        self.min_hour = 0
-        self.max_hour = 0
-        self.max_records = 0
-        self.max_temp = 0
-        self.alert_temp = 0
-        self.pause_records_minutes = 0
-        self.pause_capture_seconds = 0
-        self.frame_seconds = 0
-        self.fps = 0
-        self.stop = False
-        self.loop_enabled = False
-        self.params_dict = {}
 
         self.save_time = 0
         self.capture_width = int(os.getenv('CAPTURE_WIDTH'))
@@ -39,22 +24,7 @@ class Model:
         self.families_dict = {}
         self.last_detections_dict = {}
 
-    def get_params(self):
-        parameters = Parameter.objects.all()
-        self.params_dict: dict[int, Parameter] = (
-            ArrayHelper.object_list_to_dict(parameters, 'slug')
-        )
-
-    def get_param(self, param):
-        if param in self.params_dict:
-            return self.params_dict[param].value
-
-        logger.error(f'Param "{param}" not exist')
-        return None
-
-    def fill_objects(self):
         self.families = Family.objects.all()
-        self.zones = Zone.objects.all()
         self.families_dict = ArrayHelper.object_list_to_dict(self.families, 'index')
 
         last_detections = Detection.objects.raw(
@@ -72,22 +42,8 @@ class Model:
         self.last_detections_dict: dict[int, Zone] = (
             dict(map(lambda kv: (kv[0], kv[1].zone), last_detections_dict.items())))
 
-    def fill_params(self):
-        self.get_params()
-
-        self.model_version = int(self.get_param('vision_model_version'))
-        self.min_score = float(self.get_param('vision_score_min'))
-        self.min_hour = int(self.get_param('vision_hour_min'))
-        self.max_hour = int(self.get_param('vision_hour_max'))
-        self.max_records = int(self.get_param('vision_records_max'))
-        self.pause_records_minutes = int(self.get_param('vision_pause_records_minutes'))
-        self.pause_capture_seconds = float(self.get_param('vision_pause_capture_seconds'))
-        self.max_temp = int(self.get_param('vision_temp_max'))
-        self.alert_temp = int(self.get_param('vision_temp_alert'))
-        self.frame_seconds = float(self.get_param('vision_frame_seconds'))  # 0.03 < > 0.02
-        self.fps = int(self.get_param('vision_fps'))
-        self.loop_enabled = self.get_param('vision_loop_enabled') == '1'
-        self.stop = self.get_param('vision_stop') == '1'
+    def fill_objects(self):
+        self.zones = Zone.objects.all()
 
     def analyze(self, frame, frame_count, datestr, yolo_results):
         saved = False
@@ -108,10 +64,6 @@ class Model:
                 saved = True
 
         return frame, saved
-
-    def get_model_path(self):
-        return (f"{os.getenv('MODEL_DIR')}/"
-                f"{os.getenv('MODEL_PREFIX')}{self.current_model_version}.{os.getenv('MODEL_EXT')}")
 
     def infer(self, frame_count, frame: cv2.typing.MatLike, datestr):
         raise Exception('Infer not implemented')
