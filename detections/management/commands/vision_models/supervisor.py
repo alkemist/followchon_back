@@ -30,7 +30,6 @@ class Supervisor:
         self.pause_capture_seconds = 0
         self.temp_pause = 0
         self.frame_seconds = 0
-        self.fps = 0
         self.enabled = True
         self.params_dict = {}
 
@@ -126,7 +125,6 @@ class Supervisor:
         self.temp_alert = int(self.get_param('vision_temp_alert'))
         self.temp_pause = int(self.get_param('vision_temp_pause_minutes'))
         self.frame_seconds = float(self.get_param('vision_frame_seconds'))  # 0.03 < > 0.02
-        self.fps = int(self.get_param('vision_fps'))
         self.enabled = self.get_param('vision_enabled') == '1'
 
         self.detection_near_margin_norm = float(self.get_param('vision_detection_near_margin_norm'))
@@ -161,7 +159,6 @@ class Supervisor:
 
     def get_log_fps(self):
         return (f"frame_seconds={self.frame_seconds}s "
-                + f"fps={self.fps} "
                 + f"pause_capture={self.pause_capture_seconds}s "
                 + self.get_log_pause_records())
 

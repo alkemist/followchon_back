@@ -19,9 +19,6 @@ class Streamer:
 
         self.show_stream = os.getenv('SHOW_STREAM') == 'True'
 
-        self.capture_width = 1024
-        self.capture_height = 768
-
         self.model = model
 
     def begin_recording(self, log: bool = False) -> object | None:
@@ -167,9 +164,6 @@ class Streamer:
         analyse_count = 0
 
         cap = cv2.VideoCapture(camera_record_filename)
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.capture_width)
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.capture_height)
-        cap.set(cv2.CAP_PROP_FPS, self.supervisor.fps)
 
         while cap.isOpened() and self.supervisor.enabled:
 
