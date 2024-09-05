@@ -48,6 +48,11 @@ class Streamer:
                                 stdout=subprocess.PIPE,
                                 universal_newlines=True)
 
+    def long_sleep(self, time_minutes):
+        self.model.release()
+        time.sleep(time_minutes * 60)
+        self.supervisor.last_capture_seconds = time.time()
+
     def start(self):
         self.model.check_model()
         self.supervisor.log_start()
@@ -101,20 +106,27 @@ class Streamer:
                     and self.supervisor.is_recording
                     and datetime.now().hour < self.supervisor.hour_max
             ):
-                self.supervisor.log_sleeping()
+                records_count_before = self.supervisor.records_count
 
-                self.supervisor.add_temperature(True)
+                # self.supervisor.log_sleeping()
+                # self.supervisor.add_temperature(True)
 
-                self.model.release()
-                self.supervisor.long_sleep(self.supervisor.pause_records_minutes)
+                self.long_sleep(self.supervisor.pause_records_minutes)
 
-                self.supervisor.add_temperature(True)
-                self.supervisor.records_count = self.supervisor.get_records_count()
+                # self.supervisor.add_temperature(True)
+                self.supervisor.get_records_count()
 
-                self.supervisor.log_awakened()
+                # self.supervisor.log_awakened()
+
+                capture_minutes = self.supervisor.record_time / 60
+                capture_count_new = (self.supervisor.pause_records_minutes / capture_minutes)
+                capture_count_margin = capture_count_new / 10 \
+                    if self.supervisor.pause_records_minutes > 10 \
+                    else 1 if self.supervisor.pause_records_minutes > 1 else 0
 
                 if (self.supervisor.is_recording_ok()
-                        and self.supervisor.records_count < self.supervisor.pause_records_minutes
+                        and self.supervisor.records_count <
+                        records_count_before + capture_count_new - capture_count_margin
                 ):
                     self.supervisor.log_restart_recording()
                     self.begin_recording()
@@ -123,16 +135,14 @@ class Streamer:
                 self.supervisor.log_warning_temperature()
                 self.supervisor.add_temperature(True)
 
-                self.model.release()
-                self.supervisor.long_sleep(self.supervisor.temp_pause)
+                self.long_sleep(self.supervisor.temp_pause)
 
                 self.supervisor.add_temperature(True)
 
             if not self.supervisor.is_recording and datetime.now().hour < self.supervisor.hour_min:
-                self.supervisor.log_waiting()
+                # self.supervisor.log_waiting()
 
-                self.model.release()
-                self.supervisor.long_sleep(self.supervisor.pause_records_minutes)
+                self.long_sleep(60)
 
             if datetime.now().hour > self.supervisor.hour_max and self.supervisor.records_count == 0:
                 self.supervisor.enabled = False
@@ -142,6 +152,7 @@ class Streamer:
 
         self.supervisor.log_stopped()
         self.supervisor.log_stat_processing()
+        self.supervisor.log_stat_fpm()
         self.supervisor.log_stat_temperature()
 
         self.stop_recording()
@@ -153,6 +164,7 @@ class Streamer:
         self.supervisor.last_frame_seconds = 0
         file_date = Path(camera_record_filename).stem
         frame_saved_count = 0
+        analyse_count = 0
 
         cap = cv2.VideoCapture(camera_record_filename)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.capture_width)
@@ -170,6 +182,7 @@ class Streamer:
                     saved = self.infer(frame, frame_saved_count, file_date)
                     self.supervisor.last_frame_seconds = time.time()
 
+                    analyse_count = analyse_count + 1
                     if saved:
                         frame_saved_count = frame_saved_count + 1
 
@@ -180,6 +193,9 @@ class Streamer:
 
             if self.show_stream and cv2.waitKey(1) == ord('q'):
                 self.supervisor.enabled = False
+
+        if self.supervisor.enabled:
+            self.supervisor.analyses_by_record.append(analyse_count)
 
     def infer(self, frame: cv2.typing.MatLike, frame_count, datestr):
         (frame, saved) = self.model.infer(

@@ -67,10 +67,10 @@ class Capture(models.Model):
             detection = Detection()
             detection.capture = self
 
-            detection.center_x = annotation.yolo_points['x_center']
-            detection.center_y = annotation.yolo_points['y_center']
-            detection.width = annotation.yolo_points['width']
-            detection.height = annotation.yolo_points['height']
+            detection.center_x = annotation.norm_x_center
+            detection.center_y = annotation.norm_y_center
+            detection.width = annotation.norm_width
+            detection.height = annotation.norm_height
             detection.score = annotation.score
             detection.zone = annotation.zone
             detection.trigger = annotation.trigger

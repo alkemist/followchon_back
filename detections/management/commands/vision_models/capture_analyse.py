@@ -7,15 +7,21 @@ import cv2
 
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.annotation import Annotation
+from detections.management.commands.vision_models.supervisor import Supervisor
 from detections.models import Capture, Detection
 from helpers.array import ArrayHelper
 
 
 class Capture_analyse:
 
-    def __init__(self, frame: cv2.typing.MatLike, datestr, frame_count, last_detections_dict: dict[int, Zone],
-                 families_dict: dict[int, Family], zones: list[Zone]):
+    def __init__(self,
+                 frame: cv2.typing.MatLike, datestr, frame_count,
+                 last_detections_dict: dict[int, (float, float)],
+                 families_dict: dict[int, Family], zones: list[Zone],
+                 supervisor: Supervisor
+                 ):
         self.frame = frame
+        self.supervisor = supervisor
 
         date_values = re.split('[-_]', datestr)
         self.date_capture = datetime(
@@ -59,7 +65,11 @@ class Capture_analyse:
         annotations = list()
 
         for result in results:
-            annotation = Annotation(result, self.families_dict, self.zones)
+            annotation = Annotation(
+                result,
+                self.families_dict, self.zones,
+                self.supervisor
+            )
 
             annotations.append(annotation)
 
@@ -110,15 +120,13 @@ class Capture_analyse:
         if annotation.family.is_tracked:
             first_detection = annotation.family.id not in self.last_detections_dict
             last_detection = self.last_detections_dict.get(annotation.family.id, None)
+            coords = (annotation.norm_x_center, annotation.norm_y_center)
 
             if (
                     first_detection
-                    or annotation.zone is None and last_detection is not None
-                    or annotation.zone is not None and last_detection is None
-                    or annotation.zone is not None and last_detection is not None
-                    and last_detection.slug != annotation.zone.slug
+                    or last_detection is not None and annotation.is_move(last_detection)
             ):
-                self.last_detections_dict[annotation.family.id] = annotation.zone
+                self.last_detections_dict[annotation.family.id] = coords
                 annotation.trigger = Detection.Triggers.MOVE
                 return True
 

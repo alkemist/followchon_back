@@ -27,9 +27,10 @@ class Model_Hailo(Model):
             if self.model is not None:
                 self.release()
 
-            self.supervisor.current_model_version = self.supervisor.model_version
+            if self.supervisor.current_model_version != self.supervisor.model_version:
+                logger.info(f'Load model version "{self.supervisor.model_version}"')
 
-            logger.info(f'Load model version "{self.supervisor.current_model_version}"')
+            self.supervisor.current_model_version = self.supervisor.model_version
 
             self.model = HailoAsyncInference(self.supervisor.get_model_path())
             self.height, self.width, _ = self.model.get_input_shape()
@@ -127,4 +128,4 @@ class Model_Hailo(Model):
             self.model.release_device()
             self.model = None
 
-            logger.info("Model device released")
+            # logger.info("Model device released")

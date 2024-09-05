@@ -34,6 +34,9 @@ class Supervisor:
         self.enabled = True
         self.params_dict = {}
 
+        self.detection_near_margin_norm = 1
+        self.detection_move_margin_norm = 1
+
         self.records_count = 0
         self.record_time = 60
         self.record_time_delay = 50
@@ -49,6 +52,8 @@ class Supervisor:
 
         self.delay_start = 0
         self.delays = []
+
+        self.analyses_by_record = []
 
     def get_model_path(self):
         return (f"{os.getenv('MODEL_DIR')}/"
@@ -124,11 +129,10 @@ class Supervisor:
         self.fps = int(self.get_param('vision_fps'))
         self.enabled = self.get_param('vision_enabled') == '1'
 
-        self.temp = self.vcgm.measure_temp()
+        self.detection_near_margin_norm = float(self.get_param('vision_detection_near_margin_norm'))
+        self.detection_move_margin_norm = float(self.get_param('vision_detection_move_margin_norm'))
 
-    def long_sleep(self, time_minutes):
-        time.sleep(time_minutes * 60)
-        self.last_capture_seconds = time.time()
+        self.temp = self.vcgm.measure_temp()
 
     def local_log(self, event: str, info: str, level: str = 'info'):
         message = f"{event} : {info} temp={self.temp}°"
@@ -166,6 +170,10 @@ class Supervisor:
 
     def get_log_temp_ave(self):
         return f"temp_ave={round(statistics.fmean(self.temps.values()), 2)}° " if len(self.temps.values()) > 0 else ""
+
+    def get_log_fpm_ave(self):
+        return f"fpm_ave={round(statistics.fmean(self.analyses_by_record))} " if len(
+            self.analyses_by_record) > 0 else ""
 
     def get_log_enabled(self):
         return f"enabled={self.enabled} "
@@ -224,8 +232,8 @@ class Supervisor:
         self.log(
             'Restart recording',
             self.get_log_records()
+            + self.get_log_pause_records()
             + self.get_log_delay(capture_time_elapsed)
-            + self.get_log_fps()
             + self.get_log_time_ave()
             , 'warning'
         )
@@ -257,6 +265,17 @@ class Supervisor:
                 , 'statistic'
             )
 
+    def log_stat_fpm(self):
+        if len(self.analyses_by_record) > 0:
+            self.log(
+                'Analyses',
+                self.get_log_fpm_ave() +
+                f"fpm_med={statistics.median(self.analyses_by_record)} "
+                f"fpm_min={min(self.analyses_by_record)} "
+                f"fpm_max={max(self.analyses_by_record)} "
+                , 'statistic'
+            )
+
     def log_stat_temperature(self):
         if len(self.temps.values()) > 0:
             self.log(
@@ -269,9 +288,11 @@ class Supervisor:
             )
 
     def log_hourly(self):
-        self.local_log('Hourly',
-                       self.get_log_records()
-                       + self.get_log_fps()
-                       + self.get_log_time_ave()
-                       + self.get_log_temp_ave()
-                       )
+        self.log('Hourly',
+                 self.get_log_records()
+                 + self.get_log_fps()
+                 + self.get_log_time_ave()
+                 + self.get_log_fpm_ave()
+                 + self.get_log_temp_ave()
+                 , 'statistic'
+                 )

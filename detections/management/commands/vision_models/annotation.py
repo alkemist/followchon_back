@@ -3,12 +3,18 @@ from typing_extensions import Self
 
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.result_yolo import Result_yolo
+from detections.management.commands.vision_models.supervisor import Supervisor
 from helpers.image import ImageHelper
 
 
 class Annotation:
 
-    def __init__(self, result: Result_yolo, families_dict: dict[int, Family], zones: list[Zone]):
+    def __init__(self,
+                 result: Result_yolo,
+                 families_dict: dict[int, Family],
+                 zones: list[Zone],
+                 supervisor: Supervisor
+                 ):
 
         self.score = result.score
         self.family = families_dict[result.cls]
@@ -16,18 +22,13 @@ class Annotation:
         self.ortho_point_tl = (result.ortho_tl_x, result.ortho_tl_y)
         self.ortho_point_br = (result.ortho_br_x, result.ortho_br_y)
 
-        self.yolo_points = {
-            'x_center': result.norm_x_center,
-            'y_center': result.norm_y_center,
-            'width': result.norm_width,
-            'height': result.norm_height,
-        }
+        self.norm_x_center = result.norm_x_center
+        self.norm_y_center = result.norm_y_center
+        self.norm_width = result.norm_width
+        self.norm_height = result.norm_height
 
         self.zone: Zone | None = None
         self.trigger: str | None = None
-
-        # ortho_x_center = result.ortho_tl_x + (result.ortho_br_x - result.ortho_tl_x / 2)
-        # ortho_y_center = result.ortho_tl_y + (result.ortho_br_y - result.ortho_tl_y / 2)
 
         if self.family.is_zoned:
             for zone in zones:
@@ -41,13 +42,16 @@ class Annotation:
 
         self.parent: Annotation | None = None
         self.nears: list[Annotation] = list()
-        self.tolerance_margin = (result.ref_width / 20, result.ref_height / 20)
+        self.near_tolerance_margin_norm = supervisor.detection_near_margin_norm
+        self.move_tolerance_margin_norm = supervisor.detection_move_margin_norm
 
     def is_near(self, annotation: Self):
-        return abs(self.ortho_point_tl[0] - annotation.ortho_point_tl[0]) < self.tolerance_margin[0] and \
-            abs(self.ortho_point_tl[1] - annotation.ortho_point_tl[1]) < self.tolerance_margin[1] and \
-            abs(self.ortho_point_br[0] - annotation.ortho_point_br[0]) < self.tolerance_margin[0] and \
-            abs(self.ortho_point_br[1] - annotation.ortho_point_br[1]) < self.tolerance_margin[1]
+        return abs(self.norm_x_center - annotation.norm_x_center) < self.near_tolerance_margin_norm \
+            or abs(self.norm_y_center - annotation.norm_y_center) < self.near_tolerance_margin_norm
+
+    def is_move(self, coords: (float, float)):
+        return abs(self.norm_x_center - coords[0]) > self.move_tolerance_margin_norm \
+            or abs(self.norm_y_center - coords[1]) > self.move_tolerance_margin_norm
 
     def add_parent(self, annotation: Self):
         if self.family.parent is not None and \

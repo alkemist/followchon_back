@@ -28,31 +28,38 @@ class Model:
         self.families_dict = ArrayHelper.object_list_to_dict(self.families, 'index')
 
         last_detections = Detection.objects.raw(
-            'SELECT * FROM' +
-            ' (SELECT * FROM detections_detection d' +
-            ' LEFT JOIN configuration_family f ON d.family_id = f.id' +
-            ' WHERE f.is_tracked = true'
-            ' ORDER BY d.id DESC) d' +
+            'SELECT * FROM (' +
+            '    SELECT * FROM detections_detection d' +
+            '    LEFT JOIN configuration_family f ON d.family_id = f.id' +
+            '    WHERE f.is_tracked = true'
+            '    ORDER BY d.id DESC'
+            ' ) d' +
             ' GROUP BY d.family_id')
 
         last_detections_dict: dict[int, Detection] = (
             ArrayHelper.object_list_to_dict(last_detections, 'family_id')
         )
 
-        self.last_detections_dict: dict[int, Zone] = (
-            dict(map(lambda kv: (kv[0], kv[1].zone), last_detections_dict.items())))
+        self.last_detections_dict: dict[int, (float, float)] = (
+            dict(
+                map(
+                    lambda kv: (kv[0], (kv[1].center_x, kv[1].center_y)),
+                    last_detections_dict.items()
+                )
+            )
+        )
 
     def fill_objects(self):
-        self.zones = Zone.objects.all()
+        self.zones = Zone.objects.all().order_by('id')
 
     def analyze(self, frame, frame_count, datestr, yolo_results):
         saved = False
 
         if len(yolo_results) > 0:
-
             analyse = Capture_analyse(
                 frame, datestr, frame_count,
-                self.last_detections_dict, self.families_dict, self.zones
+                self.last_detections_dict, self.families_dict, self.zones,
+                self.supervisor
             )
 
             frame = analyse.detect(yolo_results)
