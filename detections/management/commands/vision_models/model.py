@@ -49,7 +49,6 @@ class Model:
         saved = False
 
         if len(yolo_results) > 0:
-            save_time_elapsed = time.time() - self.save_time
 
             analyse = Capture_analyse(
                 frame, datestr, frame_count,
@@ -58,7 +57,7 @@ class Model:
 
             frame = analyse.detect(yolo_results)
 
-            if analyse.is_triggered and save_time_elapsed > 1:
+            if analyse.is_triggered:
                 analyse.save()
                 self.save_time = time.time()
                 saved = True
