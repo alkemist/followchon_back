@@ -47,7 +47,7 @@ class Annotation:
 
     def is_near(self, annotation: Self):
         return abs(self.norm_x_center - annotation.norm_x_center) < self.near_tolerance_margin_norm \
-            or abs(self.norm_y_center - annotation.norm_y_center) < self.near_tolerance_margin_norm
+            and abs(self.norm_y_center - annotation.norm_y_center) < self.near_tolerance_margin_norm
 
     def is_move(self, coords: (float, float)):
         return abs(self.norm_x_center - coords[0]) > self.move_tolerance_margin_norm \
