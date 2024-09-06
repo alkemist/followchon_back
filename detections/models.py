@@ -147,7 +147,7 @@ class Capture(models.Model):
         )
 
     def __str__(self):
-        return f"{self.date.strftime('%m/%d %H:%M:%S')}"
+        return f"{self.date.strftime('%d %B %Y %H:%M:%S')}"
 
 
 class Detection(models.Model):

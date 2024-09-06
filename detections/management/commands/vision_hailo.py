@@ -22,7 +22,7 @@ class Command(BaseCommand):
                    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
                    rotation="1 day", retention=7)
 
-        supervisor = Supervisor()
+        supervisor = Supervisor(Vcgencmd())
         model = None
         streamer = None
 

@@ -5,7 +5,6 @@ from datetime import datetime
 from math import floor
 
 from loguru import logger
-from vcgencmd import Vcgencmd
 
 from configuration.models import Parameter, Log
 from helpers.array import ArrayHelper
@@ -15,7 +14,7 @@ from helpers.file import FileHelper
 
 class Supervisor:
 
-    def __init__(self):
+    def __init__(self, vcgencmd=None):
         self.records_directory = './records'
 
         self.current_model_version = 0
@@ -45,7 +44,7 @@ class Supervisor:
         self.last_frame_seconds = 0
         self.last_capture_seconds = time.time()
 
-        self.vcgm = Vcgencmd()
+        self.vcgm = vcgencmd
         self.temp = 0
         self.temps: dict[str, float] = {}
 
@@ -86,7 +85,7 @@ class Supervisor:
 
         key = f"{hour}:{minute}"
 
-        self.temp = self.vcgm.measure_temp()
+        self.temp = self.vcgm.measure_temp() if self.vcgm is not None else 0
 
         if force or key not in self.temps:
             self.temps[key] = round(self.temp, 1)
@@ -130,7 +129,7 @@ class Supervisor:
         self.detection_near_margin_norm = float(self.get_param('vision_detection_near_margin_norm'))
         self.detection_move_margin_norm = float(self.get_param('vision_detection_move_margin_norm'))
 
-        self.temp = self.vcgm.measure_temp()
+        self.temp = self.vcgm.measure_temp() if self.vcgm is not None else 0
 
     def local_log(self, event: str, info: str, level: str = 'info'):
         message = f"{event} : {info} temp={self.temp}°"

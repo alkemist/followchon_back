@@ -175,6 +175,7 @@ REST_FRAMEWORK = {
 ALLOWED_HOSTS = [
     "localhost",
     "192.168.0.24",
+    "192.168.0.25",
     "192.168.0.96",
     "88.137.200.111",
     "beeper.synology.me",
@@ -185,6 +186,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://localhost",
     "https://localhost:4200",
     "https://192.168.0.24",
+    "https://192.168.0.25",
     "https://192.168.0.96",
     "https://192.168.0.96:4200",
     "https://88.137.200.111",
@@ -195,6 +197,7 @@ CORS_ALLOWED_ORIGINS = [
 CSRF_TRUSTED_ORIGINS = [
     "https://localhost",
     "https://192.168.0.24",
+    "https://192.168.0.25",
     "https://192.168.0.96",
     "https://88.137.200.111",
     "https://beeper.synology.me",

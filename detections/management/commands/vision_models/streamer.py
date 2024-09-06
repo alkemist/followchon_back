@@ -58,6 +58,7 @@ class Streamer:
 
         while self.supervisor.enabled:
             self.model.check_model()
+            self.supervisor.fill_params()
             self.supervisor.add_temperature()
 
             records = self.supervisor.get_records()
@@ -79,7 +80,7 @@ class Streamer:
                 self.begin_recording()
 
             if self.supervisor.is_recording and (self.supervisor.records_count >= self.supervisor.records_max
-                                                 or datetime.now().hour == self.supervisor.hour_max):
+                                                 or datetime.now().hour >= self.supervisor.hour_max):
                 self.supervisor.log_stop_recording()
                 self.stop_recording()
 
@@ -138,10 +139,9 @@ class Streamer:
 
             if not self.supervisor.is_recording and datetime.now().hour < self.supervisor.hour_min:
                 # self.supervisor.log_waiting()
-
                 self.long_sleep(60)
 
-            if datetime.now().hour > self.supervisor.hour_max and self.supervisor.records_count == 0:
+            if datetime.now().hour >= self.supervisor.hour_max and self.supervisor.records_count == 0:
                 self.supervisor.enabled = False
 
         if self.show_stream:
@@ -156,8 +156,6 @@ class Streamer:
         self.model.release()
 
     def capture(self, camera_record_filename: str):
-        self.supervisor.fill_params()
-
         self.supervisor.last_frame_seconds = 0
         file_date = Path(camera_record_filename).stem
         frame_saved_count = 0
