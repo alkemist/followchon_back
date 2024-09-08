@@ -20,7 +20,7 @@ Update schema : `.venv/bin/python manage.py makemigrations && .venv/bin/python m
 Create first admin user : `python manage.py createsuperuser`  
 Export
 data :
-`python manage.py dumpdata --format=yaml --exclude=admin --exclude=auth --exclude=sessions --exclude=contenttypes --exclude=detections`  
+`venv/bin/python manage.py dumpdata --format=yaml --exclude=admin --exclude=auth --exclude=authtoken --exclude=sessions --exclude=contenttypes --exclude=detections --exclude=configuration.log --exclude=configuration.zone`  
 Import data : `python manage.py loaddata data.yaml`
 
 # Dev

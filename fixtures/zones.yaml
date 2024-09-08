@@ -3,32 +3,21 @@
   fields:
     slug: clapier
     name: Clapier
-    center_x: 0.44114380899500283
-    center_y: 0.10858165216854834
-    width: 0.1349250416435313
-    height: 0.20729224504904684
+    center_x: 0.4141086186540732
+    center_y: 0.118432608059583
+    width: 0.12691853600944508
+    height: 0.22699415683111612
     is_trigger: false
-    is_ignored: false
+    is_ignored: true
 - model: configuration.zone
   pk: 2
   fields:
     slug: cachette
     name: Cachette
-    center_x: 0.5710716268739588
-    center_y: 0.10167191066691345
-    width: 0.12493059411438098
-    height: 0.19347276204577704
-    is_trigger: false
-    is_ignored: true
-- model: configuration.zone
-  pk: 3
-  fields:
-    slug: foin
-    name: Foin
-    center_x: 0.7245974458634092
-    center_y: 0.12783021778024556
-    width: 0.18212104386451955
-    height: 0.24578937627244127
+    center_x: 0.615112160566706
+    center_y: 0.1671698525453466
+    width: 0.06847697756788673
+    height: 0.1631022468967133
     is_trigger: false
     is_ignored: true
 - model: configuration.zone
@@ -36,31 +25,108 @@
   fields:
     slug: piscine
     name: Piscine
-    center_x: 0.30433656367545264
-    center_y: 0.3069899438583503
-    width: 0.1231425306168904
-    height: 0.2290085754827565
-    is_trigger: true
+    center_x: 0.2691950867368918
+    center_y: 0.32786504229191976
+    width: 0.1357538643066177
+    height: 0.2740875725065448
+    is_trigger: false
     is_ignored: false
 - model: configuration.zone
   pk: 5
   fields:
     slug: fontaine
     name: Fontaine
-    center_x: 0.17036919189950347
-    center_y: 0.723704110315175
-    width: 0.33888404818322526
-    height: 0.539270766129764
-    is_trigger: true
+    center_x: 0.15465187152440504
+    center_y: 0.7776810877980826
+    width: 0.30744940743302834
+    height: 0.4345892287362617
+    is_trigger: false
     is_ignored: false
 - model: configuration.zone
   pk: 6
   fields:
     slug: bas
     name: Bas
-    center_x: 0.6682398667406997
-    center_y: 0.7743846011475107
-    width: 0.649083842309828
-    height: 0.44123635017582835
+    center_x: 0.6531877213695396
+    center_y: 0.8579893849693456
+    width: 0.6900826446280992
+    height: 0.2740267825321585
+    is_trigger: false
+    is_ignored: true
+- model: configuration.zone
+  pk: 9
+  fields:
+    slug: centre-haut
+    name: Centre haut
+    center_x: 0.6239669421487604
+    center_y: 0.3772792863701954
+    width: 0.33766233766233766
+    height: 0.179456906729634
+    is_trigger: false
+    is_ignored: false
+- model: configuration.zone
+  pk: 10
+  fields:
+    slug: centre-bas
+    name: Centre bas
+    center_x: 0.6540731995277449
+    center_y: 0.5917023575895468
+    width: 0.690672963400236
+    height: 0.25568596927852943
+    is_trigger: false
+    is_ignored: false
+- model: configuration.zone
+  pk: 11
+  fields:
+    slug: window
+    name: Fenêtre
+    center_x: 0.8966942148760331
+    center_y: 0.23542728681068603
+    width: 0.20543093270365997
+    height: 0.4589630834690123
+    is_trigger: false
+    is_ignored: false
+- model: configuration.zone
+  pk: 12
+  fields:
+    slug: tunnel
+    name: Tunnel
+    center_x: 0.39669421487603307
+    center_y: 0.3505181686999868
+    width: 0.12042502951593864
+    height: 0.23297914207005116
+    is_trigger: false
+    is_ignored: false
+- model: configuration.zone
+  pk: 13
+  fields:
+    slug: passerelle
+    name: Passerelle
+    center_x: 0.5392561983471075
+    center_y: 0.16949796950966164
+    width: 0.07969303423848895
+    height: 0.17523730248664546
+    is_trigger: false
+    is_ignored: false
+- model: configuration.zone
+  pk: 14
+  fields:
+    slug: loft
+    name: Loft
+    center_x: 0.581759149940968
+    center_y: 0.04257399382917296
+    width: 0.1340023612750887
+    height: 0.08276490752727653
+    is_trigger: false
+    is_ignored: false
+- model: configuration.zone
+  pk: 16
+  fields:
+    slug: foin
+    name: Foin
+    center_x: 0.7213695395513577
+    center_y: 0.14358848222484583
+    width: 0.1416765053128689
+    height: 0.2858257903712449
     is_trigger: false
     is_ignored: false

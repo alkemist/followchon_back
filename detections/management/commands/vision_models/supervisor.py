@@ -4,6 +4,7 @@ import time
 from datetime import datetime
 from math import floor
 
+import psutil
 from loguru import logger
 
 from configuration.models import Parameter, Log
@@ -53,6 +54,8 @@ class Supervisor:
 
         self.analyses_by_record = []
 
+        self.check_disk_free()
+
     def get_model_path(self):
         return (f"{os.getenv('MODEL_DIR')}/"
                 f"{os.getenv('MODEL_PREFIX')}{self.current_model_version}.{os.getenv('MODEL_EXT')}")
@@ -89,6 +92,19 @@ class Supervisor:
 
         if force or key not in self.temps:
             self.temps[key] = round(self.temp, 1)
+
+    def check_disk_free(self):
+        disk_info = psutil.disk_usage(os.getenv('WATCH_DISK'))
+
+        if disk_info.percent >= 80:
+            self.log(
+                'Disk',
+                self.get_log_time_ave() +
+                f"disk_used={FileHelper.convert_size(disk_info.used)} "
+                f"disk_free={FileHelper.convert_size(disk_info.free)} "
+                f"disk_usage={disk_info.percent}% "
+                , 'warning'
+            )
 
     def add_processing_delay(self):
         self.delays.append(
@@ -155,6 +171,10 @@ class Supervisor:
 
     def get_log_pause_records(self):
         return f"pause_records={self.pause_records_minutes}m "
+
+    def get_log_disk_free(self):
+        disk_info = psutil.disk_usage(os.getenv('WATCH_DISK'))
+        return f"disk_usage={disk_info.percent}% "
 
     def get_log_fps(self):
         return (f"frame_seconds={self.frame_seconds}s "
@@ -246,8 +266,8 @@ class Supervisor:
             'Stopped',
             self.get_log_records()
             + self.get_log_fps()
+            + self.get_log_disk_free()
             + self.get_log_hour()
-            + self.get_log_enabled()
         )
 
     def log_stat_processing(self):

@@ -1,0 +1,78 @@
+- model: configuration.parameter
+  pk: 2
+  fields:
+    slug: vision_hour_min
+    name: 'Vision : Heure de début'
+    value: '7'
+- model: configuration.parameter
+  pk: 3
+  fields:
+    slug: vision_hour_max
+    name: 'Vision : Heure de fin'
+    value: '20'
+- model: configuration.parameter
+  pk: 4
+  fields:
+    slug: vision_score_min
+    name: 'Vision : Score minimum'
+    value: '0.7'
+- model: configuration.parameter
+  pk: 5
+  fields:
+    slug: vision_model_version
+    name: 'Vision : Version du model'
+    value: '16'
+- model: configuration.parameter
+  pk: 6
+  fields:
+    slug: vision_enabled
+    name: 'Vision : Stop si 0'
+    value: '1'
+- model: configuration.parameter
+  pk: 7
+  fields:
+    slug: vision_frame_seconds
+    name: 'Vision : Image par nombre de secondes'
+    value: '0.08'
+- model: configuration.parameter
+  pk: 8
+  fields:
+    slug: vision_pause_records_minutes
+    name: 'Vision : Pause quand il a tout traité'
+    value: '2'
+- model: configuration.parameter
+  pk: 9
+  fields:
+    slug: vision_records_max
+    name: 'Vision : Max enreg. avant pause enreg.'
+    value: '10'
+- model: configuration.parameter
+  pk: 11
+  fields:
+    slug: vision_temp_alert
+    name: 'Vision : Seuil de température avant log'
+    value: '70'
+- model: configuration.parameter
+  pk: 14
+  fields:
+    slug: vision_pause_capture_seconds
+    name: 'Vision : Pause après une capture'
+    value: '0.05'
+- model: configuration.parameter
+  pk: 15
+  fields:
+    slug: vision_temp_pause_minutes
+    name: 'Vision : Pause si température trop haute'
+    value: '30'
+- model: configuration.parameter
+  pk: 17
+  fields:
+    slug: vision_detection_near_margin_norm
+    name: 'Vision : Rapport face à la taille de l''image pour rapprochement'
+    value: '0.02'
+- model: configuration.parameter
+  pk: 18
+  fields:
+    slug: vision_detection_move_margin_norm
+    name: 'Vision : Marge normalisé pour detection de déplacement'
+    value: '0.06'

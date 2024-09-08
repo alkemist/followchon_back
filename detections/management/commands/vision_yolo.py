@@ -15,7 +15,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         load_dotenv()
 
-        logger.add(f"{os.getenv('LOG_DIRECTORY')}vision_hailo.log",
+        logger.add(f"{os.getenv('LOG_DIRECTORY')}vision_yolo.log",
                    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
                    rotation="1 day", retention=7)
 

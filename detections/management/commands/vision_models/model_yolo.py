@@ -20,11 +20,12 @@ class Model_YOLO(Model):
         self.supervisor.fill_params()
 
         if self.model is None or not self.supervisor.current_model_version != self.supervisor.model_version:
+            if self.supervisor.current_model_version != self.supervisor.model_version:
+                logger.info(f'Load model version "{self.supervisor.current_model_version}"')
+
             self.supervisor.current_model_version = self.supervisor.model_version
 
-            logger.info(f'Load model version "{self.supervisor.current_model_version}"')
-
-            self.model = YOLO(self.supervisor.model_path)
+            self.model = YOLO(self.supervisor.get_model_path(), task='detect')
 
     def infer(self, frame: cv2.typing.MatLike, frame_count, datestr):
         results = self.model(frame, stream=True, verbose=False)

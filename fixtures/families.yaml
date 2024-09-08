@@ -17,7 +17,7 @@
     name: Noisette
     parent: 1
     is_tracked: true
-    is_trigger: true
+    is_trigger: false
     is_abstract: false
     is_unique: true
     is_zoned: true
@@ -29,7 +29,7 @@
     name: Stitch
     parent: 1
     is_tracked: true
-    is_trigger: true
+    is_trigger: false
     is_abstract: false
     is_unique: true
     is_zoned: true
