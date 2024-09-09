@@ -50,7 +50,7 @@ class Model:
         )
 
     def fill_objects(self):
-        self.zones = Zone.objects.all().order_by('id')
+        self.zones = Zone.objects.all().filter(is_enabled=True).order_by('id')
 
     def analyze(self, frame, frame_count, datestr, yolo_results):
         saved = False

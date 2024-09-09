@@ -35,8 +35,6 @@ class Capture(models.Model):
     images_dir = 'images'
     labels_dir = 'labels'
 
-    zones = Zone.objects.all()
-
     status = models.CharField(null=True, max_length=200, choices=Statuses.choices, default=Statuses.DRAFT)
 
     photo_file = models.CharField(null=True, max_length=200)

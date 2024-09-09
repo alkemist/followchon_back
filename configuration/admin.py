@@ -22,11 +22,11 @@ class FamilyAdmin(admin.ModelAdmin):
 
 @admin.register(Zone)
 class ZoneAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name', 'slug', 'is_trigger', 'is_ignored', 'is_indoor']
+    list_display = ['id', 'name', 'slug', 'is_trigger', 'is_ignored', 'is_indoor', 'is_enabled']
     list_display_links = ['name']
     search_fields = ['slug', 'name']
     ordering = ['id']
-    list_editable = ['is_trigger', 'is_ignored', 'is_indoor']
+    list_editable = ['is_trigger', 'is_ignored', 'is_indoor', 'is_enabled']
 
 
 @admin.register(Parameter)

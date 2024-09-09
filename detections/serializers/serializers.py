@@ -34,7 +34,7 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
         fields = ['id', 'date', 'status', 'detections', 'detections_ids', 'photo_path', 'size']
 
     def update(self, instance, validated_data):
-        zones = Zone.objects.all()
+        zones = Zone.objects.all().filter(is_enabled=True)
         lines = list()
 
         for detection in instance.detections.all():
