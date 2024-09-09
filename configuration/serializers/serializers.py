@@ -15,4 +15,5 @@ class FamilyParentSerializer(serializers.ModelSerializer):
 class ZoneSerializer(serializers.ModelSerializer):
     class Meta:
         model = Zone
-        fields = ['id', 'slug', 'name', 'is_trigger', 'is_ignored', 'center_x', 'center_y', 'width', 'height']
+        fields = ['id', 'slug', 'name', 'is_trigger', 'is_ignored', 'is_indoor', 'center_x', 'center_y', 'width',
+                  'height']

@@ -39,6 +39,7 @@ class Zone(models.Model):
 
     is_trigger = models.BooleanField(default=False)
     is_ignored = models.BooleanField(default=False)
+    is_indoor = models.BooleanField(default=False)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
