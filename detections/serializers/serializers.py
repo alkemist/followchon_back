@@ -92,7 +92,7 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
 
 
 class CaptureDateSerializer(serializers.ModelSerializer):
-    date_only = serializers.DateField()
+    date_only = serializers.DateField(format="%Y-%m-%d %w")
 
     class Meta:
         model = Capture
