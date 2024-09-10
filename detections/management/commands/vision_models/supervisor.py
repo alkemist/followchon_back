@@ -30,6 +30,7 @@ class Supervisor:
         self.pause_capture_seconds = 0
         self.temp_pause = 0
         self.frame_seconds = 0
+        self.stats_hourly = False
         self.enabled = True
         self.params_dict = {}
 
@@ -141,6 +142,7 @@ class Supervisor:
         self.temp_pause = int(self.get_param('vision_temp_pause_minutes'))
         self.frame_seconds = float(self.get_param('vision_frame_seconds'))  # 0.03 < > 0.02
         self.enabled = self.get_param('vision_enabled') == '1'
+        self.stats_hourly = self.get_param('vision_stats_hourly') == '1'
 
         self.detection_near_margin_norm = float(self.get_param('vision_detection_near_margin_norm'))
         self.detection_move_margin_norm = float(self.get_param('vision_detection_move_margin_norm'))
@@ -304,11 +306,21 @@ class Supervisor:
             )
 
     def log_hourly(self):
-        self.log('Hourly',
-                 self.get_log_records()
-                 + self.get_log_fps()
-                 + self.get_log_time_ave()
-                 + self.get_log_fpm_ave()
-                 + self.get_log_temp_ave()
-                 , 'statistic'
-                 )
+        if self.stats_hourly:
+            self.log('Hourly',
+                     self.get_log_records()
+                     + self.get_log_fps()
+                     + self.get_log_time_ave()
+                     + self.get_log_fpm_ave()
+                     + self.get_log_temp_ave()
+                     , 'statistic'
+                     )
+        else:
+            self.local_log('Hourly',
+                           self.get_log_records()
+                           + self.get_log_fps()
+                           + self.get_log_time_ave()
+                           + self.get_log_fpm_ave()
+                           + self.get_log_temp_ave()
+                           , 'statistic'
+                           )
