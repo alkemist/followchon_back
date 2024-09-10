@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from configuration.models import Family, Zone
+from configuration.models import Family, Zone, Parameter
 
 
 class FamilyParentSerializer(serializers.ModelSerializer):
@@ -18,3 +18,9 @@ class ZoneSerializer(serializers.ModelSerializer):
         fields = ['id', 'slug', 'name', 'is_trigger', 'is_ignored', 'is_indoor', 'is_enabled', 'center_x', 'center_y',
                   'width',
                   'height']
+
+
+class ParameterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Parameter
+        fields = ['id', 'slug', 'name', 'value']

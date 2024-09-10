@@ -6,11 +6,17 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 
 from api.models import ReadOnlyViewSet, CustomPageNumberPagination, UpdateViewSet
-from configuration.models import Family, Zone
+from configuration.models import Family, Zone, Parameter
 from configuration.serializers.family import FamilySerializer
 from configuration.serializers.family_detections import FamilyDetectionsSerializer
-from configuration.serializers.serializers import ZoneSerializer
+from configuration.serializers.serializers import ZoneSerializer, ParameterSerializer
 from detections.models import Detection
+
+
+class ParameterViewSet(ReadOnlyViewSet):
+    queryset = Parameter.objects.all().order_by('id')
+    serializer_class = ParameterSerializer
+    http_method_names = ['get', 'head', 'options']
 
 
 class FamilyViewSet(ReadOnlyViewSet):
