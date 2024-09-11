@@ -65,7 +65,15 @@ class Model:
             frame = analyse.detect(yolo_results)
 
             if analyse.is_triggered:
-                analyse.save()
+                try:
+                    analyse.save()
+                except Exception as error:
+                    self.supervisor.log(
+                        type(error).__name__,
+                        str(error),
+                        'error'
+                    )
+
                 self.save_time = time.time()
                 saved = True
 

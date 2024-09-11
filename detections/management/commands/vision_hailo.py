@@ -44,6 +44,6 @@ class Command(BaseCommand):
                 'vision',
                 'error',
                 type(error).__name__,
-                ex_value,
+                f"{ex_value} : {str(error)}",
                 Vcgencmd().measure_temp()
             )

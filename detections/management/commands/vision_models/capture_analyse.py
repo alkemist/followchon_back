@@ -142,5 +142,4 @@ class Capture_analyse:
             (annotation.zone is None or not cast(Zone, annotation.zone).is_ignored)
 
     def save(self):
-        capture = Capture()
-        capture.write(self.frame, self.date_capture, self.annotations)
+        Capture().write(self.frame, self.date_capture, self.annotations)

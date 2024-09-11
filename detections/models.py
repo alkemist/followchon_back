@@ -58,7 +58,6 @@ class Capture(models.Model):
             os.makedirs(photo_dir)
 
         self.resize(frame)
-
         self.save()
 
         for annotation in annotations:

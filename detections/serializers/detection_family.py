@@ -17,7 +17,7 @@ class DetectionFamilySerializer(serializers.ModelSerializer):
     capture_id = serializers.SerializerMethodField()
 
     def get_date(self, obj):
-        return obj.capture.date
+        return obj.capture.date.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     def get_status(self, obj):
         return obj.capture.status

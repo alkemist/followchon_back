@@ -91,7 +91,7 @@ class Streamer:
                 camera_record_filename = f"{self.supervisor.records_directory}/{last_record}"
 
                 self.supervisor.delay_start = time.time()
-                self.capture(camera_record_filename)
+                duration = self.capture(camera_record_filename)
 
                 self.supervisor.last_capture_seconds = time.time()
 
@@ -173,6 +173,8 @@ class Streamer:
         )
 
         cap = cv2.VideoCapture(camera_record_filename)
+        frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        fps = cap.get(cv2.CAP_PROP_FPS)
 
         while cap.isOpened() and self.supervisor.enabled:
 
@@ -202,6 +204,8 @@ class Streamer:
 
         if self.supervisor.enabled:
             self.supervisor.analyses_by_record.append(analyse_count)
+
+        return round(frames / fps)
 
     def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date):
         (frame, saved) = self.model.infer(
