@@ -30,6 +30,7 @@ class Supervisor:
         self.pause_capture_seconds = 0
         self.temp_pause = 0
         self.frame_seconds = 0
+        self.popcorn_frame_count = 0
         self.stats_hourly = False
         self.enabled = True
         self.params_dict = {}
@@ -140,6 +141,7 @@ class Supervisor:
         self.pause_capture_seconds = float(self.get_param('vision_pause_capture_seconds'))
         self.temp_alert = int(self.get_param('vision_temp_alert'))
         self.temp_pause = int(self.get_param('vision_temp_pause_minutes'))
+        self.popcorn_frame_count = int(self.get_param('vision_popcorn_frame_count'))
         self.frame_seconds = float(self.get_param('vision_frame_seconds'))  # 0.03 < > 0.02
         self.enabled = self.get_param('vision_enabled') == '1'
         self.stats_hourly = self.get_param('vision_stats_hourly') == '1'
@@ -270,6 +272,13 @@ class Supervisor:
             + self.get_log_fps()
             + self.get_log_disk_free()
             + self.get_log_hour()
+        )
+
+    def log_popcorn(self, capture_date, frame_count):
+        self.log(
+            'Popcorn',
+            f"date={capture_date.strftime('%Y-%m-%d %H-%M')} "
+            f"count={frame_count} "
         )
 
     def log_stat_processing(self):

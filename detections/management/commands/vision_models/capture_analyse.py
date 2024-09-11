@@ -1,5 +1,4 @@
 import copy
-import re
 from datetime import datetime
 from typing import cast
 
@@ -15,7 +14,7 @@ from helpers.array import ArrayHelper
 class Capture_analyse:
 
     def __init__(self,
-                 frame: cv2.typing.MatLike, datestr, frame_count,
+                 frame: cv2.typing.MatLike, capture_date: datetime, frame_count,
                  last_detections_dict: dict[int, (float, float)],
                  families_dict: dict[int, Family], zones: list[Zone],
                  supervisor: Supervisor
@@ -23,13 +22,13 @@ class Capture_analyse:
         self.frame = frame
         self.supervisor = supervisor
 
-        date_values = re.split('[-_]', datestr)
         self.date_capture = datetime(
-            int(date_values[0]),
-            int(date_values[1]),
-            int(date_values[2]),
-            int(date_values[3]),
-            int(date_values[4]),
+            capture_date.year,
+            capture_date.month,
+            capture_date.day,
+            capture_date.hour,
+            capture_date.minute,
+            capture_date.second,
             frame_count,
         )
 

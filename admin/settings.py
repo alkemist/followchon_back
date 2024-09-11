@@ -120,8 +120,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
-DATETIME_FORMAT = "%d %B %Y %H:%M:%S"
-fr_formats.DATETIME_FORMAT = "j F Y H:i:s"
+DATETIME_FORMAT = "%d %B %Y %H:%M:%S %f"
+fr_formats.DATETIME_FORMAT = "j F Y H:i:s u"
 
 LANGUAGE_CODE = 'fr-FR'
 

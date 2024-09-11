@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import time
 from datetime import datetime
@@ -161,6 +162,16 @@ class Streamer:
         frame_saved_count = 0
         analyse_count = 0
 
+        date_values = re.split('[-_]', file_date)
+        capture_date = datetime(
+            int(date_values[0]),
+            int(date_values[1]),
+            int(date_values[2]),
+            int(date_values[3]),
+            int(date_values[4]),
+            int(date_values[5]),
+        )
+
         cap = cv2.VideoCapture(camera_record_filename)
 
         while cap.isOpened() and self.supervisor.enabled:
@@ -171,7 +182,7 @@ class Streamer:
             if ret:
                 # Si l'appareil n'est pas assez rapide pour analyser toutes les images
                 if frame_seconds_elapsed > self.supervisor.frame_seconds:
-                    saved = self.infer(frame, frame_saved_count, file_date)
+                    saved = self.infer(frame, frame_saved_count, capture_date)
                     self.supervisor.last_frame_seconds = time.time()
 
                     analyse_count = analyse_count + 1
@@ -186,14 +197,17 @@ class Streamer:
             if self.show_stream and cv2.waitKey(1) == ord('q'):
                 self.supervisor.enabled = False
 
+        if frame_saved_count > self.supervisor.popcorn_frame_count:
+            self.supervisor.log_popcorn(capture_date, frame_saved_count)
+
         if self.supervisor.enabled:
             self.supervisor.analyses_by_record.append(analyse_count)
 
-    def infer(self, frame: cv2.typing.MatLike, frame_count, datestr):
+    def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date):
         (frame, saved) = self.model.infer(
             frame,
             frame_count,
-            datestr
+            capture_date
         )
 
         self.supervisor.last_frame_seconds = time.time()

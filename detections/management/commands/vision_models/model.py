@@ -52,12 +52,12 @@ class Model:
     def fill_objects(self):
         self.zones = Zone.objects.all().filter(is_enabled=True).order_by('id')
 
-    def analyze(self, frame, frame_count, datestr, yolo_results):
+    def analyze(self, frame, frame_count, capture_date, yolo_results):
         saved = False
 
         if len(yolo_results) > 0:
             analyse = Capture_analyse(
-                frame, datestr, frame_count,
+                frame, capture_date, frame_count,
                 self.last_detections_dict, self.families_dict, self.zones,
                 self.supervisor
             )

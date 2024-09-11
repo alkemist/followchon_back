@@ -67,7 +67,7 @@ class Model_Hailo(Model):
             padded_image.resize((self.width, self.height)),
         )
 
-    def infer(self, frame: cv2.typing.MatLike, frame_count, datestr):
+    def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date):
         saved = False
         image_pil = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image_pil = Image.fromarray(image_pil)
@@ -116,7 +116,7 @@ class Model_Hailo(Model):
 
                             yolo_results.append(yolo_result)
 
-                (frame, saved) = self.analyze(frame, frame_count, datestr, yolo_results)
+                (frame, saved) = self.analyze(frame, frame_count, capture_date, yolo_results)
         else:
             # No traitement
             logger.info(f"Queue empty")
