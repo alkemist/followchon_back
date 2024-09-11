@@ -58,7 +58,7 @@ class FamilyViewSet(ReadOnlyViewSet):
 
 
 class ZoneViewSet(UpdateViewSet):
-    queryset = Zone.objects.all().order_by('id')
+    queryset = Zone.objects.all().filter(is_enabled=True).order_by('id')
     serializer_class = ZoneSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     pagination_class = CustomPageNumberPagination

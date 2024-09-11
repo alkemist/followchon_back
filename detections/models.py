@@ -94,10 +94,10 @@ class Capture(models.Model):
 
     def size(self):
         im = cv2.imread(self.photo_path(None, True))
-        return im.shape[1::-1]
+        return im.shape[1::-1] if im is not None else (0, 0)
 
     def mark_as(self, new_status: str, root: bool = None):
-        if new_status not in Capture.Statuses:
+        if new_status not in Capture.Statuses or not os.path.isfile(self.photo_path(self.status, root)):
             return
 
         shutil.move(self.photo_path(self.status, root), self.photo_path(new_status, root))
@@ -181,6 +181,14 @@ class Detection(models.Model):
 
     def coords(self):
         size = self.size()
+        if size[0] == 0 or size[1] == 0:
+            return {
+                'tl_x': 0,
+                'tl_y': 0,
+                'br_x': 0,
+                'br_y': 0,
+            }
+
         return YoloHelper.calc_orthogonal_points(
             x_center_norm=self.center_x,
             y_center_norm=self.center_y,
