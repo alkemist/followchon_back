@@ -91,7 +91,7 @@ def commit():
     for path in execute(('git', 'pull')):
         print(path, end="")
 
-    for path in execute(('git', 'add', model_pt, model_onnx, model_hef)):
+    for path in execute(('git', 'add', model_pt, model_hef)):
         print(path, end="")
 
     for path in execute(('git', 'commit', '-m', os.getenv('TRAIN_DATASET_NAME'))):
@@ -109,8 +109,8 @@ if __name__ == '__main__':
 
     print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    # train()
-    # export()
+    train()
+    export()
     build()
     commit()
 
