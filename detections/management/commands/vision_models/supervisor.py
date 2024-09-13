@@ -277,8 +277,9 @@ class Supervisor:
     def log_popcorn(self, capture_date, frame_count):
         self.log(
             'Popcorn',
-            f"date={capture_date.strftime('%Y-%m-%d %H-%M')} "
             f"count={frame_count} "
+            f"time={capture_date.strftime('%H:%M')} "
+            , 'event'
         )
 
     def log_stat_processing(self):
