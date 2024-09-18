@@ -157,7 +157,7 @@ class Supervisor:
         match level:
             case 'warning':
                 logger.warning(message, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
-            case 'error':
+            case 'fail', 'error':
                 logger.error(message, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
             case _:
                 logger.info(message, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
