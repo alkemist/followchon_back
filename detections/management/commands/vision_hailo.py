@@ -23,6 +23,7 @@ class Command(BaseCommand):
 
         supervisor = Supervisor(Vcgencmd())
         model = None
+        error = None
 
         try:
             model = Model_Hailo(supervisor)
@@ -40,5 +41,6 @@ class Command(BaseCommand):
                 'fail'
             )
 
+        finally:
             if error is OperationalError:
                 self.handle()
