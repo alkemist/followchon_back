@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, Count, Case, When, IntegerField
 from django.db.models.functions import TruncDate
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -6,7 +6,8 @@ from rest_framework.response import Response
 
 from api.models import UpdateViewSet, CustomLimitOffsetPagination
 from detections.models import Capture
-from detections.serializers.serializers import CaptureHydratedSerializer, CaptureDateSerializer
+from detections.serializers.serializers import CaptureHydratedSerializer, CaptureDateSerializer, \
+    CaptureStatisticsDaySerializer
 
 
 class CaptureViewSet(UpdateViewSet):
@@ -62,6 +63,26 @@ class CaptureViewSet(UpdateViewSet):
                     .order_by('-date_only'))
 
         return Response(CaptureDateSerializer(captures, many=True).data)
+
+    @action(detail=False)
+    def statistics_by_day(self, request, *args, **kwargs):
+        captures = (
+            Capture.objects.all()
+            .annotate(
+                date_only=TruncDate('date'),
+            )
+            .values('date_only').distinct()
+            .annotate(
+                capture_count=Count('id'),
+                capture_changed_count=Count(Case(
+                    When(changed=True, then=1),
+                    output_field=IntegerField(),
+                ))
+            )
+            .order_by('-date_only')
+        )
+
+        return Response(CaptureStatisticsDaySerializer(captures, many=True).data)
 
     @action(detail=True)
     def mark_as_draft(self, request, pk=None, *args, **kwargs):

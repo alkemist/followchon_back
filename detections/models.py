@@ -40,6 +40,7 @@ class Capture(models.Model):
     photo_file = models.CharField(null=True, max_length=200)
 
     date = models.DateTimeField(default=timezone.now)
+    changed = models.BooleanField(default=False)
 
     id = 0
     detections = []
@@ -51,6 +52,7 @@ class Capture(models.Model):
         self.status = Capture.Statuses.DRAFT
         self.date = date
         self.photo_file = f"{self.date.strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg"
+        self.changed = False
 
         photo_dir = f"{self.file_dir(None, True)}{self.images_dir}"
 
@@ -79,6 +81,11 @@ class Capture(models.Model):
         file = pathlib.Path(self.label_path(None, True))
         file.parent.mkdir(parents=True, exist_ok=True)
         file.write_text("\n".join([annotation.line for annotation in annotations]))
+
+    def check_changed(self):
+        detections = Detection.objects.all().filter(capture_id=self.id)
+        self.changed = any([d.score is None or d.score == 0 for d in detections])
+        self.save()
 
     def resize(self, image):
         cv2.imwrite(
@@ -140,7 +147,7 @@ class Capture(models.Model):
         return format_html(
             '<a target="_blank" href="{0}">{1}</a>',
             f"{os.getenv('FRONT_URL')}?id={self.id}&status={self.status}",
-            'Annotate',
+            'Followchon',
         )
 
     def __str__(self):

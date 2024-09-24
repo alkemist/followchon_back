@@ -31,9 +31,9 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Capture
-        fields = ['id', 'date', 'status', 'detections', 'detections_ids', 'photo_path', 'size']
+        fields = ['id', 'date', 'status', 'detections', 'detections_ids', 'photo_path', 'size', 'changed']
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Capture, validated_data):
         zones = Zone.objects.all().filter(is_enabled=True)
         lines = list()
 
@@ -86,6 +86,7 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
             instance.mark_as(Capture.Statuses.VERIFIED, True)
             instance.status = Capture.Statuses.VERIFIED
 
+        instance.changed = True
         instance.save()
 
         return instance
@@ -97,3 +98,13 @@ class CaptureDateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Capture
         fields = ['date_only']
+
+
+class CaptureStatisticsDaySerializer(serializers.ModelSerializer):
+    capture_count = serializers.IntegerField()
+    capture_changed_count = serializers.IntegerField()
+    date_only = serializers.DateField(format="%Y-%m-%d")
+
+    class Meta:
+        model = Capture
+        fields = ['date_only', 'capture_count', 'capture_changed_count']

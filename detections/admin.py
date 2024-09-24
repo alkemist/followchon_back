@@ -18,14 +18,14 @@ class CaptureAdmin(admin.ModelAdmin):
         ('Identification',
          {'fields': ['date', 'photo_file', 'image_tag', 'status'], 'classes': []}),
     ]
-    list_display = ['id', 'date', 'status', 'image_tag', 'front_url']
+    list_display = ['id', 'date', 'status', 'changed', 'image_tag', 'front_url']
     list_display_links = ['date']
     readonly_fields = ['image_tag', 'status']
     list_editable = []
     search_fields = ['id', 'date', 'photo_file']
     ordering = ['-date']
-    list_filter = ['date', 'status']
-    actions = ['resize', 'mark_as_draft', 'mark_as_verified', 'mark_as_archived', 'mark_as_deleted']
+    list_filter = ['date', 'status', 'changed']
+    actions = ['resize', 'mark_as_draft', 'mark_as_verified', 'mark_as_archived', 'mark_as_deleted', 'migrate']
     inlines = [
         DetectionInline,
     ]
@@ -43,6 +43,24 @@ class CaptureAdmin(admin.ModelAdmin):
             ngettext(
                 "%d capture resized.",
                 "%d captures resized.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Migrate")
+    def migrate(self, request, queryset):
+        # for item in queryset.iterator():
+        #     item.check_changed()
+
+        updated = len(queryset)
+
+        self.message_user(
+            request,
+            ngettext(
+                "%d checked.",
+                "%d checked.",
                 updated,
             )
             % updated,
