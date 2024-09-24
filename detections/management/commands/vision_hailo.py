@@ -37,7 +37,11 @@ class Command(BaseCommand):
 
             tb = ex.__traceback__
             while tb is not None:
-                trace = f"file {tb.tb_frame.f_code.co_filename} line {str(tb.tb_lineno)}"
+                file = tb.tb_frame.f_code.co_filename.replace(
+                    'home/jaden/Projects/followchon_back/', '')
+                line = str(tb.tb_lineno)
+                trace = f" in file {file} on line {line}"
+                
                 tb = tb.tb_next
 
             if model is not None:
@@ -45,7 +49,7 @@ class Command(BaseCommand):
 
             supervisor.log(
                 type(error).__name__,
-                f"{str(error)} {trace}",
+                f"{str(error)}{trace}",
                 'fail'
             )
 

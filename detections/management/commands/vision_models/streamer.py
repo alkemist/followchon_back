@@ -205,7 +205,10 @@ class Streamer:
         if self.supervisor.enabled:
             self.supervisor.analyses_by_record.append(analyse_count)
 
-        return round(frames / fps)
+        if fps is not None and fps > 0:
+            return round(frames / fps)
+
+        return None
 
     def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date):
         (frame, saved) = self.model.infer(
