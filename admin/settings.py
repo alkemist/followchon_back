@@ -97,7 +97,11 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'sqlite3.db',
-    }
+        'OPTIONS': {
+            "isolation_level": None,
+            "autocommit": True,
+        },
+    },
 }
 
 # Password validation
