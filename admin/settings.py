@@ -99,7 +99,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'sqlite3.db',
         'OPTIONS': {
             "isolation_level": None,
-            "autocommit": True,
         },
     },
 }
