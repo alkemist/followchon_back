@@ -46,7 +46,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'django_extensions',
-    'pwa'
+    'pwa',
+    'dbbackup'
 ]
 
 MIDDLEWARE = [
@@ -234,3 +235,11 @@ PWA_APP_SPLASH_SCREEN = [
         'src': '/static/icon.png',
     }
 ]
+
+DBBACKUP_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+DBBACKUP_STORAGE_OPTIONS = {
+    'access_key': os.getenv('AWS_ACCESS_KEY_ID'),
+    'secret_key': os.getenv('AWS_SECRET_ACCESS_KEY'),
+    'bucket_name': 'followchon',
+    'default_acl': 'private',
+}

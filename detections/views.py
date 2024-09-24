@@ -1,5 +1,5 @@
-from django.db.models import Q, Count, Case, When, IntegerField
-from django.db.models.functions import TruncDate
+from django.db.models import Q, Count, Case, When, IntegerField, ExpressionWrapper, F, FloatField
+from django.db.models.functions import TruncDate, Round
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
@@ -74,10 +74,19 @@ class CaptureViewSet(UpdateViewSet):
             .values('date_only').distinct()
             .annotate(
                 capture_count=Count('id'),
-                capture_changed_count=Count(Case(
-                    When(changed=True, then=1),
-                    output_field=IntegerField(),
-                ))
+                capture_changed_count=Count(
+                    Case(
+                        When(changed=True, then=1),
+                        output_field=IntegerField(),
+                    )
+                ),
+                capture_changed_percent=ExpressionWrapper(
+                    Round(
+                        F('capture_changed_count') * 100.0 / F('capture_count'),
+                        1
+                    ),
+                    output_field=FloatField()
+                )
             )
             .order_by('-date_only')
         )
