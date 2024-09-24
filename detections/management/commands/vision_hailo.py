@@ -1,7 +1,6 @@
 import os
 
 from django.core.management.base import BaseCommand
-from django.db import OperationalError
 from dotenv import load_dotenv
 from loguru import logger
 from vcgencmd import Vcgencmd
@@ -41,7 +40,7 @@ class Command(BaseCommand):
                     'home/jaden/Projects/followchon_back/', '')
                 line = str(tb.tb_lineno)
                 trace = f" in file {file} on line {line}"
-                
+
                 tb = tb.tb_next
 
             if model is not None:
@@ -54,5 +53,6 @@ class Command(BaseCommand):
             )
 
         finally:
-            if error is OperationalError:
+            # if error is OperationalError:
+            if type(error).__name__ == 'OperationalError':
                 self.handle()
