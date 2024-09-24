@@ -31,13 +31,21 @@ class Command(BaseCommand):
             streamer = Streamer(model)
             streamer.start()
 
-        except Exception as error:
+        except Exception as ex:
+            error = ex
+            trace = ""
+
+            tb = ex.__traceback__
+            while tb is not None:
+                trace = f"file {tb.tb_frame.f_code.co_filename} line {str(tb.tb_lineno)}"
+                tb = tb.tb_next
+
             if model is not None:
                 model.release()
 
             supervisor.log(
                 type(error).__name__,
-                str(error),
+                f"{str(error)} {trace}",
                 'fail'
             )
 
