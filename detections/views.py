@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db.models import Q, Count, Case, When, IntegerField, ExpressionWrapper, F, FloatField, Min
 from django.db.models.functions import TruncDate, Round
 from rest_framework.decorators import action
@@ -68,7 +70,7 @@ class CaptureViewSet(UpdateViewSet):
     def statistics_by_day(self, request, *args, **kwargs):
         captures = (
             Capture.objects.all()
-            # .filter(date__gte=datetime(2024, 9, 4))
+            .filter(date__gte=datetime(2024, 9, 4))
             .annotate(
                 date_only=TruncDate('date'),
             )
