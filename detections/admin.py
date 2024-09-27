@@ -18,7 +18,7 @@ class CaptureAdmin(admin.ModelAdmin):
         ('Identification',
          {'fields': ['date', 'photo_file', 'image_tag', 'status'], 'classes': []}),
     ]
-    list_display = ['id', 'date', 'status', 'changed', 'image_tag', 'front_url']
+    list_display = ['id', 'date', 'status', 'changed', 'version', 'image_tag', 'front_url']
     list_display_links = ['date']
     readonly_fields = ['image_tag', 'status']
     list_editable = []

@@ -101,6 +101,7 @@ class CaptureDateSerializer(serializers.ModelSerializer):
 
 
 class CaptureStatisticsDaySerializer(serializers.ModelSerializer):
+    version = serializers.IntegerField()
     capture_count = serializers.IntegerField()
     capture_changed_count = serializers.IntegerField()
     capture_changed_percent = serializers.FloatField()
@@ -108,4 +109,4 @@ class CaptureStatisticsDaySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Capture
-        fields = ['date_only', 'capture_count', 'capture_changed_count', 'capture_changed_percent']
+        fields = ['date_only', 'version', 'capture_count', 'capture_changed_count', 'capture_changed_percent']

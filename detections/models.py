@@ -41,6 +41,7 @@ class Capture(models.Model):
 
     date = models.DateTimeField(default=timezone.now)
     changed = models.BooleanField(default=False)
+    version = models.IntegerField(null=True, default=None)
 
     id = 0
     detections = []
@@ -48,11 +49,12 @@ class Capture(models.Model):
     def detections_ids(self):
         return self.detections
 
-    def write(self, frame: cv2.typing.MatLike, date: datetime, annotations: list[Annotation]):
+    def write(self, frame: cv2.typing.MatLike, date: datetime, annotations: list[Annotation], version: int):
         self.status = Capture.Statuses.DRAFT
         self.date = date
         self.photo_file = f"{self.date.strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg"
         self.changed = False
+        self.version = version
 
         photo_dir = f"{self.file_dir(None, True)}{self.images_dir}"
 
