@@ -88,7 +88,7 @@ class CaptureViewSet(UpdateViewSet):
                     output_field=FloatField()
                 )
             )
-            .order_by('-date_only')
+            .order_by('date_only')
         )
 
         return Response(CaptureStatisticsDaySerializer(captures, many=True).data)
