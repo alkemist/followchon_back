@@ -9,6 +9,7 @@ from time import sleep
 import cv2
 
 from detections.management.commands.vision_models.model import Model
+from detections.management.commands.vision_models.sources import Sources
 
 
 class Streamer:
@@ -85,8 +86,9 @@ class Streamer:
                 self.supervisor.log_stop_recording()
                 self.stop_recording()
 
-            if self.supervisor.records_count > self.supervisor.min_records_capture \
-                    or datetime.now().hour >= self.supervisor.hour_max and self.supervisor.records_count > 0:
+            if (self.supervisor.records_count > self.supervisor.min_records_capture \
+                    or (datetime.now().hour >= self.supervisor.hour_max or self.supervisor.source != Sources.VISION)
+                    and self.supervisor.records_count > 0):
                 last_record = records[0]
                 camera_record_filename = f"{self.supervisor.records_directory}/{last_record}"
 
@@ -96,7 +98,11 @@ class Streamer:
                 self.supervisor.last_capture_seconds = time.time()
 
                 if self.supervisor.enabled and os.path.isfile(camera_record_filename):
-                    self.supervisor.add_processing_delay()
+                    if self.supervisor.source == Sources.VISION:
+                        self.supervisor.add_processing_delay()
+                    else:
+                        self.model.last_detections_dict = {}
+
                     os.remove(camera_record_filename)
 
             # Pas assez de vidéo, on peut attendre un peu
@@ -142,7 +148,9 @@ class Streamer:
                 # self.supervisor.log_waiting()
                 self.long_sleep(60)
 
-            if datetime.now().hour >= self.supervisor.hour_max and self.supervisor.records_count == 0:
+            if ((datetime.now().hour >= self.supervisor.hour_max or self.supervisor.source != Sources.VISION)
+                    and self.supervisor.records_count == 0
+            ):
                 self.supervisor.enabled = False
 
         if self.show_stream:
@@ -151,26 +159,34 @@ class Streamer:
         self.supervisor.log_stopped()
         self.supervisor.log_stat_processing()
         self.supervisor.log_stat_fpm()
-        self.supervisor.log_stat_temperature()
 
-        self.stop_recording()
+        if self.supervisor.vcgm is not None:
+            self.supervisor.log_stat_temperature()
+
+        if self.supervisor.source == Sources.VISION:
+            self.stop_recording()
+
         self.model.release()
 
     def capture(self, camera_record_filename: str):
         self.supervisor.last_frame_seconds = 0
-        file_date = Path(camera_record_filename).stem
+
+        if self.supervisor.source == Sources.VISION:
+            file_date = Path(camera_record_filename).stem
+            date_values = re.split('[-_]', file_date)
+            capture_date = datetime(
+                int(date_values[0]),
+                int(date_values[1]),
+                int(date_values[2]),
+                int(date_values[3]),
+                int(date_values[4]),
+                int(date_values[5]),
+            )
+        else:
+            capture_date = datetime.now()
+
         frame_saved_count = 0
         analyse_count = 0
-
-        date_values = re.split('[-_]', file_date)
-        capture_date = datetime(
-            int(date_values[0]),
-            int(date_values[1]),
-            int(date_values[2]),
-            int(date_values[3]),
-            int(date_values[4]),
-            int(date_values[5]),
-        )
 
         cap = cv2.VideoCapture(camera_record_filename)
         frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -199,16 +215,60 @@ class Streamer:
             if self.show_stream and cv2.waitKey(1) == ord('q'):
                 self.supervisor.enabled = False
 
-        if frame_saved_count > self.supervisor.popcorn_frame_count:
-            self.supervisor.log_popcorn(capture_date, frame_saved_count)
+        if self.supervisor.source == Sources.VISION:
+            if frame_saved_count > self.supervisor.popcorn_frame_count:
+                self.supervisor.log_popcorn(capture_date, frame_saved_count)
 
-        if self.supervisor.enabled:
-            self.supervisor.analyses_by_record.append(analyse_count)
+            if self.supervisor.enabled:
+                self.supervisor.analyses_by_record.append(analyse_count)
 
         if fps is not None and fps > 0:
             return round(frames / fps)
 
         return None
+
+    def read(self):
+        self.model.check_model()
+        self.supervisor.log_start()
+
+        frame_saved_count = 0
+
+        while self.supervisor.enabled:
+            self.model.check_model()
+            self.supervisor.fill_params()
+
+            records = self.supervisor.get_records()
+
+            if self.supervisor.records_count > 0:
+                last_record = records[0]
+                photo_filename = f"{self.supervisor.records_directory}/{last_record}"
+                print(photo_filename)
+
+                frame = cv2.imread(photo_filename)
+
+                saved = self.infer(frame, frame_saved_count, datetime.now())
+
+                if saved:
+                    frame_saved_count = frame_saved_count + 1
+
+                if self.supervisor.pause_capture_seconds:
+                    sleep(self.supervisor.pause_capture_seconds)
+
+                if self.supervisor.enabled and os.path.isfile(photo_filename):
+                    os.remove(photo_filename)
+
+            else:
+                self.supervisor.enabled = False
+
+            if self.show_stream and cv2.waitKey(1) == ord('q'):
+                self.supervisor.enabled = False
+
+        if self.show_stream:
+            cv2.destroyAllWindows()
+
+        self.supervisor.log_stopped()
+
+        self.model.release()
 
     def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date):
         (frame, saved) = self.model.infer(

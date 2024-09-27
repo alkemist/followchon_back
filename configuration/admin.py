@@ -41,10 +41,10 @@ class ParameterAdmin(admin.ModelAdmin):
 
 @admin.register(Log)
 class LogAdmin(admin.ModelAdmin):
-    readonly_fields = ['date', 'source', 'version', 'level', 'event', 'temp']
-    list_display = ['date', 'level', 'event', 'info', 'temp', 'source', 'version']
-    search_fields = ['date', 'level', 'event', 'info', 'temp', 'source', 'version']
-    list_filter = ['date', 'level', 'event', 'source', 'version']
+    readonly_fields = ['date', 'source', 'level', 'event']
+    list_display = ['date', 'level', 'event', 'info', 'source']
+    search_fields = ['date', 'level', 'event', 'info', 'source']
+    list_filter = ['date', 'level', 'event', 'source']
     ordering = ['-id']
     list_display_links = ['date']
     list_editable = []

@@ -8,6 +8,8 @@ import psutil
 from loguru import logger
 
 from configuration.models import Parameter, Log
+from detections.management.commands.vision_models.levels import Levels
+from detections.management.commands.vision_models.sources import Sources
 from helpers.array import ArrayHelper
 from helpers.date import DateHelper
 from helpers.file import FileHelper
@@ -15,8 +17,11 @@ from helpers.file import FileHelper
 
 class Supervisor:
 
-    def __init__(self, vcgencmd=None):
-        self.records_directory = './records'
+    def __init__(self, vcgencmd=None, source: Sources = Sources.VISION, model_ext: str = 'pt'):
+        self.records_directory = f"./records/{source}"
+        self.source = source
+        self.model_ext = model_ext
+        self.record_exts = 'jpg|png' if source == Sources.PHOTO else 'mkv|mp4'
 
         self.current_model_version = 0
         self.model_version = ''
@@ -55,12 +60,11 @@ class Supervisor:
         self.delays = []
 
         self.analyses_by_record = []
-
         self.check_disk_free()
 
     def get_model_path(self):
         return (f"{os.getenv('MODEL_DIR')}/"
-                f"{os.getenv('MODEL_PREFIX')}{self.current_model_version}.{os.getenv('MODEL_EXT')}")
+                f"{os.getenv('MODEL_PREFIX')}{self.current_model_version}.{self.model_ext}")
 
     def get_params(self):
         parameters = Parameter.objects.all()
@@ -76,7 +80,7 @@ class Supervisor:
         return None
 
     def get_records(self):
-        records = FileHelper.list_files(self.records_directory, r'.*\.(mkv)$')
+        records = FileHelper.list_files(self.records_directory, r'.*\.(' + self.record_exts + ')$')
         self.records_count = len(records)
         return records
 
@@ -105,7 +109,7 @@ class Supervisor:
                 f"disk_used={FileHelper.convert_size(disk_info.used)} "
                 f"disk_free={FileHelper.convert_size(disk_info.free)} "
                 f"disk_usage={disk_info.percent}% "
-                , 'warning'
+                , Levels.WARNING
             )
 
     def add_processing_delay(self):
@@ -117,6 +121,7 @@ class Supervisor:
 
     def is_recording_ok(self):
         return (
+                self.source == Sources.VISION and
                 self.hour_min <= datetime.now().hour < self.hour_max and
                 (self.is_recording and self.records_count <= self.records_max or
                  not self.is_recording and self.records_count <= self.min_records_recording)
@@ -151,21 +156,24 @@ class Supervisor:
 
         self.temp = self.vcgm.measure_temp() if self.vcgm is not None else 0
 
-    def local_log(self, event: str, info: str, level: str = 'info'):
-        message = f"{event} : {info} temp={self.temp}°"
+    def local_log(self, event: str, info: str, level: Levels = Levels.INFO):
+        message = f"{event} : {info}"
+
+        if self.vcgm is not None:
+            message = f"{message} temp={self.temp}°"
 
         match level:
-            case 'warning':
+            case Levels.WARNING:
                 logger.warning(message, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
-            case 'fail', 'error':
+            case Levels.ERROR, Levels.FAIL:
                 logger.error(message, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
             case _:
                 logger.info(message, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}")
 
-    def log(self, event: str, info: str = '', level: str = 'info'):
+    def log(self, event: str, info: str = '', level: Levels = Levels.INFO):
         self.local_log(event, info, level)
 
-        Log().create(self.current_model_version, 'vision', level, event, info, self.temp)
+        Log().create(self.source, level, event, info)
 
     def get_log_records(self):
         return f"records={self.records_count}/{self.records_max} "
@@ -224,7 +232,7 @@ class Supervisor:
             self.get_log_records()
             + self.get_log_fps()
             + self.get_log_temp_pause()
-            , "warning"
+            , Levels.TEMP
         )
 
     def log_stop_recording(self):
@@ -255,7 +263,7 @@ class Supervisor:
             + self.get_log_pause_records()
             + self.get_log_delay(capture_time_elapsed)
             + self.get_log_time_ave()
-            , 'warning'
+            , Levels.WARNING
         )
 
     def log_waiting(self):
@@ -279,7 +287,7 @@ class Supervisor:
             'Popcorn',
             f"count={frame_count} "
             f"time={capture_date.strftime('%H:%M')} "
-            , 'event'
+            , Levels.EVENT
         )
 
     def log_stat_processing(self):
@@ -290,7 +298,7 @@ class Supervisor:
                 f"time_med={DateHelper.secondsToMMSS(statistics.median(self.delays))} "
                 f"time_min={DateHelper.secondsToMMSS(min(self.delays))} "
                 f"time_max={DateHelper.secondsToMMSS(max(self.delays))} "
-                , 'statistic'
+                , Levels.STATISTIC
             )
 
     def log_stat_fpm(self):
@@ -301,7 +309,7 @@ class Supervisor:
                 f"fpm_med={statistics.median(self.analyses_by_record)} "
                 f"fpm_min={min(self.analyses_by_record)} "
                 f"fpm_max={max(self.analyses_by_record)} "
-                , 'statistic'
+                , Levels.STATISTIC
             )
 
     def log_stat_temperature(self):
@@ -312,7 +320,7 @@ class Supervisor:
                 f"temp_med={statistics.median(self.temps.values())}° "
                 f"temp_min={min(self.temps.values())}° "
                 f"temp_max={max(self.temps.values())}° "
-                , 'statistic'
+                , Levels.STATISTIC
             )
 
     def log_hourly(self):
@@ -323,7 +331,7 @@ class Supervisor:
                      + self.get_log_time_ave()
                      + self.get_log_fpm_ave()
                      + self.get_log_temp_ave()
-                     , 'statistic'
+                     , Levels.STATISTIC
                      )
         else:
             self.local_log('Hourly',
@@ -332,5 +340,5 @@ class Supervisor:
                            + self.get_log_time_ave()
                            + self.get_log_fpm_ave()
                            + self.get_log_temp_ave()
-                           , 'statistic'
+                           , Levels.STATISTIC
                            )

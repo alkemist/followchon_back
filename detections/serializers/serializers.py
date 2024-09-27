@@ -5,6 +5,7 @@ from rest_framework import serializers
 from configuration.models import Family, Zone
 from configuration.serializers.family import FamilySerializer
 from configuration.serializers.serializers import ZoneSerializer
+from detections.management.commands.vision_models.sources import Sources
 from detections.models import Capture, Detection
 from helpers.yolo import YoloHelper
 
@@ -57,7 +58,7 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
                 size[0], size[1]
             )
 
-            if new_detection.family.is_zoned:
+            if new_detection.family.is_zoned and instance.source == Sources.VISION:
                 for zone in zones:
                     if zone.has_point((yolo_points['x_center'], yolo_points['y_center'])):
                         new_detection.zone = zone

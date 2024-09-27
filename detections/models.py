@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.annotation import Annotation
+from detections.management.commands.vision_models.sources import Sources
 from helpers.image import ImageHelper
 from helpers.yolo import YoloHelper
 
@@ -36,6 +37,7 @@ class Capture(models.Model):
     labels_dir = 'labels'
 
     status = models.CharField(null=True, max_length=200, choices=Statuses.choices, default=Statuses.DRAFT)
+    source = models.CharField(null=True, max_length=200, choices=Sources.choices, default=Sources.VISION)
 
     photo_file = models.CharField(null=True, max_length=200)
 
@@ -49,12 +51,14 @@ class Capture(models.Model):
     def detections_ids(self):
         return self.detections
 
-    def write(self, frame: cv2.typing.MatLike, date: datetime, annotations: list[Annotation], version: int):
+    def write(self, frame: cv2.typing.MatLike, date: datetime, annotations: list[Annotation], version: int,
+              source: Sources):
         self.status = Capture.Statuses.DRAFT
         self.date = date
         self.photo_file = f"{self.date.strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg"
         self.changed = False
         self.version = version
+        self.source = source
 
         photo_dir = f"{self.file_dir(None, True)}{self.images_dir}"
 

@@ -5,7 +5,7 @@
     name: Guinea Pig
     parent: null
     is_tracked: false
-    is_trigger: false
+    is_trigger: true
     is_abstract: true
     is_unique: false
     is_zoned: true

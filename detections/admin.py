@@ -20,11 +20,11 @@ class CaptureAdmin(admin.ModelAdmin):
     ]
     list_display = ['id', 'date', 'status', 'changed', 'version', 'image_tag', 'front_url']
     list_display_links = ['date']
-    readonly_fields = ['image_tag', 'status']
+    readonly_fields = ['image_tag', 'status', 'source']
     list_editable = []
     search_fields = ['id', 'date', 'photo_file']
     ordering = ['-date']
-    list_filter = ['date', 'status', 'changed', 'version']
+    list_filter = ['date', 'status', 'changed', 'version', 'source']
     actions = ['resize', 'mark_as_draft', 'mark_as_verified', 'mark_as_archived', 'mark_as_deleted', 'migrate']
     inlines = [
         DetectionInline,
@@ -158,7 +158,7 @@ class DetectionAdmin(AdminChangeLinksMixin, admin.ModelAdmin):
     list_editable = []
     search_fields = ['capture__id', 'family__id', 'zone__id']
     ordering = ['-capture_id', 'family__index']
-    list_filter = ['capture__date', 'capture__status', 'family', 'zone', 'trigger',
+    list_filter = ['capture__date', 'capture__status', 'family', 'zone', 'trigger', 'capture__source',
                    ('score', admin.EmptyFieldListFilter)]
     list_display_links = ['id']
     change_links = ['capture']

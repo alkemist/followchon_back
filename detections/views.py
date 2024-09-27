@@ -7,6 +7,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from api.models import UpdateViewSet, CustomLimitOffsetPagination
+from detections.management.commands.vision_models.sources import Sources
 from detections.models import Capture
 from detections.serializers.serializers import CaptureHydratedSerializer, CaptureDateSerializer, \
     CaptureStatisticsDaySerializer
@@ -24,6 +25,7 @@ class CaptureViewSet(UpdateViewSet):
 
         if 'pk' not in self.kwargs:
             capture_id = self.request.query_params.get('id')
+            source = self.request.query_params.get('source')
             status = self.request.query_params.get('status')
             offset = self.request.query_params.get('offset')
             limit = self.request.query_params.get('limit')
@@ -35,6 +37,9 @@ class CaptureViewSet(UpdateViewSet):
                     queryset = queryset.filter(id=capture_id)
                 else:
                     queryset = queryset.filter(~Q(id=capture_id))
+
+            if source is not None and source in Sources:
+                queryset = queryset.filter(source=source)
 
             if status is not None and status:
                 if status == Capture.STATUS_EDITABLE:
@@ -70,6 +75,7 @@ class CaptureViewSet(UpdateViewSet):
     def statistics_by_day(self, request, *args, **kwargs):
         captures = (
             Capture.objects.all()
+            .filter(source=Sources.VISION)
             .filter(date__gte=datetime(2024, 9, 4))
             .annotate(
                 date_only=TruncDate('date'),

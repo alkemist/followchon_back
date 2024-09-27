@@ -5,6 +5,7 @@ import cv2
 
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.capture_analyse import Capture_analyse
+from detections.management.commands.vision_models.sources import Sources
 from detections.management.commands.vision_models.supervisor import Supervisor
 from detections.models import Detection
 from helpers.array import ArrayHelper
@@ -27,30 +28,32 @@ class Model:
         self.families = Family.objects.all()
         self.families_dict = ArrayHelper.object_list_to_dict(self.families, 'index')
 
-        last_detections = Detection.objects.raw(
-            'SELECT * FROM (' +
-            '    SELECT * FROM detections_detection d' +
-            '    LEFT JOIN configuration_family f ON d.family_id = f.id' +
-            '    WHERE f.is_tracked = true'
-            '    ORDER BY d.id DESC'
-            ' ) d' +
-            ' GROUP BY d.family_id')
+        if self.supervisor.source == Sources.VISION:
+            last_detections = Detection.objects.raw(
+                'SELECT * FROM (' +
+                '    SELECT * FROM detections_detection d' +
+                '    LEFT JOIN configuration_family f ON d.family_id = f.id' +
+                '    WHERE f.is_tracked = true'
+                '    ORDER BY d.id DESC'
+                ' ) d' +
+                ' GROUP BY d.family_id')
 
-        last_detections_dict: dict[int, Detection] = (
-            ArrayHelper.object_list_to_dict(last_detections, 'family_id')
-        )
+            last_detections_dict: dict[int, Detection] = (
+                ArrayHelper.object_list_to_dict(last_detections, 'family_id')
+            )
 
-        self.last_detections_dict: dict[int, (float, float)] = (
-            dict(
-                map(
-                    lambda kv: (kv[0], (kv[1].center_x, kv[1].center_y)),
-                    last_detections_dict.items()
+            self.last_detections_dict: dict[int, (float, float)] = (
+                dict(
+                    map(
+                        lambda kv: (kv[0], (kv[1].center_x, kv[1].center_y)),
+                        last_detections_dict.items()
+                    )
                 )
             )
-        )
 
     def fill_objects(self):
-        self.zones = Zone.objects.all().filter(is_enabled=True).order_by('id')
+        if self.supervisor.source == Sources.VISION:
+            self.zones = Zone.objects.all().filter(is_enabled=True).order_by('id')
 
     def analyze(self, frame, frame_count, capture_date, yolo_results):
         saved = False

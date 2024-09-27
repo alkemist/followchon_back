@@ -6,6 +6,7 @@ import cv2
 
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.annotation import Annotation
+from detections.management.commands.vision_models.sources import Sources
 from detections.management.commands.vision_models.supervisor import Supervisor
 from detections.models import Capture, Detection
 from helpers.array import ArrayHelper
@@ -96,7 +97,7 @@ class Capture_analyse:
                     family_id_grouped.append(annotation.family.id)
 
         for annotation in annotations_grouped:
-            if annotation.is_valid():
+            if self.supervisor.source != Sources.VISION or annotation.is_valid():
                 self.annotations.append(annotation)
 
                 self.is_triggered = self.is_trigger_annotation(annotation)
@@ -116,7 +117,10 @@ class Capture_analyse:
         return frame_copy
 
     def is_trigger_annotation(self, annotation: Annotation):
-        if annotation.family.is_tracked:
+        if self.supervisor.source == Sources.PHOTO:
+            return True
+
+        if annotation.family.is_tracked or self.supervisor.source == Sources.VIDEO:
             first_detection = annotation.family.id not in self.last_detections_dict
             last_detection = self.last_detections_dict.get(annotation.family.id, None)
             coords = (annotation.norm_x_center, annotation.norm_y_center)
@@ -129,17 +133,21 @@ class Capture_analyse:
                 annotation.trigger = Detection.Triggers.MOVE
                 return True
 
-        if annotation.zone is not None and cast(Zone, annotation.zone).is_trigger:
-            annotation.trigger = Detection.Triggers.ZONE
-        elif annotation.family.is_trigger:
-            annotation.trigger = Detection.Triggers.FAMILY
+        if self.supervisor.source == Sources.VISION:
+            if annotation.zone is not None and cast(Zone, annotation.zone).is_trigger:
+                annotation.trigger = Detection.Triggers.ZONE
+            elif annotation.family.is_trigger:
+                annotation.trigger = Detection.Triggers.FAMILY
 
-        return self.is_triggered or \
-            (
-                    annotation.trigger == Detection.Triggers.ZONE or
-                    annotation.trigger == Detection.Triggers.FAMILY
-            ) and \
-            (annotation.zone is None or not cast(Zone, annotation.zone).is_ignored)
+            return self.is_triggered or \
+                (
+                        annotation.trigger == Detection.Triggers.ZONE or
+                        annotation.trigger == Detection.Triggers.FAMILY
+                ) and \
+                (annotation.zone is None or not cast(Zone, annotation.zone).is_ignored)
+        else:
+            return False
 
     def save(self):
-        Capture().write(self.frame, self.date_capture, self.annotations, self.supervisor.current_model_version)
+        Capture().write(self.frame, self.date_capture, self.annotations, self.supervisor.current_model_version,
+                        self.supervisor.source)

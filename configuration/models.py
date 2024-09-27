@@ -3,6 +3,9 @@ from typing import cast
 from django.db import models
 from django.utils import timezone
 
+from detections.management.commands.vision_models.levels import Levels
+from detections.management.commands.vision_models.sources import Sources
+
 
 class Family(models.Model):
     class Colors(models.TextChoices):
@@ -87,26 +90,20 @@ class Parameter(models.Model):
 
 
 class Log(models.Model):
-    version = models.IntegerField(default=0, null=True)
-
     date = models.DateTimeField(default=timezone.now)
-    source = models.CharField(max_length=200, default='', null=True)
-    level = models.CharField(max_length=200, default='', null=True)
+    source = models.CharField(null=True, max_length=200, choices=Sources.choices, default=Sources.VISION)
+    level = models.CharField(null=True, max_length=200, choices=Levels.choices, default=Levels.INFO)
     event = models.CharField(max_length=200, default='', null=True)
     info = models.CharField(max_length=200, default='', null=True)
-
-    temp = models.FloatField(null=True, default=0)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def create(self, version, source, level, event, info, temp):
-        self.version = version
+    def create(self, source: str, level: Levels, event: str, info: str):
         self.source = source
         self.level = level
         self.event = event
         self.info = info
-        self.temp = temp
         self.save()
 
     def __str__(self):

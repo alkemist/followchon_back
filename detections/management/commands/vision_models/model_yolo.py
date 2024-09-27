@@ -21,7 +21,7 @@ class Model_YOLO(Model):
 
         if self.model is None or not self.supervisor.current_model_version != self.supervisor.model_version:
             if self.supervisor.current_model_version != self.supervisor.model_version:
-                logger.info(f'Load model version "{self.supervisor.current_model_version}"')
+                logger.info(f'Load model version "{self.supervisor.model_version}"')
 
             self.supervisor.current_model_version = self.supervisor.model_version
 

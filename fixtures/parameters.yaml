@@ -3,13 +3,13 @@
   fields:
     slug: vision_hour_min
     name: 'Vision : Heure de début'
-    value: '7'
+    value: '8'
 - model: configuration.parameter
   pk: 3
   fields:
     slug: vision_hour_max
     name: 'Vision : Heure de fin'
-    value: '20'
+    value: '19'
 - model: configuration.parameter
   pk: 4
   fields:
@@ -21,7 +21,7 @@
   fields:
     slug: vision_model_version
     name: 'Vision : Version du model'
-    value: '16'
+    value: '23'
 - model: configuration.parameter
   pk: 6
   fields:
@@ -45,7 +45,7 @@
   fields:
     slug: vision_records_max
     name: 'Vision : Max enreg. avant pause enreg.'
-    value: '10'
+    value: '20'
 - model: configuration.parameter
   pk: 11
   fields:
@@ -69,10 +69,22 @@
   fields:
     slug: vision_detection_near_margin_norm
     name: 'Vision : Rapport face à la taille de l''image pour rapprochement'
-    value: '0.02'
+    value: '0.015'
 - model: configuration.parameter
   pk: 18
   fields:
     slug: vision_detection_move_margin_norm
     name: 'Vision : Marge normalisé pour detection de déplacement'
     value: '0.06'
+- model: configuration.parameter
+  pk: 19
+  fields:
+    slug: vision_stats_hourly
+    name: 'Vision : Envoie les stats par heure si 1'
+    value: '0'
+- model: configuration.parameter
+  pk: 20
+  fields:
+    slug: vision_popcorn_frame_count
+    name: 'Vision : Detection de popcorn'
+    value: '50'
