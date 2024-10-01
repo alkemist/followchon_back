@@ -6,6 +6,8 @@ import shutil
 from django.core.management.base import BaseCommand
 from dotenv import load_dotenv
 
+from configuration.models import Parameter
+from helpers.array import ArrayHelper
 from helpers.file import FileHelper
 
 
@@ -33,21 +35,41 @@ def copy_to(files, ext, src_dir, dst_dir):
 
 class Command(BaseCommand):
     help = ""
+    params_dict: dict[str, Parameter] = {}
+    new_model_version = 0
+
+    def get_params(self):
+        parameters = Parameter.objects.all()
+        self.params_dict: dict[str, Parameter] = (
+            ArrayHelper.object_list_to_dict(parameters, 'slug')
+        )
+
+    def get_param(self, param: str):
+        if param in self.params_dict:
+            return self.params_dict[param].value
+
+        return None
 
     def handle(self, *args, **options):
         load_dotenv()
+
+        self.get_params()
+        self.new_model_version = int(self.get_param('vision_model_version')) + 1
 
         dataset_source_path = './static/captures/verified'
         dataset_source_labels_path = f'{dataset_source_path}/labels'
         dataset_source_images_path = f'{dataset_source_path}/images'
 
-        dataset_test_path = './static/captures/dataset'
-        dataset_test_labels_path = f'{dataset_test_path}/test/labels'
-        dataset_test_images_path = f'{dataset_test_path}/test/images'
-        dataset_val_labels_path = f'{dataset_test_path}/val/labels'
-        dataset_val_images_path = f'{dataset_test_path}/val/images'
-        dataset_train_labels_path = f'{dataset_test_path}/train/labels'
-        dataset_train_images_path = f'{dataset_test_path}/train/images'
+        dataset_dir = f'./static/captures/chons-v{self.new_model_version}'
+        if not os.path.exists(dataset_dir):
+            os.makedirs(dataset_dir)
+
+        dataset_test_labels_path = f'{dataset_dir}/test/labels'
+        dataset_test_images_path = f'{dataset_dir}/test/images'
+        dataset_val_labels_path = f'{dataset_dir}/val/labels'
+        dataset_val_images_path = f'{dataset_dir}/val/images'
+        dataset_train_labels_path = f'{dataset_dir}/train/labels'
+        dataset_train_images_path = f'{dataset_dir}/train/images'
 
         dataset_test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
         dataset_val_percent = float(os.getenv('DATASET_VAL_PERCENT'))
@@ -72,7 +94,7 @@ class Command(BaseCommand):
         copy_to(trains, 'jpg', dataset_source_images_path, dataset_train_images_path)
 
         shutil.copy(f"{dataset_source_path}/data.yaml",
-                    f"{dataset_test_path}/data.yaml")
+                    f"{dataset_dir}/data.yaml")
 
         self.stdout.write(
             self.style.SUCCESS('Successfully finished')
