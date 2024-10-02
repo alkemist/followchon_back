@@ -199,6 +199,9 @@ class Supervisor:
     def get_log_temp_ave(self):
         return f"temp_ave={round(statistics.fmean(self.temps.values()), 2)}° " if len(self.temps.values()) > 0 else ""
 
+    def get_log_temp_max(self):
+        return f"temp_max={max(self.temps.values())}° "
+
     def get_log_fpm_ave(self):
         return f"fpm_ave={round(statistics.fmean(self.analyses_by_record))} " if len(
             self.analyses_by_record) > 0 else ""
@@ -232,7 +235,9 @@ class Supervisor:
             self.get_log_records()
             + self.get_log_fps()
             + self.get_log_temp_pause()
-            , Levels.TEMP
+            + self.get_log_temp_ave()
+            + self.get_log_temp_max()
+            , Levels.HOT
         )
 
     def log_stop_recording(self):
@@ -319,7 +324,7 @@ class Supervisor:
                 self.get_log_temp_ave() +
                 f"temp_med={statistics.median(self.temps.values())}° "
                 f"temp_min={min(self.temps.values())}° "
-                f"temp_max={max(self.temps.values())}° "
+                + self.get_log_temp_max()
                 , Levels.STATISTIC
             )
 

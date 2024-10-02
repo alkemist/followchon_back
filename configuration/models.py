@@ -1,7 +1,9 @@
 from typing import cast
 
+from django.contrib import admin
 from django.db import models
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 
 from detections.management.commands.vision_models.levels import Levels
 from detections.management.commands.vision_models.sources import Sources
@@ -105,6 +107,24 @@ class Log(models.Model):
         self.event = event
         self.info = info
         self.save()
+
+    @admin.display(description='Level')
+    def level_color(self):
+        color = '#fff'
+
+        match self.level:
+            case Levels.EVENT:
+                color = '#0ea5e9'
+            case Levels.STATISTIC:
+                color = '#22c55e'
+            case Levels.WARNING:
+                color = '#f97316'
+            case Levels.HOT:
+                color = '#ef4444'
+            case Levels.ERROR, Levels.FAIL:
+                color = '#a855f7'
+
+        return mark_safe(f'<b style="color:{color}">{self.level}</b>')
 
     def __str__(self):
         return f"{self.date} {self.level} {self.event} {self.info}"

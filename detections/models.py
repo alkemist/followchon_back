@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import cast
 
 import cv2
+from django.contrib import admin
 from django.db import models
 from django.utils import timezone
 from django.utils.html import format_html
@@ -144,6 +145,7 @@ class Capture(models.Model):
         return (f"{self.file_dir(status, root)}"
                 f"{self.labels_dir}/{capture_name}.txt")
 
+    @admin.display(description='photo')
     def image_tag(self):
         return mark_safe('<a href="/%s" target="_blank">'
                          '<img src="/%s" width="200" height="200" />'

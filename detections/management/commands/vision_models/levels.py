@@ -7,6 +7,6 @@ class Levels(models.TextChoices):
     EVENT = 'event', _('Event')
     STATISTIC = 'statistic', _('Statistic')
     WARNING = 'warning', _('Warning')
-    TEMP = 'temp', _('Temp')
+    HOT = 'hot', _('Hot')
     ERROR = 'error', _('Error')
     FAIL = 'fail', _('Fail')

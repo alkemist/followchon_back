@@ -41,8 +41,8 @@ class ParameterAdmin(admin.ModelAdmin):
 
 @admin.register(Log)
 class LogAdmin(admin.ModelAdmin):
-    readonly_fields = ['date', 'source', 'level', 'event']
-    list_display = ['date', 'level', 'event', 'info', 'source']
+    readonly_fields = ['date', 'source']
+    list_display = ['date', 'level_color', 'event', 'info', 'source']
     search_fields = ['date', 'level', 'event', 'info', 'source']
     list_filter = ['date', 'level', 'event', 'source']
     ordering = ['-id']
