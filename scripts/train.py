@@ -16,6 +16,7 @@ train_previous_path = os.getenv('TRAIN_MODEL_PATH')
 train_dataset_yaml_path = f"{os.getenv('TRAIN_DATASET_PATH')}/data.yaml"
 train_dataset_name = os.getenv('TRAIN_DATASET_NAME')
 train_device = os.getenv('TRAIN_DEVICE')
+train_only_build = os.getenv('TRAIN_ONLY_BUILD')
 
 model_train_last = f"{runs_dir}/{os.getenv('TRAIN_DATASET_NAME')}/weights/last.pt"
 model_pt = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.pt"
@@ -109,8 +110,10 @@ if __name__ == '__main__':
 
     print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    train()
-    export()
+    if not train_only_build:
+        train()
+        export()
+
     build()
     commit()
 
