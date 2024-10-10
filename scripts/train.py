@@ -69,14 +69,16 @@ def build():
         "hailomz", "compile",
         "--ckpt", f"../shared_with_docker/followchon_back/{model_onnx}",
         "--hw-arch", "hailo8l",
-        "--calib-path", f"../shared_with_docker/followchon_back/{os.getenv('TRAIN_DATASET_PATH')}/train",
-        "--yaml", "../shared_with_docker/followchon_back/models/config/hef_config_yolov8n.yaml",
-        "--classes", "4",
+        "--calib-path", f"../shared_with_docker/followchon_back/{os.getenv('TRAIN_DATASET_PATH')}/val",
+        "--yaml",
+        f"../shared_with_docker/followchon_back/models/config/{os.getenv('TRAIN_MODEL_BASE')}/hef_config_n.yaml",
+        "--classes", os.getenv('TRAIN_CLASSES'),
     )
 
     command_copy = (
         "docker", "exec", "-i", "hailo_ai_sw_suite_2024-07_container",
-        "mv", "/local/workspace/yolov8n.hef", f"../shared_with_docker/followchon_back/{model_hef}"
+        "mv", f"/local/workspace/{os.getenv('TRAIN_MODEL_BASE')}n.hef",
+        f"../shared_with_docker/followchon_back/{model_hef}"
     )
 
     for path in execute(command_build):

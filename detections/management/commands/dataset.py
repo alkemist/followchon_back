@@ -35,14 +35,6 @@ def copy_to(files, ext, src_dir, dst_dir):
 
 class Command(BaseCommand):
     help = ""
-    params_dict: dict[str, Parameter] = {}
-    new_model_version = 0
-
-    def get_params(self):
-        parameters = Parameter.objects.all()
-        self.params_dict: dict[str, Parameter] = (
-            ArrayHelper.object_list_to_dict(parameters, 'slug')
-        )
 
     def get_param(self, param: str):
         if param in self.params_dict:
@@ -53,14 +45,20 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         load_dotenv()
 
-        self.get_params()
-        self.new_model_version = int(self.get_param('vision_model_version')) + 1
-
-        dataset_source_path = './static/captures/verified'
+        dataset_source_path = os.getenv('DATASET_SOURCE_DIR')
         dataset_source_labels_path = f'{dataset_source_path}/labels'
         dataset_source_images_path = f'{dataset_source_path}/images'
 
-        dataset_dir = f'./static/captures/chons-v{self.new_model_version}'
+        dataset_dir = os.getenv('DATASET_RESULT_DIR')
+
+        if not dataset_dir:
+            parameters = Parameter.objects.all()
+            params_dict: dict[str, Parameter] = (
+                ArrayHelper.object_list_to_dict(parameters, 'slug')
+            )
+            new_model_version = int(params_dict['vision_model_version'].value) + 1
+            dataset_dir = f'./static/captures/chons-v{new_model_version}'
+
         if not os.path.exists(dataset_dir):
             os.makedirs(dataset_dir)
 
