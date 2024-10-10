@@ -9,6 +9,8 @@ from ultralytics import YOLO
 
 load_dotenv()
 
+# settings.update({'datasets_dir': ''})
+
 runs_dir = 'runs'
 models_dir = 'models'
 
@@ -109,6 +111,9 @@ if __name__ == '__main__':
         print(":D GPU is available")
     else:
         print("T_T GPU is not available")
+
+    print("PyTorch version :", torch.__version__)
+    print("CUDA Devices :", torch.cuda.device_count())
 
     print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 

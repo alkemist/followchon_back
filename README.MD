@@ -36,6 +36,11 @@ Start vision : `.venv/bin/python manage.py vision`
 Deployment statics files : `.venv/bin/python manage.py collectstatic`
 Authorization port : `sudo ufw allow 8000`
 
+# CUDA
+
+Check CUDA : `nvidia-smi`
+Install PyTorch : `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124`
+
 # Links
 
 https://www.digitalocean.com/community/tutorials/how-to-serve-django-applications-with-uwsgi-and-nginx-on-ubuntu-16-04#setting-up-the-uwsgi-application-server
