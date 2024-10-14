@@ -41,6 +41,24 @@ Authorization port : `sudo ufw allow 8000`
 Check CUDA : `nvidia-smi`
 Install PyTorch : `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124`
 
+# HAILO
+
+## From sources
+
+### Uninstall
+
+`sudo dpkg --purge hailort-pcie-driver`  
+`sudo dpkg --purge hailo-all`  
+`sudo dpkg --purge hailort`
+`sudo dpkg --purge hailo-tappas-core`
+`sudo dpkg --purge hailofw`
+
+### Build
+
+Hailort : `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config release`
+Tappas : `./install.sh`
+Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`
+
 # Links
 
 https://www.digitalocean.com/community/tutorials/how-to-serve-django-applications-with-uwsgi-and-nginx-on-ubuntu-16-04#setting-up-the-uwsgi-application-server
