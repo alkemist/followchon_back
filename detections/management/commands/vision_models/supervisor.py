@@ -38,6 +38,7 @@ class Supervisor:
         self.popcorn_frame_count = 0
         self.stats_hourly = False
         self.enabled = True
+        self.log_detections = False
         self.params_dict = {}
 
         self.detection_near_margin_norm = 1
@@ -148,8 +149,9 @@ class Supervisor:
         self.temp_pause = int(self.get_param('vision_temp_pause_minutes'))
         self.popcorn_frame_count = int(self.get_param('vision_popcorn_frame_count'))
         self.frame_seconds = float(self.get_param('vision_frame_seconds'))  # 0.03 < > 0.02
-        self.enabled = self.get_param('vision_enabled') == '1'
+        self.enabled = self.source != Sources.VISION or self.get_param('vision_enabled') == '1'
         self.stats_hourly = self.get_param('vision_stats_hourly') == '1'
+        self.log_detections = self.get_param('vision_detection_log') == '1'
 
         self.detection_near_margin_norm = float(self.get_param('vision_detection_near_margin_norm'))
         self.detection_move_margin_norm = float(self.get_param('vision_detection_move_margin_norm'))

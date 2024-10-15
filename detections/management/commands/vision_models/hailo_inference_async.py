@@ -38,18 +38,18 @@ class HailoAsyncInference:
         self.infer_model.input().set_format_type(input_format_type)
         self.infer_model.output().set_format_type(getattr(FormatType, output_type))
 
-    def callback(self, completion_info, bindings):
+    def callback(self, completion_info, binding, frame):
         """
         Callback function for handling inference results.
 
         Args:
             completion_info: Information about the completion of the inference task.
-            bindings: Bindings object containing input and output buffers.
+            binding: Bindings object containing input and output buffers.
         """
         if completion_info.exception:
             logger.error(f'Inference error: {completion_info.exception}')
         else:
-            self.output_results.append(bindings.output().get_buffer()[0])
+            self.output_results.append(binding.output().get_buffer())
 
     def remove_last_output_results(self):
         return self.output_results.pop()
@@ -99,10 +99,16 @@ class HailoAsyncInference:
         job = None
 
         for frame in input_data:
-            bindings = self._create_bindings()
-            bindings.input().set_buffer(frame)
+            binding = self._create_bindings()
+            binding.input().set_buffer(frame)
+
             self.configured_infer_model.wait_for_async_ready(timeout_ms=10000)
-            job = self.configured_infer_model.run_async([bindings], partial(self.callback, bindings=bindings))
+            job = self.configured_infer_model.run_async(
+                [binding],
+                partial(
+                    self.callback, binding=binding, frame=frame
+                )
+            )
 
         if job is not None:
             job.wait(10000)  # Wait for the last job
@@ -118,6 +124,7 @@ class HailoAsyncInference:
         """
         output_buffers = {name: np.empty(self.infer_model.output(name).shape, dtype=np.float32)
                           for name in self.infer_model.output_names}
+
         return self.configured_infer_model.create_bindings(output_buffers=output_buffers)
 
     def release_device(self):

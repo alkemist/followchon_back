@@ -85,32 +85,37 @@ class Model_Hailo(Model):
             logger.info(f"Queue size too long : {len(raw_detections)}")
 
         if len(raw_detections) > 0:
-            raw_detection = self.model.remove_last_output_results()
+            raw_detections = self.model.remove_last_output_results()
 
             yolo_results = list()
 
-            if raw_detection is not None and len(raw_detection) > 0:
-                for i, detection in enumerate(raw_detection):
-                    bbox, score = detection[:4], detection[4]
+            if raw_detections is not None and len(raw_detections) > 0:
+                for i, detection in enumerate(raw_detections):
 
-                    if score >= self.supervisor.score_min:
-                        yolo_result = Result_yolo(
-                            i,
-                            float(score),
-                            width_resized,
-                            height_resized
-                        )
+                    for result in detection:
+                        bbox, score = result[:4], result[4]
 
-                        yolo_result.import_hailo_without_padding(
-                            padded_size,
-                            padding,
-                            float(bbox[1]),
-                            float(bbox[0]),
-                            float(bbox[3]),
-                            float(bbox[2]),
-                        )
+                        if self.supervisor.log_detections:
+                            logger.info(f"Class: {i}, Score: {score}, Result: {bbox[1]} {bbox[0]} {bbox[3]} {bbox[2]}")
 
-                        yolo_results.append(yolo_result)
+                        if score >= self.supervisor.score_min:
+                            yolo_result = Result_yolo(
+                                i,
+                                float(score),
+                                width_resized,
+                                height_resized
+                            )
+
+                            yolo_result.import_hailo_without_padding(
+                                padded_size,
+                                padding,
+                                float(bbox[1]),
+                                float(bbox[0]),
+                                float(bbox[3]),
+                                float(bbox[2]),
+                            )
+
+                            yolo_results.append(yolo_result)
 
                 (frame, saved) = self.analyze(frame, frame_count, capture_date, yolo_results)
         else:
