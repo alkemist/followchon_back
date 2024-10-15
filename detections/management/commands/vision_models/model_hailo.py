@@ -91,30 +91,26 @@ class Model_Hailo(Model):
 
             if raw_detection is not None and len(raw_detection) > 0:
                 for i, detection in enumerate(raw_detection):
-                    if len(detection) == 0:
-                        continue
+                    bbox, score = detection[:4], detection[4]
 
-                    for det in detection:
-                        bbox, score = det[:4], det[4]
+                    if score >= self.supervisor.score_min:
+                        yolo_result = Result_yolo(
+                            i,
+                            float(score),
+                            width_resized,
+                            height_resized
+                        )
 
-                        if score >= self.supervisor.score_min:
-                            yolo_result = Result_yolo(
-                                i,
-                                float(score),
-                                width_resized,
-                                height_resized
-                            )
+                        yolo_result.import_hailo_without_padding(
+                            padded_size,
+                            padding,
+                            float(bbox[1]),
+                            float(bbox[0]),
+                            float(bbox[3]),
+                            float(bbox[2]),
+                        )
 
-                            yolo_result.import_hailo_without_padding(
-                                padded_size,
-                                padding,
-                                float(bbox[1]),
-                                float(bbox[0]),
-                                float(bbox[3]),
-                                float(bbox[2]),
-                            )
-
-                            yolo_results.append(yolo_result)
+                        yolo_results.append(yolo_result)
 
                 (frame, saved) = self.analyze(frame, frame_count, capture_date, yolo_results)
         else:
