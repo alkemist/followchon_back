@@ -29,6 +29,7 @@ class Annotation:
 
         self.zone: Zone | None = None
         self.trigger: str | None = None
+        self.fail: str | None = None
 
         if self.family.is_zoned:
             for zone in zones:
@@ -62,10 +63,15 @@ class Annotation:
             self.nears.append(annotation)
 
     def is_valid(self):
-        return not self.family.is_abstract and \
-            (self.family.parent is None and self.parent is None or
-             self.family.parent is not None and self.parent is not None and
-             self.parent.family.id == self.family.parent.id)
+        valid = not self.family.is_abstract and \
+                (self.family.parent is None and self.parent is None or
+                 self.family.parent is not None and self.parent is not None and
+                 self.parent.family.id == self.family.parent.id)
+
+        if not valid:
+            self.fail = 'hierarchy'
+
+        return valid
 
     def trace(self, frame: cv2.typing.MatLike):
         return ImageHelper.trace_detected_box_coords(

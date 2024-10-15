@@ -3,6 +3,7 @@ from datetime import datetime
 from typing import cast
 
 import cv2
+from loguru import logger
 
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.annotation import Annotation
@@ -107,6 +108,15 @@ class Capture_analyse:
 
                     self.is_triggered = self.is_trigger_annotation(annotation.parent)
 
+        if self.supervisor.log_detections_fail:
+            for annotation in annotations_grouped:
+                if annotation.fail is not None:
+                    logger.info(
+                        f"Class: {annotation.family.index}, "
+                        f"Score: {annotation.score}, "
+                        f"Fail: {annotation.fail}"
+                    )
+
         self.annotations = ArrayHelper.sort(
             self.annotations, lambda a1, a2: a1.family.index - a2.family.index
         )
@@ -132,6 +142,8 @@ class Capture_analyse:
                 self.last_detections_dict[annotation.family.id] = coords
                 annotation.trigger = Detection.Triggers.MOVE
                 return True
+            else:
+                annotation.fail = 'stationary'
 
         if self.supervisor.source == Sources.VISION:
             if annotation.zone is not None and cast(Zone, annotation.zone).is_trigger:
@@ -146,6 +158,8 @@ class Capture_analyse:
                 ) and \
                 (annotation.zone is None or not cast(Zone, annotation.zone).is_ignored)
         else:
+            if annotation.fail is None:
+                annotation.fail = 'unknown'
             return False
 
     def save(self):

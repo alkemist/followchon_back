@@ -39,6 +39,7 @@ class Supervisor:
         self.stats_hourly = False
         self.enabled = True
         self.log_detections = False
+        self.log_detections_fail = False
         self.params_dict = {}
 
         self.detection_near_margin_norm = 1
@@ -152,6 +153,7 @@ class Supervisor:
         self.enabled = self.source != Sources.VISION or self.get_param('vision_enabled') == '1'
         self.stats_hourly = self.get_param('vision_stats_hourly') == '1'
         self.log_detections = self.get_param('vision_detection_log') == '1'
+        self.log_detections_fail = self.get_param('vision_detection_fail') == '1'
 
         self.detection_near_margin_norm = float(self.get_param('vision_detection_near_margin_norm'))
         self.detection_move_margin_norm = float(self.get_param('vision_detection_move_margin_norm'))

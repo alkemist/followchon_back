@@ -2,6 +2,7 @@ import os
 import time
 
 import cv2
+from loguru import logger
 
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.capture_analyse import Capture_analyse
@@ -68,6 +69,9 @@ class Model:
             frame = analyse.detect(yolo_results)
 
             if analyse.is_triggered:
+                if self.supervisor.log_detections:
+                    logger.info(f"S")
+
                 analyse.save()
 
                 self.save_time = time.time()
