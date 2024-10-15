@@ -3,8 +3,11 @@ import shutil
 import subprocess
 from datetime import datetime
 
+import onnx
 import torch
 from dotenv import load_dotenv
+from onnx import __version__, IR_VERSION
+from onnx.defs import onnx_opset_version
 from ultralytics import YOLO
 
 load_dotenv()
@@ -18,9 +21,14 @@ train_previous_path = os.getenv('TRAIN_MODEL_PATH')
 train_dataset_yaml_path = f"{os.getenv('TRAIN_DATASET_PATH')}/data.yaml"
 train_dataset_name = os.getenv('TRAIN_DATASET_NAME')
 train_device = os.getenv('TRAIN_DEVICE')
-train_only_build = os.getenv('TRAIN_ONLY_BUILD')
+train_step_train = os.getenv('TRAIN_STEP_TRAIN')
+train_step_export = os.getenv('TRAIN_STEP_EXPORT')
+train_step_build = os.getenv('TRAIN_STEP_BUILD')
+train_step_git = os.getenv('TRAIN_STEP_GIT')
+train_resume = os.getenv('TRAIN_RESUME')
+hailo_sdk_version = os.getenv('TRAIN_SDK_VERSION')
 
-model_train_last = f"{runs_dir}/{os.getenv('TRAIN_DATASET_NAME')}/weights/last.pt"
+model_train_last = f"{runs_dir}/{os.getenv('TRAIN_DATASET_NAME')}/weights/best.pt"
 model_pt = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.pt"
 model_onnx = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.onnx"
 model_hef = f"{models_dir}/{os.getenv('TRAIN_DATASET_NAME')}.hef"
@@ -34,7 +42,8 @@ def train():
         imgsz=1024,
         name=train_dataset_name,
         verbose=True,
-        save=False,
+        save=True,
+        resume=train_resume,
         project=runs_dir,
         exist_ok=True,
         device=train_device,
@@ -48,7 +57,14 @@ def train():
 
 def export():
     model = YOLO(model_pt)
-    model.export(format="onnx")
+    model.export(format="onnx", opset=20)
+
+    original_model = onnx.load(model_onnx)
+    print(f"From : ONNX ir_version={original_model.ir_version}")
+
+    # cnverted_model = version_converter.convert_version(original_model, 9)
+    # print(f"To : ONNX version={converted_model.model_version}, ir_version={converted_model.ir_version}")
+    # onnx.save_model(converted_model, model_onnx)
 
     print(f'Model onnx saved in {model_onnx}')
 
@@ -67,7 +83,7 @@ def execute(cmd):
 
 def build():
     command_build = (
-        "docker", "exec", "-i", "hailo_ai_sw_suite_2024-07_container",
+        "docker", "exec", "-i", f"hailo_ai_sw_suite_{hailo_sdk_version}_container",
         "hailomz", "compile",
         "--ckpt", f"../shared_with_docker/followchon_back/{model_onnx}",
         "--hw-arch", "hailo8l",
@@ -114,14 +130,20 @@ if __name__ == '__main__':
 
     print("PyTorch version :", torch.__version__)
     print("CUDA Devices :", torch.cuda.device_count())
+    print(f"ONNX version={__version__!r}, opset={onnx_opset_version()}, ir_version={IR_VERSION}")
 
     print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    if not train_only_build:
+    if train_step_train:
         train()
+
+    if train_step_export:
         export()
 
-    build()
-    commit()
+    if train_step_build:
+        build()
+
+    if train_step_git:
+        commit()
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

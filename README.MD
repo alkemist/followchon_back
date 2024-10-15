@@ -9,6 +9,9 @@ https://gist.github.com/rutcreate/c0041e842f858ceb455b748809763ddb
 `python3 -m venv .venv`
 `.venv/bin/pip install -r requirements.txt`
 
+Check package version : `pip freeze | findstr onnx`  
+Install package version : `pip install --force-reinstall -v "onnx==1.14.0"`
+
 # Django
 
 Generate base site : `django-admin startproject mysite`  
