@@ -36,7 +36,9 @@ class HailoAsyncInference:
         """
         input_format_type = self.hef.get_input_vstream_infos()[0].format.type
         self.infer_model.input().set_format_type(input_format_type)
-        self.infer_model.output().set_format_type(getattr(FormatType, output_type))
+
+        for name in self.infer_model.output_names:
+            self.infer_model.output(name).set_format_type(getattr(FormatType, output_type))
 
     def callback(self, completion_info, binding, frame):
         """
