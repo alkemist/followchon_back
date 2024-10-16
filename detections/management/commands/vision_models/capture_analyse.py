@@ -113,7 +113,7 @@ class Capture_analyse:
                 if annotation.fail is not None:
                     logger.info(
                         f"Class: {annotation.family.index}, "
-                        f"Score: {annotation.score}, "
+                        f"Score: {round(annotation.score, 2)}, "
                         f"Fail: {annotation.fail}"
                     )
 

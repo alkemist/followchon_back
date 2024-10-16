@@ -1,5 +1,5 @@
 base:
-  - /local/shared_with_docker/followchon_back/models/config/yolo8/hef_config.yaml
+  - /local/shared_with_docker/followchon_back/models/config/8/hef_config.yaml
 postprocessing:
   device_pre_post_layers:
     nms: true
@@ -9,7 +9,7 @@ network:
 paths:
   network_path:
     - models_files/ObjectDetection/Detection-COCO/yolo/yolov8n/2023-01-30/yolov8n.onnx
-  alls_script: /local/shared_with_docker/followchon_back/models/config/yolo8/yolo.alls
+  alls_script: /local/shared_with_docker/followchon_back/models/config/8/yolo.alls
   url: https://hailo-model-zoo.s3.eu-west-2.amazonaws.com/ObjectDetection/Detection-COCO/yolo/yolov8n/2023-01-30/yolov8n.zip
 parser:
   nodes:
