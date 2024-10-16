@@ -113,7 +113,7 @@ def build():
 
     command_copy_hef = (
         "docker", "exec", "-i", f"hailo_ai_sw_suite_{hailo_sdk_version}_container",
-        "mv", f"/local/workspace/yolo{model_base_version}n.hef",
+        "mv", f"/local/workspace/yolov{model_base_version}n.hef",
         f"/local/shared_with_docker/followchon_back/{model_hef}"
     )
 
