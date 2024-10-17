@@ -1,5 +1,5 @@
 base:
-  - /local/shared_with_docker/followchon_back/models/config/8/hef_config.yaml
+  - base/yolov8.yaml
 postprocessing:
   device_pre_post_layers:
     nms: true
@@ -7,10 +7,7 @@ postprocessing:
 network:
   network_name: yolov8n
 paths:
-  network_path:
-    - models_files/ObjectDetection/Detection-COCO/yolo/yolov8n/2023-01-30/yolov8n.onnx
-  alls_script: /local/shared_with_docker/followchon_back/models/config/8/yolo.alls
-  url: https://hailo-model-zoo.s3.eu-west-2.amazonaws.com/ObjectDetection/Detection-COCO/yolo/yolov8n/2023-01-30/yolov8n.zip
+  alls_script: /local/shared_with_docker/followchon_back/models/config/8/yolo_41.alls
 parser:
   nodes:
     - null
@@ -23,9 +20,7 @@ parser:
 info:
   task: object detection
   input_shape: 640x640x3
-  #input_shape: 1024x1024x3
   output_shape: 80x5x100
-  #output_shape: 4x5x100
   operations: 8.74G
   parameters: 3.2M
   framework: pytorch

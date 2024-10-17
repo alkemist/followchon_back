@@ -67,6 +67,18 @@ Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`
 Show usage : `hailortcli monitor`
 Visualize model : https://netron.app/
 
+### Notes
+
+#### Outputs
+
+Ok :
+
+- 41 => 42 (8)
+- 52 => 53 (16)
+- 62 => 63 (32)
+
+Pas géré : 39, 50, 60
+
 # Links
 
 https://www.digitalocean.com/community/tutorials/how-to-serve-django-applications-with-uwsgi-and-nginx-on-ubuntu-16-04#setting-up-the-uwsgi-application-server
