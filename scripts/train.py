@@ -32,6 +32,15 @@ model_onnx = f"{models_dir}/{train_dataset_name}.onnx"
 model_har = f"{models_dir}/{train_dataset_name}.har"
 model_hef = f"{models_dir}/{train_dataset_name}.hef"
 
+end_node_names = [
+    '/model.22/cv2.0/cv2.0.2/Conv',
+    '/model.22/cv3.0/cv3.0.2/Conv',
+    '/model.22/cv2.1/cv2.1.2/Conv',
+    '/model.22/cv3.1/cv3.1.2/Conv',
+    '/model.22/cv2.2/cv2.2.2/Conv',
+    '/model.22/cv3.2/cv3.2.2/Conv'
+]
+
 
 def train():
     model = YOLO(train_previous_path)
@@ -79,7 +88,10 @@ def parse():
         "hailomz", "parse",
         "--hw-arch", "hailo8l",
         "--ckpt", f"/local/shared_with_docker/followchon_back/{model_onnx}",
-        f"yolov{model_base_version}n",
+        "--end-node-names", " ".join([f"'{d}'" for d in end_node_names]),
+        "--yaml",
+        f"/local/shared_with_docker/followchon_back/models/config/{model_base_version}/hef_config_n.yaml",
+        # f"yolov{model_base_version}n",
     )
 
     command_copy_har = (

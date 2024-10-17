@@ -62,6 +62,11 @@ Hailort : `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build -
 Tappas : `./install.sh`
 Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`
 
+### Tools
+
+Show usage : `hailortcli monitor`
+Visualize model : https://netron.app/
+
 # Links
 
 https://www.digitalocean.com/community/tutorials/how-to-serve-django-applications-with-uwsgi-and-nginx-on-ubuntu-16-04#setting-up-the-uwsgi-application-server

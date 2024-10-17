@@ -18,6 +18,8 @@ class HailoAsyncInference:
         params = VDevice.create_params()
         params.scheduling_algorithm = HailoSchedulingAlgorithm.ROUND_ROBIN
 
+        self.filter_outputs = []  # yolov8n/yolov8_nms_postprocess, 'yolov8n/conv42', 'yolov8n/conv53', 'yolov8n/conv63'
+
         self.hef = HEF(hef_path)
         self.target = VDevice(params)
         self.infer_model = self.target.create_infer_model(hef_path)
@@ -25,7 +27,12 @@ class HailoAsyncInference:
         self._set_input_output(output_type)
         self.input_vstream_info, self.output_vstream_info = self._get_vstream_info()
         self.configured_infer_model = self.infer_model.configure()
-        self.output_results = []
+
+        self.output_results = {}
+
+        outputs = self.infer_model.output_names if len(self.filter_outputs) == 0 else self.filter_outputs
+        for output in outputs:
+            self.output_results[output] = []
 
     def _set_input_output(self, output_type):
         """
@@ -36,6 +43,13 @@ class HailoAsyncInference:
         """
         input_format_type = self.hef.get_input_vstream_infos()[0].format.type
         self.infer_model.input().set_format_type(input_format_type)
+
+        logger.info('Available outputs :')
+        logger.info(self.infer_model.output_names)
+
+        if len(self.filter_outputs) > 0:
+            logger.info('Filtered output :')
+            logger.info(self.filter_outputs)
 
         for name in self.infer_model.output_names:
             self.infer_model.output(name).set_format_type(getattr(FormatType, output_type))
@@ -51,7 +65,39 @@ class HailoAsyncInference:
         if completion_info.exception:
             logger.error(f'Inference error: {completion_info.exception}')
         else:
-            self.output_results.append(binding.output().get_buffer())
+            outputs = self.infer_model.output_names if len(self.filter_outputs) == 0 else self.filter_outputs
+            for output in outputs:
+                ok = False
+                detections_groups = binding.output(output).get_buffer()
+                for detections in detections_groups:
+                    for detection in detections:
+                        if len(detection) == 5 and detection[4] > 0:
+                            print(detection)
+                            ok = True
+
+                    # if ok:
+                    print(output)
+                    print(detections_groups)
+                    exit()
+                    # self.output_results[output].append(detections)
+
+                # filtered_detections = [
+                #     d for d in binding.output(output).get_buffer() if d[4] > 0
+                # ]
+                # filtered_detections = [
+                #     [
+                #         [
+                #             [
+                #                 d for d in level3 if d[4] > 0
+                #             ]
+                #             for level3 in level2
+                #         ]
+                #         for level2 in level1
+                #     ]
+                #     for level1 in binding.output(output).get_buffer()
+                # ]
+                # if len(filtered_detections) > 0:
+                #     self.output_results[output].append(binding.output(output).get_buffer())
 
     def remove_last_output_results(self):
         return self.output_results.pop()
@@ -124,8 +170,10 @@ class HailoAsyncInference:
         Returns:
             bindings: Bindings object with input and output buffers.
         """
-        output_buffers = {name: np.empty(self.infer_model.output(name).shape, dtype=np.float32)
-                          for name in self.infer_model.output_names}
+        output_buffers = {
+            name: np.empty(self.infer_model.output(name).shape, dtype=np.float32)
+            for name in self.infer_model.output_names
+        }
 
         return self.configured_infer_model.create_bindings(output_buffers=output_buffers)
 

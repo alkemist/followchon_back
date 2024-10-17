@@ -6,7 +6,6 @@ from loguru import logger
 
 from detections.management.commands.vision_models.hailo_inference_async import HailoAsyncInference
 from detections.management.commands.vision_models.model import Model
-from detections.management.commands.vision_models.result_yolo import Result_yolo
 from detections.management.commands.vision_models.supervisor import Supervisor
 from helpers.image import ImageHelper
 
@@ -79,45 +78,56 @@ class Model_Hailo(Model):
         if self.model is None:
             self.check_model()
 
-        raw_detections = self.model.run(np.array(processed_image))
+        raw_detections_queue = self.model.run(np.array(processed_image))
 
-        if len(raw_detections) > 10:
-            logger.info(f"Queue size too long : {len(raw_detections)}")
+        if self.supervisor.log_detections:
+            logger.info(f"Queue detections : {len(raw_detections_queue)}")
 
-        if len(raw_detections) > 0:
-            raw_detections = self.model.remove_last_output_results()
+        if len(raw_detections_queue) > 10:
+            logger.info(f"Queue size too long : {len(raw_detections_queue)}")
 
-            yolo_results = list()
-
-            if raw_detections is not None and len(raw_detections) > 0:
-                for i, detection in enumerate(raw_detections):
-
-                    for result in detection:
-                        bbox, score = result[:4], result[4]
-
-                        if self.supervisor.log_detections:
-                            logger.info(f"Class: {i}, Score: {score}, Result: {bbox[1]} {bbox[0]} {bbox[3]} {bbox[2]}")
-
-                        if score >= self.supervisor.score_min:
-                            yolo_result = Result_yolo(
-                                i,
-                                float(score),
-                                width_resized,
-                                height_resized
-                            )
-
-                            yolo_result.import_hailo_without_padding(
-                                padded_size,
-                                padding,
-                                float(bbox[1]),
-                                float(bbox[0]),
-                                float(bbox[3]),
-                                float(bbox[2]),
-                            )
-
-                            yolo_results.append(yolo_result)
-
-                (frame, saved) = self.analyze(frame, frame_count, capture_date, yolo_results)
+        if len(raw_detections_queue) > 0:
+            print(self.model.output_results)
+            # raw_detections = self.model.remove_last_output_results()
+            #
+            # yolo_results = list()
+            #
+            # if raw_detections is not None and len(raw_detections) > 0:
+            #     if self.supervisor.log_detections:
+            #         logger.info(f"Raw detections: {len(raw_detections)}")
+            #
+            #     for i, detection in enumerate(raw_detections):
+            #         if self.supervisor.log_detections:
+            #             logger.info(f"Detection: {len(detection)}")
+            #
+            #         for result in detection:
+            #             bbox, score = result[:4], result[4]
+            #
+            #             if score > 0:
+            #                 if self.supervisor.log_detections:
+            #                     logger.info(
+            #                         f"Class: {i}, Score: {score}, Result: {bbox[1]} {bbox[0]} {bbox[3]} {bbox[2]}")
+            #
+            #                 if score >= self.supervisor.score_min:
+            #                     yolo_result = Result_yolo(
+            #                         i,
+            #                         float(score),
+            #                         width_resized,
+            #                         height_resized
+            #                     )
+            #
+            #                     yolo_result.import_hailo_without_padding(
+            #                         padded_size,
+            #                         padding,
+            #                         float(bbox[1]),
+            #                         float(bbox[0]),
+            #                         float(bbox[3]),
+            #                         float(bbox[2]),
+            #                     )
+            #
+            #                     yolo_results.append(yolo_result)
+            #
+            #     (frame, saved) = self.analyze(frame, frame_count, capture_date, yolo_results)
         else:
             # No traitement
             logger.info(f"Queue empty")

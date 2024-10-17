@@ -242,7 +242,6 @@ class Streamer:
             if self.supervisor.records_count > 0:
                 last_record = records[0]
                 photo_filename = f"{self.supervisor.records_directory}/{last_record}"
-                print(photo_filename)
 
                 frame = cv2.imread(photo_filename)
 
