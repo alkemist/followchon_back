@@ -91,10 +91,8 @@ def parse():
         "--ckpt", f"/local/shared_with_docker/followchon_back/{model_onnx}",
         # "--start-node-names", "images",
         # "--end-node-names") + end_node_names + (
-        # "--model-script",
-        # f"/local/shared_with_docker/followchon_back/models/config/{model_base_version}/yolo.alls",
         "--yaml",
-        f"/local/shared_with_docker/followchon_back/models/config/{model_base_version}/hef_config_n.yaml",
+        f"/local/shared_with_docker/followchon_back/models/config/{model_base_version}/hef_config_n_{model_nms_version}.yaml",
         # "/local/workspace/hailo_model_zoo/hailo_model_zoo/cfg/networks/yolov8n.yaml",
         # f"yolov{model_base_version}n",
     )
@@ -124,7 +122,7 @@ def build():
         "--classes", train_dataset_classes,
         # "--start-node-names", "images",
         # "--end-node-names") + end_node_names + (
-        "--calib-path", f"/local/shared_with_docker/followchon_back/{train_dataset_path}/val",
+        "--calib-path", f"/local/shared_with_docker/followchon_back/{train_dataset_path}/all",
         # "--model-script",
         # f"/local/shared_with_docker/followchon_back/models/config/{model_base_version}/yolo.alls",
         "--yaml",

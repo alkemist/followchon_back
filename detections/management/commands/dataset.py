@@ -36,12 +36,6 @@ def copy_to(files, ext, src_dir, dst_dir):
 class Command(BaseCommand):
     help = ""
 
-    def get_param(self, param: str):
-        if param in self.params_dict:
-            return self.params_dict[param].value
-
-        return None
-
     def handle(self, *args, **options):
         load_dotenv()
 
@@ -68,6 +62,8 @@ class Command(BaseCommand):
         dataset_val_images_path = f'{dataset_dir}/val/images'
         dataset_train_labels_path = f'{dataset_dir}/train/labels'
         dataset_train_images_path = f'{dataset_dir}/train/images'
+        dataset_all_labels_path = f'{dataset_dir}/all/labels'
+        dataset_all_images_path = f'{dataset_dir}/all/images'
 
         dataset_test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
         dataset_val_percent = float(os.getenv('DATASET_VAL_PERCENT'))
@@ -75,25 +71,34 @@ class Command(BaseCommand):
         annotations = FileHelper.list_files(dataset_source_labels_path, r'.*\.(txt)$').tolist()
 
         backup_count = len(annotations)
-        test_count = int(backup_count * dataset_test_percent)
-        val_count = int(backup_count * dataset_val_percent)
-        train_count = backup_count - test_count - val_count
 
-        tests = extract(annotations, test_count)
-        copy_to(tests, 'txt', dataset_source_labels_path, dataset_test_labels_path)
-        copy_to(tests, 'jpg', dataset_source_images_path, dataset_test_images_path)
+        if backup_count < 1112:
+            self.stdout.write(
+                self.style.SUCCESS('Error : 1112 files minimum required')
+            )
+        else:
+            copy_to(annotations, 'txt', dataset_source_labels_path, dataset_all_labels_path)
+            copy_to(annotations, 'jpg', dataset_source_images_path, dataset_all_images_path)
 
-        vals = extract(annotations, val_count)
-        copy_to(vals, 'txt', dataset_source_labels_path, dataset_val_labels_path)
-        copy_to(vals, 'jpg', dataset_source_images_path, dataset_val_images_path)
+            test_count = int(backup_count * dataset_test_percent)
+            val_count = int(backup_count * dataset_val_percent)
+            train_count = backup_count - test_count - val_count
 
-        trains = extract(annotations, train_count)
-        copy_to(trains, 'txt', dataset_source_labels_path, dataset_train_labels_path)
-        copy_to(trains, 'jpg', dataset_source_images_path, dataset_train_images_path)
+            tests = extract(annotations, test_count)
+            copy_to(tests, 'txt', dataset_source_labels_path, dataset_test_labels_path)
+            copy_to(tests, 'jpg', dataset_source_images_path, dataset_test_images_path)
 
-        shutil.copy(f"{dataset_source_path}/data.yaml",
-                    f"{dataset_dir}/data.yaml")
+            vals = extract(annotations, val_count)
+            copy_to(vals, 'txt', dataset_source_labels_path, dataset_val_labels_path)
+            copy_to(vals, 'jpg', dataset_source_images_path, dataset_val_images_path)
 
-        self.stdout.write(
-            self.style.SUCCESS('Successfully finished')
-        )
+            trains = extract(annotations, train_count)
+            copy_to(trains, 'txt', dataset_source_labels_path, dataset_train_labels_path)
+            copy_to(trains, 'jpg', dataset_source_images_path, dataset_train_images_path)
+
+            shutil.copy(f"{dataset_source_path}/data.yaml",
+                        f"{dataset_dir}/data.yaml")
+
+            self.stdout.write(
+                self.style.SUCCESS('Successfully finished')
+            )
