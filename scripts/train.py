@@ -148,8 +148,8 @@ def build():
 
 
 def commit():
-    for path in execute(('git', 'pull')):
-        print(path, end="")
+    # for path in execute(('git', 'pull')):
+    #    print(path, end="")
 
     for path in execute(('git', 'add', model_pt, model_hef)):
         print(path, end="")

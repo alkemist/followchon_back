@@ -1,8 +1,8 @@
 import os
 import time
+from datetime import datetime
 
 import cv2
-from loguru import logger
 
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.capture_analyse import Capture_analyse
@@ -56,7 +56,7 @@ class Model:
         if self.supervisor.source == Sources.VISION:
             self.zones = Zone.objects.all().filter(is_enabled=True).order_by('id')
 
-    def analyze(self, frame, frame_count, capture_date, yolo_results):
+    def analyze(self, frame, frame_count, capture_date: datetime, yolo_results):
         saved = False
 
         if len(yolo_results) > 0:
@@ -69,9 +69,6 @@ class Model:
             frame = analyse.detect(yolo_results)
 
             if analyse.is_triggered:
-                if self.supervisor.log_detections:
-                    logger.info(f"S")
-
                 analyse.save()
 
                 self.save_time = time.time()

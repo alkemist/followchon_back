@@ -52,7 +52,7 @@ class CaptureAdmin(admin.ModelAdmin):
     @admin.action(description="Migrate")
     def migrate(self, request, queryset):
         # for item in queryset.iterator():
-        #     item.check_changed()
+        #     item.inverse()
 
         updated = len(queryset)
 

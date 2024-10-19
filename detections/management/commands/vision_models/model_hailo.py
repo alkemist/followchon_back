@@ -1,3 +1,5 @@
+from datetime import datetime
+
 import PIL.Image
 import cv2
 import numpy as np
@@ -67,12 +69,12 @@ class Model_Hailo(Model):
             padded_image.resize((self.width, self.height)),
         )
 
-    def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date):
+    def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date: datetime):
         saved = False
         image_pil = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image_pil = Image.fromarray(image_pil)
 
-        (padding, padded_size, processed_image) = self.preprocess(image_pil)
+        (padding, padded_size, processed_image) = self.preprocess(image_pil.copy())
 
         (height_resized, width_resized) = processed_image.size
 
@@ -81,8 +83,8 @@ class Model_Hailo(Model):
 
         raw_detections_queue = self.model.run(np.array(processed_image))
 
-        if self.supervisor.log_detections:
-            logger.info(f"Queue detections : {len(raw_detections_queue)}")
+        # if self.supervisor.log_detections:
+        #     logger.info(f"Queue detections : {len(raw_detections_queue)}")
 
         if len(raw_detections_queue) > 10:
             logger.info(f"Queue size too long : {len(raw_detections_queue)}")
@@ -93,12 +95,12 @@ class Model_Hailo(Model):
             yolo_results = list()
 
             if raw_detections is not None and len(raw_detections) > 0:
-                if self.supervisor.log_detections:
-                    logger.info(f"Raw detections: {len(raw_detections)}")
+                # if self.supervisor.log_detections:
+                #     logger.info(f"Raw detections: {len(raw_detections)}")
 
                 for i, detection in enumerate(raw_detections):
-                    if self.supervisor.log_detections:
-                        logger.info(f"Detection: {len(detection)}")
+                    # if self.supervisor.log_detections:
+                    #     logger.info(f"Detection: {len(detection)}")
 
                     for result in detection:
                         bbox, score = result[:4], result[4]
@@ -106,7 +108,7 @@ class Model_Hailo(Model):
                         if score > 0:
                             if self.supervisor.log_detections:
                                 logger.info(
-                                    f"Class: {i}, Score: {score}, Result: {bbox[1]} {bbox[0]} {bbox[3]} {bbox[2]}")
+                                    f"Class: {i}, Score: {score}, Result: {bbox[0]} {bbox[1]} {bbox[2]} {bbox[3]}")
 
                             if score >= self.supervisor.score_min:
                                 yolo_result = Result_yolo(
@@ -126,6 +128,69 @@ class Model_Hailo(Model):
                                 )
 
                                 yolo_results.append(yolo_result)
+
+                                # image_1_2 = processed_image.copy()
+                                # draw_1_2 = ImageDraw.Draw(image_1_2)
+                                #
+                                # scaled_box = [x * width_resized if i % 2 == 0 else x * height_resized for i, x in
+                                #               enumerate(bbox)]
+                                # ymin, xmin, ymax, xmax = scaled_box
+                                # print([(xmin, ymin), (xmax, ymax)])
+                                #
+                                # draw_1_2.rectangle([(xmin, ymin), (xmax, ymax)], width=2)
+                                # image_1_2.save(f"{capture_date.strftime('%Y-%m-%d_%H-%M-%S-%f')}_1-2.jpg", 'JPEG')
+                                #
+                                # yolo_result = Result_yolo(
+                                #     i,
+                                #     float(score),
+                                #     width_resized,
+                                #     height_resized
+                                # )
+                                #
+                                # yolo_result.import_hailo_without_padding(
+                                #     padded_size,
+                                #     padding,
+                                #     float(bbox[0]),
+                                #     float(bbox[1]),
+                                #     float(bbox[2]),
+                                #     float(bbox[3]),
+                                # )
+                                #
+                                # print([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
+                                #        (yolo_result.ortho_br_x, yolo_result.ortho_br_y)])
+                                # print([(yolo_result.norm_x_center, yolo_result.norm_y_center),
+                                #        (yolo_result.norm_width, yolo_result.norm_height)])
+                                #
+                                # image_2_1 = image_pil.copy()
+                                # image_2_2 = processed_image.copy()
+                                # draw_2_1 = ImageDraw.Draw(image_2_1)
+                                # draw_2_2 = ImageDraw.Draw(image_2_2)
+                                # draw_2_1.rectangle([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
+                                #                     (yolo_result.ortho_br_x, yolo_result.ortho_br_y)], width=2)
+                                # draw_2_2.rectangle([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
+                                #                     (yolo_result.ortho_br_x, yolo_result.ortho_br_y)], width=2)
+                                # image_2_1.save(f"{capture_date.strftime('%Y-%m-%d_%H-%M-%S-%f')}_2-1.jpg", 'JPEG')
+                                # image_2_2.save(f"{capture_date.strftime('%Y-%m-%d_%H-%M-%S-%f')}_2-2.jpg", 'JPEG')
+                                #
+
+                                # print([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
+                                #        (yolo_result.ortho_br_x, yolo_result.ortho_br_y)])
+                                # print([(yolo_result.norm_x_center, yolo_result.norm_y_center),
+                                #        (yolo_result.norm_width, yolo_result.norm_height)])
+                                #
+                                # image_3_1 = image_pil.copy()
+                                # # image_3_2 = processed_image.copy()
+                                # draw_3_1 = ImageDraw.Draw(image_3_1)
+                                # # draw_3_2 = ImageDraw.Draw(image_3_2)
+                                # draw_3_1.rectangle([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
+                                #                     (yolo_result.ortho_br_x, yolo_result.ortho_br_y)], width=2)
+                                # # draw_3_2.rectangle([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
+                                # #                     (yolo_result.ortho_br_x, yolo_result.ortho_br_y)], width=2)
+                                # image_3_1.save(f"{capture_date.strftime('%Y-%m-%d_%H-%M-%S-%f')}_3-1.jpg", 'JPEG')
+                                # # image_3_2.save(f"{capture_date.strftime('%Y-%m-%d_%H-%M-%S-%f')}_3-2.jpg", 'JPEG')
+                                #
+                                # self.release()
+                                # exit()
 
                 (frame, saved) = self.analyze(frame, frame_count, capture_date, yolo_results)
         else:

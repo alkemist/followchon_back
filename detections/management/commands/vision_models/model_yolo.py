@@ -1,4 +1,5 @@
 import math
+from datetime import datetime
 
 import cv2
 from loguru import logger
@@ -27,7 +28,7 @@ class Model_YOLO(Model):
 
             self.model = YOLO(self.supervisor.get_model_path(), task='detect')
 
-    def infer(self, frame: cv2.typing.MatLike, frame_count, datestr):
+    def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date: datetime):
         results = self.model(frame, stream=True, verbose=False)
 
         (width, height) = frame.shape[1::-1]
@@ -56,6 +57,21 @@ class Model_YOLO(Model):
 
                     yolo_results.append(yolo_result)
 
-        (frame, saved) = self.analyze(frame, frame_count, datestr, yolo_results)
+                    # image_pil = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    # image_pil = Image.fromarray(image_pil)
+                    # draw = ImageDraw.Draw(image_pil)
+                    #
+                    #
+                    # print(float(tl_x), float(tl_y), float(br_x), float(br_y))
+                    # print([(yolo_result.norm_x_center, yolo_result.norm_y_center),
+                    #        (yolo_result.norm_width, yolo_result.norm_height)])
+                    #
+                    # draw.rectangle([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
+                    #                 (yolo_result.ortho_br_x, yolo_result.ortho_br_y)], width=2)
+                    # image_pil.save(f"{capture_date.strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg", 'JPEG')
+                    #
+                    # exit()
+
+        (frame, saved) = self.analyze(frame, frame_count, capture_date, yolo_results)
 
         return ImageHelper.resize_with_ratio(frame, self.capture_width, None), saved
