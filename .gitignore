@@ -22,7 +22,10 @@ logs
 hailort.*.log
 hailort.log
 
+models/*.onnx
+models/*.har
 models/config/*/n_nms_config_tmp.json
+models/config/*/n_nms_config_*_tmp.json
 
 yolov8n.pt
 __pycache__

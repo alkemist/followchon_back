@@ -2,14 +2,13 @@
   "nms_scores_th": 0.2,
   "nms_iou_th": 0.7,
   "image_dims": [
-    640,
-    640
+    1024,
+    1024
   ],
-  "max_proposals_per_class": 100,
-  "classes": 80,
+  "max_proposals_per_class": 10,
+  "classes": 4,
   "regression_length": 16,
   "background_removal": false,
-  "background_removal_index": 0,
   "bbox_decoders": [
     {
       "name": "bbox_decoder41",
