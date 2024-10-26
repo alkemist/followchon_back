@@ -26,6 +26,7 @@ hailo_sdk_version = os.getenv('TRAIN_SDK_VERSION')
 model_base_version = os.getenv('TRAIN_MODEL_BASE_VERSION')
 model_nms_version = os.getenv('TRAIN_MODEL_NMS_VERSION')
 train_dataset_classes = os.getenv('TRAIN_CLASSES')
+train_calib_dir = os.getenv('TRAIN_CALIB_DIR')
 
 model_train_last = f"{runs_dir}/{train_dataset_name}/weights/best.pt"
 model_pt = f"{models_dir}/{train_dataset_name}.pt"
@@ -122,7 +123,7 @@ def build():
         "--classes", train_dataset_classes,
         # "--start-node-names", "images",
         # "--end-node-names") + end_node_names + (
-        "--calib-path", f"/local/shared_with_docker/followchon_back/{train_dataset_path}/all",
+        "--calib-path", f"/local/shared_with_docker/followchon_back/{train_dataset_path}/{train_calib_dir}",
         # "--model-script",
         # f"/local/shared_with_docker/followchon_back/models/config/{model_base_version}/yolo.alls",
         "--yaml",
