@@ -61,6 +61,7 @@ Install PyTorch : `pip install torch torchvision torchaudio --index-url https://
 Hailort : `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config release`
 Tappas : `./install.sh`
 Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`
+Python : `venv/bin/pip install ~/Downloads/hailort-4.19.0-cp311-cp311-linux_aarch64.whl`
 
 ### Tools
 
@@ -69,17 +70,7 @@ Visualize model : https://netron.app/
 
 ### Notes
 
-#### Outputs
-
-Ok :
-
-- 41 => 42 (8)
-- 52 => 53 (16)
-- 62 => 63 (32)
-
-Pas géré : 39, 50, 60
-
-# Jupyter
+#### Jupyter
 
 `nano /home/jaden/.jupyter/jupyter_notebook_config.py`
 `venv/bin/python manage.py shell_plus --lab`

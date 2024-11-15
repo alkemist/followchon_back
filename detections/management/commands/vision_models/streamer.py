@@ -59,7 +59,6 @@ class Streamer:
         hour = datetime.now().hour
 
         while self.supervisor.enabled:
-            self.model.check_model()
             self.supervisor.fill_params()
             self.supervisor.add_temperature()
 

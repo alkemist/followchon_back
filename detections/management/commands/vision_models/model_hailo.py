@@ -29,8 +29,8 @@ class Model_Hailo(Model):
             if self.model is not None:
                 self.release()
 
-            if self.supervisor.current_model_version != self.supervisor.model_version:
-                logger.info(f'Load model version "{self.supervisor.model_version}"')
+            # if self.supervisor.current_model_version != self.supervisor.model_version:
+            logger.info(f'Load model version "{self.supervisor.model_version}"')
 
             self.supervisor.current_model_version = self.supervisor.model_version
 

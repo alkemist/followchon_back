@@ -121,7 +121,9 @@ class Log(models.Model):
                 color = '#f97316'
             case Levels.HOT:
                 color = '#ef4444'
-            case Levels.ERROR, Levels.FAIL:
+            case Levels.FAIL:
+                color = '#a855f7'
+            case Levels.ERROR:
                 color = '#a855f7'
 
         return mark_safe(f'<b style="color:{color}">{self.level}</b>')
