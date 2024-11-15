@@ -29,3 +29,5 @@ models/config/*/n_nms_config_*_tmp.json
 
 yolov8n.pt
 __pycache__
+
+notebooks/*.ipynb
