@@ -129,69 +129,6 @@ class Model_Hailo(Model):
 
                                 yolo_results.append(yolo_result)
 
-                                # image_1_2 = processed_image.copy()
-                                # draw_1_2 = ImageDraw.Draw(image_1_2)
-                                #
-                                # scaled_box = [x * width_resized if i % 2 == 0 else x * height_resized for i, x in
-                                #               enumerate(bbox)]
-                                # ymin, xmin, ymax, xmax = scaled_box
-                                # print([(xmin, ymin), (xmax, ymax)])
-                                #
-                                # draw_1_2.rectangle([(xmin, ymin), (xmax, ymax)], width=2)
-                                # image_1_2.save(f"{capture_date.strftime('%Y-%m-%d_%H-%M-%S-%f')}_1-2.jpg", 'JPEG')
-                                #
-                                # yolo_result = Result_yolo(
-                                #     i,
-                                #     float(score),
-                                #     width_resized,
-                                #     height_resized
-                                # )
-                                #
-                                # yolo_result.import_hailo_without_padding(
-                                #     padded_size,
-                                #     padding,
-                                #     float(bbox[0]),
-                                #     float(bbox[1]),
-                                #     float(bbox[2]),
-                                #     float(bbox[3]),
-                                # )
-                                #
-                                # print([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
-                                #        (yolo_result.ortho_br_x, yolo_result.ortho_br_y)])
-                                # print([(yolo_result.norm_x_center, yolo_result.norm_y_center),
-                                #        (yolo_result.norm_width, yolo_result.norm_height)])
-                                #
-                                # image_2_1 = image_pil.copy()
-                                # image_2_2 = processed_image.copy()
-                                # draw_2_1 = ImageDraw.Draw(image_2_1)
-                                # draw_2_2 = ImageDraw.Draw(image_2_2)
-                                # draw_2_1.rectangle([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
-                                #                     (yolo_result.ortho_br_x, yolo_result.ortho_br_y)], width=2)
-                                # draw_2_2.rectangle([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
-                                #                     (yolo_result.ortho_br_x, yolo_result.ortho_br_y)], width=2)
-                                # image_2_1.save(f"{capture_date.strftime('%Y-%m-%d_%H-%M-%S-%f')}_2-1.jpg", 'JPEG')
-                                # image_2_2.save(f"{capture_date.strftime('%Y-%m-%d_%H-%M-%S-%f')}_2-2.jpg", 'JPEG')
-                                #
-
-                                # print([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
-                                #        (yolo_result.ortho_br_x, yolo_result.ortho_br_y)])
-                                # print([(yolo_result.norm_x_center, yolo_result.norm_y_center),
-                                #        (yolo_result.norm_width, yolo_result.norm_height)])
-                                #
-                                # image_3_1 = image_pil.copy()
-                                # # image_3_2 = processed_image.copy()
-                                # draw_3_1 = ImageDraw.Draw(image_3_1)
-                                # # draw_3_2 = ImageDraw.Draw(image_3_2)
-                                # draw_3_1.rectangle([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
-                                #                     (yolo_result.ortho_br_x, yolo_result.ortho_br_y)], width=2)
-                                # # draw_3_2.rectangle([(yolo_result.ortho_tl_x, yolo_result.ortho_tl_y),
-                                # #                     (yolo_result.ortho_br_x, yolo_result.ortho_br_y)], width=2)
-                                # image_3_1.save(f"{capture_date.strftime('%Y-%m-%d_%H-%M-%S-%f')}_3-1.jpg", 'JPEG')
-                                # # image_3_2.save(f"{capture_date.strftime('%Y-%m-%d_%H-%M-%S-%f')}_3-2.jpg", 'JPEG')
-                                #
-                                # self.release()
-                                # exit()
-
                 (frame, saved) = self.analyze(frame, frame_count, capture_date, yolo_results)
         else:
             # No traitement

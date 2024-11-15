@@ -72,33 +72,28 @@ class Command(BaseCommand):
 
         backup_count = len(annotations)
 
-        if backup_count < 1112:
-            self.stdout.write(
-                self.style.SUCCESS('Error : 1112 files minimum required')
-            )
-        else:
-            copy_to(annotations, 'txt', dataset_source_labels_path, dataset_all_labels_path)
-            copy_to(annotations, 'jpg', dataset_source_images_path, dataset_all_images_path)
+        # copy_to(annotations, 'txt', dataset_source_labels_path, dataset_all_labels_path)
+        # copy_to(annotations, 'jpg', dataset_source_images_path, dataset_all_images_path)
 
-            test_count = int(backup_count * dataset_test_percent)
-            val_count = int(backup_count * dataset_val_percent)
-            train_count = backup_count - test_count - val_count
+        test_count = int(backup_count * dataset_test_percent)
+        val_count = int(backup_count * dataset_val_percent)
+        train_count = backup_count - test_count - val_count
 
-            tests = extract(annotations, test_count)
-            copy_to(tests, 'txt', dataset_source_labels_path, dataset_test_labels_path)
-            copy_to(tests, 'jpg', dataset_source_images_path, dataset_test_images_path)
+        tests = extract(annotations, test_count)
+        copy_to(tests, 'txt', dataset_source_labels_path, dataset_test_labels_path)
+        copy_to(tests, 'jpg', dataset_source_images_path, dataset_test_images_path)
 
-            vals = extract(annotations, val_count)
-            copy_to(vals, 'txt', dataset_source_labels_path, dataset_val_labels_path)
-            copy_to(vals, 'jpg', dataset_source_images_path, dataset_val_images_path)
+        vals = extract(annotations, val_count)
+        copy_to(vals, 'txt', dataset_source_labels_path, dataset_val_labels_path)
+        copy_to(vals, 'jpg', dataset_source_images_path, dataset_val_images_path)
 
-            trains = extract(annotations, train_count)
-            copy_to(trains, 'txt', dataset_source_labels_path, dataset_train_labels_path)
-            copy_to(trains, 'jpg', dataset_source_images_path, dataset_train_images_path)
+        trains = extract(annotations, train_count)
+        copy_to(trains, 'txt', dataset_source_labels_path, dataset_train_labels_path)
+        copy_to(trains, 'jpg', dataset_source_images_path, dataset_train_images_path)
 
-            shutil.copy(f"{dataset_source_path}/data.yaml",
-                        f"{dataset_dir}/data.yaml")
+        shutil.copy(f"{dataset_source_path}/data.yaml",
+                    f"{dataset_dir}/data.yaml")
 
-            self.stdout.write(
-                self.style.SUCCESS('Successfully finished')
-            )
+        self.stdout.write(
+            self.style.SUCCESS('Successfully finished')
+        )

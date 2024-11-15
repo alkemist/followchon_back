@@ -79,6 +79,11 @@ Ok :
 
 Pas géré : 39, 50, 60
 
+# Jupyter
+
+`nano /home/jaden/.jupyter/jupyter_notebook_config.py`
+`venv/bin/python manage.py shell_plus --lab`
+
 # Links
 
 https://www.digitalocean.com/community/tutorials/how-to-serve-django-applications-with-uwsgi-and-nginx-on-ubuntu-16-04#setting-up-the-uwsgi-application-server

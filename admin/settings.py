@@ -258,9 +258,16 @@ SHELL_PLUS = "ipython"
 SHELL_PLUS_PRINT_SQL = True
 
 IPYTHON_ARGUMENTS = [
-    "--ext",
-    "django_extensions.management.notebook_extension",
+    '--ext', 'django_extensions.management.notebook_extension',
     "--debug",
 ]
 
-IPYTHON_KERNEL_DISPLAY_NAME = "Django Shell-Plus"
+SHELL_PLUS_MODEL_ALIASES = {
+}
+
+SHELL_PLUS_PRE_IMPORTS = {
+    ('detections.models', '*'),
+    ('configuration.models', '*'),
+}
+
+SHELL_PLUS_MODEL_IMPORTS_RESOLVER = 'django_extensions.collision_resolvers.FullPathCR'
