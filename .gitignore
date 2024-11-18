@@ -30,8 +30,9 @@ models/config/*/n_nms_config_*_tmp.json
 yolov8n.pt
 __pycache__
 
-notebooks
-notebooks/**
-notebooks/**/*.ipynb
-notebooks/**/*.csv
-notebooks/*.ipynb
+notebooks/Wagon
+notebooks/Wagon/*.ipynb
+notebooks/data/*.csv
+
+notebooks/.ipynb_checkpoints
+notebooks/**/.ipynb_checkpoints
