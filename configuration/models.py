@@ -50,7 +50,7 @@ class Zone(models.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if self.center_x and self.center_y and self.width and self.height:
+        if self.center_x is not None and self.center_y is not None and self.width is not None and self.height is not None:
             self.norm_point_tl = (
                 cast(float, self.center_x) - cast(float, self.width) / 2,
                 cast(float, self.center_y) - cast(float, self.height) / 2
