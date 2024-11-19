@@ -50,7 +50,11 @@ class Zone(models.Model):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        if self.center_x > 0.0 and self.center_y > 0.0 and self.width > 0 and self.height > 0:
+        self.norm_point_tl = None
+        self.norm_point_br = None
+
+    def has_point(self, point: tuple[int, int]) -> bool:
+        if self.norm_point_tl is None or self.norm_point_br is None:
             self.norm_point_tl = (
                 cast(float, self.center_x) - cast(float, self.width) / 2,
                 cast(float, self.center_y) - cast(float, self.height) / 2
@@ -61,9 +65,9 @@ class Zone(models.Model):
                 cast(float, self.center_y) + cast(float, self.height) / 2
             )
 
-    def has_point(self, point: tuple[int, int]) -> bool:
         has_in_x = self.norm_point_tl[0] <= point[0] <= self.norm_point_br[0]
         has_in_y = self.norm_point_tl[1] <= point[1] <= self.norm_point_br[1]
+
         return has_in_x and has_in_y
 
     def __str__(self):
