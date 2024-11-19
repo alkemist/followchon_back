@@ -16,13 +16,13 @@ class Model_YOLO(Model):
     def __init__(self, supervisor: Supervisor):
         super().__init__(supervisor)
 
-    def check_model(self):
+    def check_model(self, origin: str):
         super().fill_objects()
         self.supervisor.fill_params()
 
         if self.model is None or not self.supervisor.current_model_version != self.supervisor.model_version:
             if self.supervisor.current_model_version != self.supervisor.model_version:
-                logger.info(f'Load model version "{self.supervisor.model_version}"')
+                logger.info(f'Load model version "{self.supervisor.model_version}" : {origin}')
 
             self.supervisor.current_model_version = self.supervisor.model_version
 

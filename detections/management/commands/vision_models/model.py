@@ -79,7 +79,7 @@ class Model:
     def infer(self, frame_count, frame: cv2.typing.MatLike, datestr):
         raise Exception('Infer not implemented')
 
-    def check_model(self):
+    def check_model(self, origin: str):
         raise Exception('Check model not implemented')
 
     def release(self):

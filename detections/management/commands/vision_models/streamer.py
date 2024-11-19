@@ -53,7 +53,7 @@ class Streamer:
         self.supervisor.last_capture_seconds = time.time()
 
     def start(self):
-        self.model.check_model()
+        self.model.check_model('start')
         self.supervisor.log_start()
 
         hour = datetime.now().hour
@@ -65,7 +65,8 @@ class Streamer:
             records = self.supervisor.get_records()
             capture_time_elapsed = round(time.time() - self.supervisor.last_capture_seconds)
 
-            if datetime.now().hour > hour:
+            if (datetime.now().hour > hour
+                    and self.supervisor.hour_min < datetime.now().hour < self.supervisor.hour_max):
                 hour = datetime.now().hour
                 self.supervisor.log_hourly()
 
@@ -227,13 +228,12 @@ class Streamer:
         return None
 
     def read(self):
-        self.model.check_model()
+        self.model.check_model('read')
         self.supervisor.log_start()
 
         frame_saved_count = 0
 
         while self.supervisor.enabled:
-            self.model.check_model()
             self.supervisor.fill_params()
 
             records = self.supervisor.get_records()

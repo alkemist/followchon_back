@@ -21,7 +21,7 @@ class Model_Hailo(Model):
         self.height = None
         self.width = None
 
-    def check_model(self):
+    def check_model(self, origin: str):
         super().fill_objects()
         self.supervisor.fill_params()
 
@@ -30,7 +30,7 @@ class Model_Hailo(Model):
                 self.release()
 
             # if self.supervisor.current_model_version != self.supervisor.model_version:
-            logger.info(f'Load model version "{self.supervisor.model_version}"')
+            logger.info(f'Load model version "{self.supervisor.model_version}" : {origin}')
 
             self.supervisor.current_model_version = self.supervisor.model_version
 
@@ -79,7 +79,7 @@ class Model_Hailo(Model):
         (height_resized, width_resized) = processed_image.size
 
         if self.model is None:
-            self.check_model()
+            self.check_model('infer')
 
         raw_detections_queue = self.model.run(np.array(processed_image))
 
