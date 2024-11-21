@@ -32,7 +32,7 @@ __pycache__
 
 notebooks/Wagon
 notebooks/Wagon/*.ipynb
-notebooks/data/*.csv
+notebooks/**/data/*
 
 notebooks/.ipynb_checkpoints
 notebooks/**/.ipynb_checkpoints
