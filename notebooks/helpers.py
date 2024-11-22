@@ -221,6 +221,8 @@ def regression_lineaire(df, X_columns, y_column):
     for X_column in X_columns:
         df_cleaned = df_cleaned[~(df_cleaned[X_column].isnull())]
 
+    df_cleaned = df_cleaned.reset_index()
+
     # Variables explicatives (X) et cible (y)
     X = df_cleaned[X_columns]  # Les colonnes explicatives
     y = df_cleaned[y_column]  # La colonne cible
@@ -282,16 +284,20 @@ def regression_lineaire_test(model_1, df, X_columns, y_column, r2_train, mse_tra
     df_cleaned = df[~(df[y_column].isnull())]
     for X_column in X_columns:
         df_cleaned = df_cleaned[~(df_cleaned[X_column].isnull())]
+
+    df_cleaned = df_cleaned.reset_index()
         
     X_test = df_cleaned[X_columns]  # Les colonnes explicatives
     y_test = df_cleaned[y_column]  # La colonne cible
     
     test_pred_model_1 = model_1.predict(X_test)
 
-    X_test_sample = X_test.sample(frac=0.02, random_state=42)
-    y_test_sample = y_test.loc[X_test_sample.index]
+    sample_count_min = min(X_test.shape[0], y_test.shape[0], len(test_pred_model_1))
+    sample_count = min(200, len(test_pred_model_1))
     
-    pred_sample = test_pred_model_1[X_test_sample.index - 1]
+    X_test_sample = X_test.sample(n=sample_count, random_state=sample_count_min)
+    y_test_sample = y_test.loc[X_test_sample.index]
+    pred_sample = test_pred_model_1[X_test_sample.index - 1] # Les index commencent à 1
     
     for X_column in X_columns:
         df_column = pd.DataFrame()
