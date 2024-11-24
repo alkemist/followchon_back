@@ -21861,3 +21861,11 @@ ValueError: Target scores need to be probabilities for multiclass roc_auc, i.e. 
 2024-11-24 16:00:44,576:INFO:Scoring test/hold-out set
 2024-11-24 16:00:44,945:INFO:Visual Rendered Successfully
 2024-11-24 16:00:45,211:INFO:plot_model() successfully completed......................................
+2024-11-24 23:58:17,743:WARNING:
+'cuml' is a soft dependency and not included in the pycaret installation. Please run: `pip install cuml` to install.
+2024-11-24 23:58:17,743:WARNING:
+'cuml' is a soft dependency and not included in the pycaret installation. Please run: `pip install cuml` to install.
+2024-11-24 23:58:17,743:WARNING:
+'cuml' is a soft dependency and not included in the pycaret installation. Please run: `pip install cuml` to install.
+2024-11-24 23:58:17,743:WARNING:
+'cuml' is a soft dependency and not included in the pycaret installation. Please run: `pip install cuml` to install.
