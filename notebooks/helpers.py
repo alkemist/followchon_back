@@ -300,10 +300,11 @@ def regression_lineaire_test(model_1, df, X_columns, y_column, r2_train, mse_tra
     pred_sample = test_pred_model_1[X_test_sample.index - 1] # Les index commencent à 1
     
     for X_column in X_columns:
-        df_column = pd.DataFrame()
-        df_column[X_column] = X_test_sample[X_column]
-        df_column[y_column + '_true'] = y_test_sample
-        df_column[y_column + '_pred'] = pred_sample
+        df_column = pd.DataFrame({
+          X_column:           X_test_sample[X_column],
+          y_column + '_true': y_test_sample,
+          y_column + '_pred': pred_sample,
+        })
 
         fig = px.scatter(
             df_column, 
