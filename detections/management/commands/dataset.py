@@ -7,8 +7,8 @@ from django.core.management.base import BaseCommand
 from dotenv import load_dotenv
 
 from configuration.models import Parameter
-from helpers.array import ArrayHelper
-from helpers.file import FileHelper
+from utils.array import ArrayHelper
+from utils.file import FileHelper
 
 
 def extract(items, count):

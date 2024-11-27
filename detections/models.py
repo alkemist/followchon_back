@@ -16,8 +16,8 @@ from dotenv import load_dotenv
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.annotation import Annotation
 from detections.management.commands.vision_models.sources import Sources
-from helpers.image import ImageHelper
-from helpers.yolo import YoloHelper
+from utils.image import ImageHelper
+from utils.yolo import YoloHelper
 
 load_dotenv()
 

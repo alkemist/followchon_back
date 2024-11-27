@@ -4,7 +4,7 @@ from typing_extensions import Self
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.result_yolo import Result_yolo
 from detections.management.commands.vision_models.supervisor import Supervisor
-from helpers.image import ImageHelper
+from utils.image import ImageHelper
 
 
 class Annotation:

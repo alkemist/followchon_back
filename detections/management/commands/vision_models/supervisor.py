@@ -10,9 +10,9 @@ from loguru import logger
 from configuration.models import Parameter, Log
 from detections.management.commands.vision_models.levels import Levels
 from detections.management.commands.vision_models.sources import Sources
-from helpers.array import ArrayHelper
-from helpers.date import DateHelper
-from helpers.file import FileHelper
+from utils.array import ArrayHelper
+from utils.date import DateHelper
+from utils.file import FileHelper
 
 
 class Supervisor:

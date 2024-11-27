@@ -1,4 +1,4 @@
-from helpers.yolo import YoloHelper
+from utils.yolo import YoloHelper
 
 
 class Result_yolo:

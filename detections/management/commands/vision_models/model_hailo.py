@@ -10,7 +10,7 @@ from detections.management.commands.vision_models.hailo_inference_async import H
 from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.result_yolo import Result_yolo
 from detections.management.commands.vision_models.supervisor import Supervisor
-from helpers.image import ImageHelper
+from utils.image import ImageHelper
 
 
 class Model_Hailo(Model):

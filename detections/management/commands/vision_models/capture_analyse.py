@@ -10,7 +10,7 @@ from detections.management.commands.vision_models.annotation import Annotation
 from detections.management.commands.vision_models.sources import Sources
 from detections.management.commands.vision_models.supervisor import Supervisor
 from detections.models import Capture, Detection
-from helpers.array import ArrayHelper
+from utils.array import ArrayHelper
 
 
 class Capture_analyse:

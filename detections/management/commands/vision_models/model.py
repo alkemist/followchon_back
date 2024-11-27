@@ -9,7 +9,7 @@ from detections.management.commands.vision_models.capture_analyse import Capture
 from detections.management.commands.vision_models.sources import Sources
 from detections.management.commands.vision_models.supervisor import Supervisor
 from detections.models import Detection
-from helpers.array import ArrayHelper
+from utils.array import ArrayHelper
 
 
 class Model:

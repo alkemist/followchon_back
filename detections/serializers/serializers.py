@@ -7,7 +7,7 @@ from configuration.serializers.family import FamilySerializer
 from configuration.serializers.serializers import ZoneSerializer
 from detections.management.commands.vision_models.sources import Sources
 from detections.models import Capture, Detection
-from helpers.yolo import YoloHelper
+from utils.yolo import YoloHelper
 
 
 class DetectionSerializer(serializers.ModelSerializer):
