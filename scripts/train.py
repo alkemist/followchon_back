@@ -179,12 +179,9 @@ if __name__ == '__main__':
 
     for train_classes in trains_classes:
         train_name = f"{train_dataset_base_name}-{train_classes['name']}"
-
         model_train_last = f"{runs_dir}/{train_name}/weights/best.pt"
         model_pt = f"{models_dir}/{train_name}.pt"
         model_onnx = f"{models_dir}/{train_name}.onnx"
-        model_har = f"{models_dir}/{train_name}.har"
-        model_hef = f"{models_dir}/{train_name}.hef"
 
         if os.getenv('TRAIN_STEP_TRAIN'):
             train(train_name, train_classes['classes'])
@@ -192,6 +189,14 @@ if __name__ == '__main__':
 
         if os.getenv('TRAIN_STEP_EXPORT'):
             export(model_pt, model_onnx)
+
+    for train_classes in trains_classes:
+        train_name = f"{train_dataset_base_name}-{train_classes['name']}"
+
+        model_pt = f"{models_dir}/{train_name}.pt"
+        model_onnx = f"{models_dir}/{train_name}.onnx"
+        model_har = f"{models_dir}/{train_name}.har"
+        model_hef = f"{models_dir}/{train_name}.hef"
 
         if os.getenv('TRAIN_STEP_PARSE'):
             parse(model_onnx, model_har, len(train_classes['classes']))
