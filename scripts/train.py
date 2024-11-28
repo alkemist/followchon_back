@@ -53,11 +53,14 @@ def train():
         name=train_dataset_name,
         verbose=True,
         save=True,
+        cache=True,
+        plots=True,
         resume=train_resume,
         project=runs_dir,
         exist_ok=True,
         device=train_device,
-        workers=8
+        workers=8,
+        classes=[0, 4],
     )
 
     shutil.move(model_train_last, model_pt)
