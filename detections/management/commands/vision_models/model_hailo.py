@@ -1,4 +1,4 @@
-from datetime import datetime
+import sys
 
 import PIL.Image
 import cv2
@@ -9,32 +9,36 @@ from loguru import logger
 from detections.management.commands.vision_models.hailo_inference_async import HailoAsyncInference
 from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.result_yolo import Result_yolo
+from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.supervisor import Supervisor
-from utils.image import ImageHelper
+from detections.management.commands.vision_models.type import Type
 
 
 class Model_Hailo(Model):
 
-    def __init__(self, supervisor: Supervisor):
-        super().__init__(supervisor)
+    def __init__(self, supervisor: Supervisor, source: Source = Source.VISION,
+                 model_type: Type = Type.ALL):
+        super().__init__(supervisor, 'hef', source, model_type)
 
         self.height = None
         self.width = None
 
     def check_model(self, origin: str):
-        super().fill_objects()
         self.supervisor.fill_params()
 
-        if self.model is None or self.supervisor.current_model_version != self.supervisor.model_version:
+        logger.info(f'Vérifie le compteur de références: {self.model_type} / {sys.getrefcount(self.model)}')
+
+        if self.model is None or self.current_model_version != self.supervisor.model_version:
             if self.model is not None:
                 self.release()
 
             # if self.supervisor.current_model_version != self.supervisor.model_version:
-            logger.info(f'Load model version "{self.supervisor.model_version}" : {origin}')
+            logger.info(
+                f'Load model version "{self.supervisor.model_version}" : {self.model_type} / {origin}')
 
-            self.supervisor.current_model_version = self.supervisor.model_version
+            self.current_model_version = self.supervisor.model_version
 
-            self.model = HailoAsyncInference(self.supervisor.get_model_path())
+            self.model = HailoAsyncInference(self.get_model_path())
             self.height, self.width, _ = self.model.get_input_shape()
 
     def preprocess(self, image: PIL.Image.Image):
@@ -69,7 +73,7 @@ class Model_Hailo(Model):
             padded_image.resize((self.width, self.height)),
         )
 
-    def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date: datetime):
+    def infer(self, frame: cv2.typing.MatLike):
         saved = False
         image_pil = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image_pil = Image.fromarray(image_pil)
@@ -77,6 +81,8 @@ class Model_Hailo(Model):
         (padding, padded_size, processed_image) = self.preprocess(image_pil.copy())
 
         (height_resized, width_resized) = processed_image.size
+
+        yolo_results = list()
 
         if self.model is None:
             self.check_model('infer')
@@ -91,8 +97,6 @@ class Model_Hailo(Model):
 
         if len(raw_detections_queue) > 0:
             raw_detections = self.model.remove_last_output_results()
-
-            yolo_results = list()
 
             if raw_detections is not None and len(raw_detections) > 0:
                 # if self.supervisor.log_detections:
@@ -128,13 +132,11 @@ class Model_Hailo(Model):
                                 )
 
                                 yolo_results.append(yolo_result)
-
-                (frame, saved) = self.analyze(frame, frame_count, capture_date, yolo_results)
         else:
             # No traitement
             logger.info(f"Queue empty")
 
-        return ImageHelper.resize_with_ratio(frame, self.capture_width, None), saved
+        return yolo_results
 
     def release(self):
         if self.model is not None:

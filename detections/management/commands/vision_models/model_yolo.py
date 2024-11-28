@@ -1,5 +1,4 @@
 import math
-from datetime import datetime
 
 import cv2
 from loguru import logger
@@ -7,17 +6,18 @@ from ultralytics import YOLO
 
 from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.result_yolo import Result_yolo
+from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.supervisor import Supervisor
-from utils.image import ImageHelper
+from detections.management.commands.vision_models.type import Type
 
 
 class Model_YOLO(Model):
 
-    def __init__(self, supervisor: Supervisor):
-        super().__init__(supervisor)
+    def __init__(self, supervisor: Supervisor, source: Source = Source.VISION,
+                 model_type: Type = Type.ALL):
+        super().__init__(supervisor, 'pt', source, model_type)
 
     def check_model(self, origin: str):
-        super().fill_objects()
         self.supervisor.fill_params()
 
         if self.model is None or not self.supervisor.current_model_version != self.supervisor.model_version:
@@ -26,9 +26,9 @@ class Model_YOLO(Model):
 
             self.supervisor.current_model_version = self.supervisor.model_version
 
-            self.model = YOLO(self.supervisor.get_model_path(), task='detect')
+            self.model = YOLO(self.get_model_path(), task='detect')
 
-    def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date: datetime):
+    def infer(self, frame: cv2.typing.MatLike):
         results = self.model(frame, stream=True, verbose=False)
 
         (width, height) = frame.shape[1::-1]
@@ -72,6 +72,4 @@ class Model_YOLO(Model):
                     #
                     # exit()
 
-        (frame, saved) = self.analyze(frame, frame_count, capture_date, yolo_results)
-
-        return ImageHelper.resize_with_ratio(frame, self.capture_width, None), saved
+        return yolo_results

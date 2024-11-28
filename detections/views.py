@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from api.models import UpdateViewSet, CustomLimitOffsetPagination
-from detections.management.commands.vision_models.sources import Sources
+from detections.management.commands.vision_models.source import Source
 from detections.models import Capture
 from detections.serializers.serializers import CaptureHydratedSerializer, CaptureDateSerializer, \
     CaptureStatisticsDaySerializer
@@ -75,7 +75,7 @@ class CaptureViewSet(UpdateViewSet):
     def statistics_by_day(self, request, *args, **kwargs):
         captures = (
             Capture.objects.all()
-            .filter(source=Sources.VISION)
+            .filter(source=Source.VISION)
             .filter(date__gte=datetime(2024, 9, 4))
             .annotate(
                 date_only=TruncDate('date'),

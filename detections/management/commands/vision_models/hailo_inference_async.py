@@ -6,6 +6,8 @@ from loguru import logger
 
 
 class HailoAsyncInference:
+    target = None
+
     def __init__(self, hef_path, batch_size=1, output_type='FLOAT32'):
         """
         Initialize the HailoAsyncInference class with the provided HEF model file path.
@@ -15,12 +17,17 @@ class HailoAsyncInference:
             batch_size (int): Batch size for inference.
             output_type (str): Format type of the output stream.
         """
-        params = VDevice.create_params()
-        params.scheduling_algorithm = HailoSchedulingAlgorithm.ROUND_ROBIN
 
         self.hef = HEF(hef_path)
-        self.target = VDevice(params)
-        self.infer_model = self.target.create_infer_model(hef_path)
+
+        if HailoAsyncInference.target is None:
+            params = VDevice.create_params()
+            params.scheduling_algorithm = HailoSchedulingAlgorithm.ROUND_ROBIN
+
+            # MAX 1 vdevice
+            HailoAsyncInference.target = VDevice(params)
+
+        self.infer_model = HailoAsyncInference.target.create_infer_model(hef_path)
         self.infer_model.set_batch_size(batch_size)
         self._set_input_output(output_type)
         self.input_vstream_info, self.output_vstream_info = self._get_vstream_info()
@@ -140,4 +147,4 @@ class HailoAsyncInference:
         Release the Hailo device.
         """
         del self.configured_infer_model
-        self.target.release()
+        HailoAsyncInference.target.release()
