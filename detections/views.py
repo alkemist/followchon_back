@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from detections.management.commands.vision_models.sources import Sources
 from django.db.models import Q, Count, Case, When, IntegerField, ExpressionWrapper, F, FloatField, Min
 from django.db.models.functions import TruncDate, Round
 from rest_framework.decorators import action
@@ -7,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from api.models import UpdateViewSet, CustomLimitOffsetPagination
-from detections.management.commands.vision_models.sources import Sources
+from detections.management.commands.vision_models.source import Source
 from detections.models import Capture
 from detections.serializers.serializers import CaptureHydratedSerializer, CaptureDateSerializer, \
     CaptureStatisticsDaySerializer
@@ -75,7 +76,7 @@ class CaptureViewSet(UpdateViewSet):
     def statistics_by_day(self, request, *args, **kwargs):
         captures = (
             Capture.objects.all()
-            .filter(source=Sources.VISION)
+            .filter(source=Source.VISION)
             .filter(date__gte=datetime(2024, 9, 4))
             .annotate(
                 date_only=TruncDate('date'),

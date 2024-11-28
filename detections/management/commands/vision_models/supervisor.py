@@ -9,7 +9,7 @@ from loguru import logger
 
 from configuration.models import Parameter, Log
 from detections.management.commands.vision_models.levels import Levels
-from detections.management.commands.vision_models.sources import Sources
+from detections.management.commands.vision_models.source import Source
 from utils.array import ArrayHelper
 from utils.date import DateHelper
 from utils.file import FileHelper
@@ -17,13 +17,11 @@ from utils.file import FileHelper
 
 class Supervisor:
 
-    def __init__(self, vcgencmd=None, source: Sources = Sources.VISION, model_ext: str = 'pt'):
+    def __init__(self, vcgencmd=None, source: Source = Source.VISION):
         self.records_directory = f"./records/{source}"
         self.source = source
-        self.model_ext = model_ext
-        self.record_exts = 'jpg|png' if source == Sources.PHOTO else 'mkv|mp4'
+        self.record_exts = 'jpg|png' if source == Source.PHOTO else 'mkv|mp4'
 
-        self.current_model_version = 0
         self.model_version = ''
         self.model_path = ''
         self.score_min = 0
@@ -63,10 +61,6 @@ class Supervisor:
 
         self.analyses_by_record = []
         self.check_disk_free()
-
-    def get_model_path(self):
-        return (f"{os.getenv('MODEL_DIR')}/"
-                f"{os.getenv('MODEL_PREFIX')}{self.current_model_version}.{self.model_ext}")
 
     def get_params(self):
         parameters = Parameter.objects.all()
@@ -123,7 +117,7 @@ class Supervisor:
 
     def is_recording_ok(self):
         return (
-                self.source == Sources.VISION and
+                self.source == Source.VISION and
                 self.hour_min <= datetime.now().hour < self.hour_max and
                 (self.is_recording and self.records_count <= self.records_max or
                  not self.is_recording and self.records_count <= self.min_records_recording)
@@ -150,7 +144,7 @@ class Supervisor:
         self.temp_pause = int(self.get_param('vision_temp_pause_minutes'))
         self.popcorn_frame_count = int(self.get_param('vision_popcorn_frame_count'))
         self.frame_seconds = float(self.get_param('vision_frame_seconds'))  # 0.03 < > 0.02
-        self.enabled = self.source != Sources.VISION or self.get_param('vision_enabled') == '1'
+        self.enabled = self.source != Source.VISION or self.get_param('vision_enabled') == '1'
         self.stats_hourly = self.get_param('vision_stats_hourly') == '1'
         self.log_detections = self.get_param('vision_detection_log') == '1'
         self.log_detections_fail = self.get_param('vision_detection_fail') == '1'

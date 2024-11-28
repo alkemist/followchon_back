@@ -6,7 +6,6 @@ from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 from detections.management.commands.vision_models.levels import Levels
-from detections.management.commands.vision_models.sources import Sources
 
 
 class Family(models.Model):
@@ -98,7 +97,7 @@ class Parameter(models.Model):
 
 class Log(models.Model):
     date = models.DateTimeField(default=timezone.now)
-    source = models.CharField(null=True, max_length=200, choices=Sources.choices, default=Sources.VISION)
+    source = models.CharField(null=True, max_length=200, choices=Source.choices, default=Source.VISION)
     level = models.CharField(null=True, max_length=200, choices=Levels.choices, default=Levels.INFO)
     event = models.CharField(max_length=200, default='', null=True)
     info = models.CharField(max_length=200, default='', null=True)

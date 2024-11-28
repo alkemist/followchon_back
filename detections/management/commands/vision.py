@@ -4,9 +4,11 @@ from django.core.management.base import BaseCommand
 from dotenv import load_dotenv
 from loguru import logger
 
-from detections.management.commands.vision_models.sources import Sources
+from detections.management.commands.vision_models.levels import Levels
+from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.streamer import Streamer
 from detections.management.commands.vision_models.supervisor import Supervisor
+from detections.management.commands.vision_models.type import Type
 
 
 class Command(BaseCommand):
@@ -44,29 +46,34 @@ class Command(BaseCommand):
             log_temp = None
 
         if options["video"]:
-            source = Sources.VIDEO
+            source = Source.VIDEO
         elif options["photo"]:
-            source = Sources.PHOTO
+            source = Source.PHOTO
         else:
-            source = Sources.VISION
+            source = Source.VISION
 
         logger.add(f"{os.getenv('LOG_DIRECTORY')}{source}_{model_name}.log",
                    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
                    rotation="1 day", retention=7)
 
-        supervisor = Supervisor(log_temp, source, model_ext)
-        model = None
+        supervisor = Supervisor(log_temp, source)
+        model_all = None
+        model_chons = None
         error = None
 
         try:
             if options["hailo"]:
                 from detections.management.commands.vision_models.model_hailo import Model_Hailo
-                model = Model_Hailo(supervisor)
+                
+                model_all = Model_Hailo(supervisor, source, Type.ALL)
+                model_chons = Model_Hailo(supervisor, source, Type.CHONS)
             else:
                 from detections.management.commands.vision_models.model_yolo import Model_YOLO
-                model = Model_YOLO(supervisor)
 
-            streamer = Streamer(model)
+                model_all = Model_YOLO(supervisor, source, Type.ALL)
+                model_chons = Model_YOLO(supervisor, source, Type.CHONS)
+
+            streamer = Streamer(supervisor, model_all, model_chons)
 
             if options["photo"]:
                 streamer.read()
@@ -92,7 +99,7 @@ class Command(BaseCommand):
             supervisor.log(
                 type(error).__name__,
                 f"{str(error)}{trace}",
-                'fail'
+                Levels.FAIL
             )
 
         finally:

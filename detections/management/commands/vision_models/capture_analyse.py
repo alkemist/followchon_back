@@ -7,7 +7,7 @@ from loguru import logger
 
 from configuration.models import Family, Zone
 from detections.management.commands.vision_models.annotation import Annotation
-from detections.management.commands.vision_models.sources import Sources
+from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.supervisor import Supervisor
 from detections.models import Capture, Detection
 from utils.array import ArrayHelper
@@ -15,12 +15,13 @@ from utils.array import ArrayHelper
 
 class Capture_analyse:
 
-    def __init__(self,
+    def __init__(self, model_version: int,
                  frame: cv2.typing.MatLike, capture_date: datetime, frame_count,
                  last_detections_dict: dict[int, (float, float)],
                  families_dict: dict[int, Family], zones: list[Zone],
                  supervisor: Supervisor
                  ):
+        self.model_version = model_version
         self.frame = frame
         self.supervisor = supervisor
 
@@ -98,7 +99,7 @@ class Capture_analyse:
                     family_id_grouped.append(annotation.family.id)
 
         for annotation in annotations_grouped:
-            if self.supervisor.source != Sources.VISION or annotation.is_valid():
+            if self.supervisor.source != Source.VISION or annotation.is_valid():
                 self.annotations.append(annotation)
 
                 self.is_triggered = self.is_trigger_annotation(annotation)
@@ -127,10 +128,10 @@ class Capture_analyse:
         return frame_copy
 
     def is_trigger_annotation(self, annotation: Annotation):
-        if self.supervisor.source == Sources.PHOTO:
+        if self.supervisor.source == Source.PHOTO:
             return True
 
-        if annotation.family.is_tracked or self.supervisor.source == Sources.VIDEO:
+        if annotation.family.is_tracked or self.supervisor.source == Source.VIDEO:
             first_detection = annotation.family.id not in self.last_detections_dict
             last_detection = self.last_detections_dict.get(annotation.family.id, None)
             coords = (annotation.norm_x_center, annotation.norm_y_center)
@@ -145,7 +146,7 @@ class Capture_analyse:
             else:
                 annotation.fail = 'stationary'
 
-        if self.supervisor.source == Sources.VISION:
+        if self.supervisor.source == Source.VISION:
             if annotation.zone is not None and cast(Zone, annotation.zone).is_trigger:
                 annotation.trigger = Detection.Triggers.ZONE
             elif annotation.family.is_trigger:
@@ -163,5 +164,5 @@ class Capture_analyse:
             return False
 
     def save(self):
-        Capture().write(self.frame, self.date_capture, self.annotations, self.supervisor.current_model_version,
+        Capture().write(self.frame, self.date_capture, self.annotations, self.model_version,
                         self.supervisor.source)

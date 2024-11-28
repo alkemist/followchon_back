@@ -9,19 +9,23 @@ from time import sleep
 import cv2
 
 from detections.management.commands.vision_models.model import Model
-from detections.management.commands.vision_models.sources import Sources
+from detections.management.commands.vision_models.source import Source
+from detections.management.commands.vision_models.supervisor import Supervisor
+from detections.management.commands.vision_models.vision import Vision
 
 
 class Streamer:
 
-    def __init__(self, model: Model):
-        self.supervisor = model.supervisor
+    def __init__(self, supervisor: Supervisor, model_all: Model, model_chons: Model):
+        self.supervisor = supervisor
+        self.vision = Vision(supervisor)
 
         self.stream_path = os.getenv('LIVE_STREAM_PATH')
 
         self.show_stream = os.getenv('SHOW_STREAM') == 'True'
 
-        self.model = model
+        self.model_all = model_all
+        self.model_chons = model_chons
 
     def begin_recording(self, log: bool = False) -> object | None:
         if log:
@@ -48,12 +52,14 @@ class Streamer:
                                 universal_newlines=True)
 
     def long_sleep(self, time_minutes):
-        self.model.release()
+        self.model_all.release()
+        self.model_chons.release()
         time.sleep(time_minutes * 60)
         self.supervisor.last_capture_seconds = time.time()
 
     def start(self):
-        self.model.check_model('start')
+        self.model_all.check_model('start')
+        self.model_chons.check_model('start')
         self.supervisor.log_start()
 
         hour = datetime.now().hour
@@ -87,7 +93,7 @@ class Streamer:
                 self.stop_recording()
 
             if (self.supervisor.records_count > self.supervisor.min_records_capture \
-                    or (datetime.now().hour >= self.supervisor.hour_max or self.supervisor.source != Sources.VISION)
+                    or (datetime.now().hour >= self.supervisor.hour_max or self.supervisor.source != Source.VISION)
                     and self.supervisor.records_count > 0):
                 last_record = records[0]
                 camera_record_filename = f"{self.supervisor.records_directory}/{last_record}"
@@ -98,10 +104,11 @@ class Streamer:
                 self.supervisor.last_capture_seconds = time.time()
 
                 if self.supervisor.enabled and os.path.isfile(camera_record_filename):
-                    if self.supervisor.source == Sources.VISION:
+                    if self.supervisor.source == Source.VISION:
                         self.supervisor.add_processing_delay()
                     else:
-                        self.model.last_detections_dict = {}
+                        self.model_all.last_detections_dict = {}
+                        self.model_chons.last_detections_dict = {}
 
                     os.remove(camera_record_filename)
 
@@ -148,7 +155,7 @@ class Streamer:
                 # self.supervisor.log_waiting()
                 self.long_sleep(60)
 
-            if ((datetime.now().hour >= self.supervisor.hour_max or self.supervisor.source != Sources.VISION)
+            if ((datetime.now().hour >= self.supervisor.hour_max or self.supervisor.source != Source.VISION)
                     and self.supervisor.records_count == 0
             ):
                 self.supervisor.enabled = False
@@ -163,15 +170,16 @@ class Streamer:
         if self.supervisor.vcgm is not None:
             self.supervisor.log_stat_temperature()
 
-        if self.supervisor.source == Sources.VISION:
+        if self.supervisor.source == Source.VISION:
             self.stop_recording()
 
-        self.model.release()
+        self.model_all.release()
+        self.model_chons.release()
 
     def capture(self, camera_record_filename: str):
         self.supervisor.last_frame_seconds = 0
 
-        if self.supervisor.source == Sources.VISION:
+        if self.supervisor.source == Source.VISION:
             file_date = Path(camera_record_filename).stem
             date_values = re.split('[-_]', file_date)
             capture_date = datetime(
@@ -215,7 +223,7 @@ class Streamer:
             if self.show_stream and cv2.waitKey(1) == ord('q'):
                 self.supervisor.enabled = False
 
-        if self.supervisor.source == Sources.VISION:
+        if self.supervisor.source == Source.VISION:
             if frame_saved_count > self.supervisor.popcorn_frame_count:
                 self.supervisor.log_popcorn(capture_date, frame_saved_count)
 
@@ -228,7 +236,8 @@ class Streamer:
         return None
 
     def read(self):
-        self.model.check_model('read')
+        self.model_all.check_model('read')
+        self.model_chons.check_model('read')
         self.supervisor.log_start()
 
         frame_saved_count = 0
@@ -266,13 +275,22 @@ class Streamer:
 
         self.supervisor.log_stopped()
 
-        self.model.release()
+        self.model_all.release()
+        self.model_chons.release()
 
     def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date):
-        (frame, saved) = self.model.infer(
-            frame,
-            frame_count,
-            capture_date
+        yolo_results_all = self.model_all.infer(
+            frame
+        )
+
+        yolo_results_chons = self.model_chons.infer(
+            frame
+        )
+
+        (frame, saved) = self.vision.analyze(
+            self.model_all.current_model_version,
+            frame, frame_count, capture_date,
+            yolo_results_all + yolo_results_chons
         )
 
         self.supervisor.last_frame_seconds = time.time()
