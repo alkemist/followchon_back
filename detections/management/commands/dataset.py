@@ -47,12 +47,16 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         load_dotenv()
 
-        dataset_source_path = os.getenv('DATASET_SOURCE_DIR')
         chunk_number = int(os.getenv('DATASET_CHUNK_FIRST'))
         dataset_chunk = int(os.getenv('DATASET_CHUNK'))
+        dataset_base_result_dir = os.getenv('DATASET_RESULT_DIR')
+
+        dataset_source_path = os.getenv('DATASET_SOURCE_DIR')
         dataset_source_labels_path = f'{dataset_source_path}/labels'
         dataset_source_images_path = f'{dataset_source_path}/images'
-        dataset_base_dir = os.getenv('DATASET_RESULT_DIR')
+
+        dataset_test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
+        dataset_val_percent = float(os.getenv('DATASET_VAL_PERCENT'))
 
         if not chunk_number or chunk_number == 0 or isnan(chunk_number):
             parameters = Parameter.objects.all()
@@ -61,22 +65,21 @@ class Command(BaseCommand):
             )
             chunk_number = int(params_dict['vision_model_version'].value) + 1
 
-        dataset_test_labels_path = f'{dataset_dir}/test/labels'
-        dataset_test_images_path = f'{dataset_dir}/test/images'
-        dataset_val_labels_path = f'{dataset_dir}/val/labels'
-        dataset_val_images_path = f'{dataset_dir}/val/images'
-        dataset_train_labels_path = f'{dataset_dir}/train/labels'
-        dataset_train_images_path = f'{dataset_dir}/train/images'
+        annotations = (
+            FileHelper
+            .list_files(dataset_source_labels_path, r'.*\.(txt)$')
+            .tolist()
+        )
 
-        dataset_test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
-        dataset_val_percent = float(os.getenv('DATASET_VAL_PERCENT'))
+        for chunk in chunk_list(annotations, dataset_chunk):
+            dataset_dir = f'{dataset_base_result_dir}{chunk_number}'
 
-        annotations = FileHelper.list_files(dataset_source_labels_path, r'.*\.(txt)$').tolist()
-
-        chunks = chunk_list(annotations, dataset_chunk)
-
-        for chunk in chunks:
-            dataset_dir = f'{dataset_base_dir}{chunk_number}'
+            dataset_test_labels_path = f'{dataset_dir}/test/labels'
+            dataset_test_images_path = f'{dataset_dir}/test/images'
+            dataset_val_labels_path = f'{dataset_dir}/val/labels'
+            dataset_val_images_path = f'{dataset_dir}/val/images'
+            dataset_train_labels_path = f'{dataset_dir}/train/labels'
+            dataset_train_images_path = f'{dataset_dir}/train/images'
 
             if not os.path.exists(dataset_dir):
                 os.makedirs(dataset_dir)
@@ -101,6 +104,10 @@ class Command(BaseCommand):
 
             shutil.copy(f"{dataset_source_path}/data.yaml",
                         f"{dataset_dir}/data.yaml")
+
+            self.stdout.write(
+                self.style.SUCCESS(f'Chunk {chunk_number} finished')
+            )
 
             chunk_number = chunk_number + 1
 
