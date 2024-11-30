@@ -9,6 +9,9 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 import os
 import csv
+import sys
+import re
+
 import pandas as pd
 import plotly.express as px
 import ipywidgets as widgets
@@ -341,3 +344,11 @@ def regression_lineaire_test(model_1, df, X_columns, y_column, r2_train, mse_tra
     
 
     return model_1, r2_train, mse_train, mae_train
+
+def list_files(path, regex):
+    return np.sort([
+        f
+        for f
+        in os.listdir(path)
+        if re.search(regex, f)
+    ])
