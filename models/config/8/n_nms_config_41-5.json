@@ -6,7 +6,7 @@
     1024
   ],
   "max_proposals_per_class": 10,
-  "classes": 3,
+  "classes": 5,
   "regression_length": 16,
   "background_removal": false,
   "bbox_decoders": [

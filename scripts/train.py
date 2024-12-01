@@ -37,8 +37,8 @@ end_node_names = (
 )
 
 trains_classes = [
-    {'name': 'all', 'classes': [0, 3, 4]},
-    {'name': 'chons', 'classes': [1, 2]},
+    {'name': 'all', 'classes': [0, 3, 4], 'class_count': 5},
+    {'name': 'chons', 'classes': [1, 2], 'class_count': 5},
 ]
 
 
@@ -199,10 +199,10 @@ if __name__ == '__main__':
         model_hef = f"{models_dir}/{train_name}.hef"
 
         if os.getenv('TRAIN_STEP_PARSE'):
-            parse(model_onnx, model_har, len(train_classes['classes']))
+            parse(model_onnx, model_har, train_classes['class_count'])
 
         if os.getenv('TRAIN_STEP_COMPILE'):
-            build(model_har, model_hef, len(train_classes['classes']))
+            build(model_har, model_hef, train_classes['class_count'])
 
         if os.getenv('TRAIN_STEP_GIT'):
             commit(train_name, model_pt, model_hef)
