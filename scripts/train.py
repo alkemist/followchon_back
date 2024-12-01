@@ -184,8 +184,9 @@ if __name__ == '__main__':
         model_onnx = f"{models_dir}/{train_name}.onnx"
 
         if os.getenv('TRAIN_STEP_TRAIN'):
-            train(train_name, train_classes['classes'])
-            move(model_train_last, model_pt)
+            if not os.path.exists(model_pt):
+                train(train_name, train_classes['classes'])
+                move(model_train_last, model_pt)
 
         if os.getenv('TRAIN_STEP_EXPORT'):
             export(model_pt, model_onnx)
@@ -193,7 +194,6 @@ if __name__ == '__main__':
     for train_classes in trains_classes:
         train_name = f"{train_dataset_base_name}-{train_classes['name']}"
 
-        model_pt = f"{models_dir}/{train_name}.pt"
         model_onnx = f"{models_dir}/{train_name}.onnx"
         model_har = f"{models_dir}/{train_name}.har"
         model_hef = f"{models_dir}/{train_name}.hef"
@@ -202,9 +202,16 @@ if __name__ == '__main__':
             parse(model_onnx, model_har, train_classes['class_count'])
 
         if os.getenv('TRAIN_STEP_COMPILE'):
-            build(model_har, model_hef, train_classes['class_count'])
+            if not os.path.exists(model_hef):
+                build(model_har, model_hef, train_classes['class_count'])
+
+    for train_classes in trains_classes:
+        train_name = f"{train_dataset_base_name}-{train_classes['name']}"
+        model_pt = f"{models_dir}/{train_name}.pt"
+        model_hef = f"{models_dir}/{train_name}.hef"
 
         if os.getenv('TRAIN_STEP_GIT'):
-            commit(train_name, model_pt, model_hef)
+            if os.path.exists(model_pt) and os.path.exists(model_hef):
+                commit(train_name, model_pt, model_hef)
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
