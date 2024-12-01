@@ -15,6 +15,7 @@ load_dotenv()
 
 runs_dir = 'runs'
 models_dir = 'models'
+metrics_dir = 'metrics'
 
 train_previous_path = os.getenv('TRAIN_MODEL_PATH')
 train_dataset_path = os.getenv('TRAIN_DATASET_PATH')
@@ -62,8 +63,15 @@ def train(train_dataset_name, classes):
     )
 
 
-def move(model_train_last, model_pt):
-    shutil.move(model_train_last, model_pt)
+def move_metric(metric_dir, train_name, train_type, metric_file):
+    shutil.move(
+        f'{metric_dir}/{metric_file}',
+        f'{metrics_dir}/{train_type}/{train_name}-{metric_file}'
+    )
+
+
+def move(model_train_best, model_pt):
+    shutil.move(model_train_best, model_pt)
 
     print(f'Model yolo saved in {model_pt}')
 
@@ -179,14 +187,21 @@ if __name__ == '__main__':
 
     for train_classes in trains_classes:
         train_name = f"{train_dataset_base_name}-{train_classes['name']}"
-        model_train_last = f"{runs_dir}/{train_name}/weights/best.pt"
+        model_run_dir = f"{runs_dir}/{train_name}"
+        model_train_best = f"{model_run_dir}/weights/best.pt"
         model_pt = f"{models_dir}/{train_name}.pt"
         model_onnx = f"{models_dir}/{train_name}.onnx"
 
         if os.getenv('TRAIN_STEP_TRAIN'):
             if not os.path.exists(model_pt):
                 train(train_name, train_classes['classes'])
-                move(model_train_last, model_pt)
+                move(model_train_best, model_pt)
+
+                move_metric(model_run_dir, train_dataset_base_name, train_classes['name'], 'confusion_matrix.png')
+                move_metric(model_run_dir, train_dataset_base_name, train_classes['name'],
+                            'confusion_matrix_normalized.png')
+                move_metric(model_run_dir, train_dataset_base_name, train_classes['name'], 'results.csv')
+                move_metric(model_run_dir, train_dataset_base_name, train_classes['name'], 'results.png')
 
         if os.getenv('TRAIN_STEP_EXPORT'):
             export(model_pt, model_onnx)
