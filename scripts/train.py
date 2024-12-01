@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import subprocess
 from datetime import datetime
@@ -43,8 +44,12 @@ trains_classes = [
 ]
 
 
-def train(train_dataset_name, classes):
-    model = YOLO(train_previous_path)
+def train(train_dataset_name, train_type, classes):
+    train_filename = train_previous_path.replace('.pt', f'-{train_type}.pt') \
+        if train_previous_path.startswith('models/') \
+        else train_previous_path
+
+    model = YOLO(train_filename)
     model.train(
         data=train_dataset_yaml_path,
         epochs=50,
@@ -173,6 +178,12 @@ def commit(train_dataset_name, model_pt, model_hef):
         print(path, end="")
 
 
+def purge(dir, pattern):
+    for f in os.listdir(dir):
+        if re.search(pattern, f):
+            os.remove(os.path.join(dir, f))
+
+
 if __name__ == '__main__':
     if torch.cuda.is_available():
         print(":D GPU is available")
@@ -194,7 +205,7 @@ if __name__ == '__main__':
 
         if os.getenv('TRAIN_STEP_TRAIN'):
             if not os.path.exists(model_pt):
-                train(train_name, train_classes['classes'])
+                train(train_name, train_classes['name'], train_classes['classes'])
                 move(model_train_best, model_pt)
 
                 move_metric(model_run_dir, train_dataset_base_name, train_classes['name'], 'confusion_matrix.png')
@@ -228,5 +239,9 @@ if __name__ == '__main__':
         if os.getenv('TRAIN_STEP_GIT'):
             if os.path.exists(model_pt) and os.path.exists(model_hef):
                 commit(train_name, model_pt, model_hef)
+
+    purge(f'{train_dataset_path}/train', '*.npy')
+    purge(f'{train_dataset_path}/val', '*.npy')
+    purge(f'{train_dataset_path}/test', '*.npy')
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
