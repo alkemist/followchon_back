@@ -7,7 +7,7 @@ postprocessing:
 network:
   network_name: yolov8n
 paths:
-  alls_script: /local/shared_with_docker/followchon_back/models/config/8/yolo_39.alls
+  alls_script: /local/shared_with_docker/followchon_back/models/config/8/yolo_39-2.alls
 parser:
   nodes:
     - null

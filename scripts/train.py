@@ -51,7 +51,7 @@ def train(train_dataset_name, classes):
         name=train_dataset_name,
         verbose=True,
         save=True,
-        cache=True,
+        cache='disk',
         plots=True,
         resume=train_resume,
         project=runs_dir,
@@ -123,7 +123,7 @@ def build(model_har, model_hef, classes_count):
         "--hw-arch", "hailo8l",
         "--har", f"/local/shared_with_docker/followchon_back/{model_har}",
         # "--ckpt", f"/local/shared_with_docker/followchon_back/{model_onnx}",
-        "--classes", classes_count,
+        "--classes", str(classes_count),
         # "--start-node-names", "images",
         # "--end-node-names") + end_node_names + (
         "--calib-path", f"/local/shared_with_docker/followchon_back/{train_dataset_path}/{train_calib_dir}",
