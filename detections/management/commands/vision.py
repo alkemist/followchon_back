@@ -8,7 +8,6 @@ from detections.management.commands.vision_models.levels import Levels
 from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.streamer import Streamer
 from detections.management.commands.vision_models.supervisor import Supervisor
-from detections.management.commands.vision_models.type import Type
 
 
 class Command(BaseCommand):
@@ -57,28 +56,17 @@ class Command(BaseCommand):
                    rotation="1 day", retention=7)
 
         supervisor = Supervisor(log_temp, source)
-        model_all = None
-        model_chons = None
+        model = None
         error = None
 
         try:
             if options["hailo"]:
                 from detections.management.commands.vision_models.model_hailo import Model_Hailo
-                from hailo_platform import (VDevice, HailoSchedulingAlgorithm)
-
-                params = VDevice.create_params()
-                params.scheduling_algorithm = HailoSchedulingAlgorithm.ROUND_ROBIN
-                vdevice = VDevice(params)
-
-                model_all = Model_Hailo(vdevice, supervisor, source, Type.ALL)
-                model_chons = Model_Hailo(vdevice, supervisor, source, Type.CHONS)
+                model = Model_Hailo(supervisor, source)
             else:
                 from detections.management.commands.vision_models.model_yolo import Model_YOLO
 
-                model_all = Model_YOLO(supervisor, source, Type.ALL)
-                model_chons = Model_YOLO(supervisor, source, Type.CHONS)
-
-            streamer = Streamer(supervisor, model_all, model_chons)
+            streamer = Streamer(supervisor, model)
 
             if options["photo"]:
                 streamer.read()
@@ -98,11 +86,8 @@ class Command(BaseCommand):
 
                 tb = tb.tb_next
 
-            if model_all is not None:
-                model_all.release()
-
-            if model_chons is not None:
-                model_chons.release()
+            if model is not None:
+                model.release()
 
             supervisor.log(
                 type(error).__name__,

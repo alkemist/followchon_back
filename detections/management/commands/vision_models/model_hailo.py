@@ -4,7 +4,7 @@ import PIL.Image
 import cv2
 import numpy as np
 from PIL import Image
-from hailo_platform import VDevice
+from hailo_platform import (VDevice, HailoSchedulingAlgorithm)
 from loguru import logger
 
 from detections.management.commands.vision_models.hailo_inference_async import HailoAsyncInference
@@ -17,18 +17,16 @@ from detections.management.commands.vision_models.type import Type
 
 class Model_Hailo(Model):
 
-    def __init__(self, vdevice: VDevice, supervisor: Supervisor, source: Source = Source.VISION,
-                 model_type: Type = Type.ALL):
-        super().__init__(supervisor, 'hef', source, model_type)
+    def __init__(self, supervisor: Supervisor, source: Source = Source.VISION):
+        super().__init__(supervisor, 'hef', source)
 
         self.height = None
         self.width = None
-        self.vdevice = vdevice
 
     def check_model(self, origin: str):
         self.supervisor.fill_params()
 
-        logger.info(f'Vérifie le compteur de références: {self.model_type} / {sys.getrefcount(self.model)}')
+        logger.info(f'Vérifie le compteur de références:{sys.getrefcount(self.model)}')
 
         if self.model is None or self.current_model_version != self.supervisor.model_version:
             if self.model is not None:
@@ -40,7 +38,11 @@ class Model_Hailo(Model):
 
             self.current_model_version = self.supervisor.model_version
 
-            self.model = HailoAsyncInference(self.vdevice, self.get_model_path())
+            params = VDevice.create_params()
+            params.scheduling_algorithm = HailoSchedulingAlgorithm.ROUND_ROBIN
+            vdevice = VDevice(params)
+
+            self.model = HailoAsyncInference(vdevice, self.get_model_path(Type.ALL), self.get_model_path(Type.CHONS))
             self.height, self.width, _ = self.model.get_input_shape()
 
     def preprocess(self, image: PIL.Image.Image):

@@ -10,17 +10,16 @@ from detections.management.commands.vision_models.type import Type
 class Model:
 
     def __init__(self, supervisor: Supervisor, model_ext: str = 'pt',
-                 source=Source.VISION, model_type: Type = Type.ALL):
+                 source=Source.VISION):
         self.supervisor = supervisor
         self.model = None
         self.model_ext = model_ext
-        self.model_type = model_type
         self.source = source
         self.current_model_version = None
 
-    def get_model_path(self):
+    def get_model_path(self, model_type: Type = Type.ALL):
         return (f"{os.getenv('MODEL_DIR')}/"
-                f"{os.getenv('MODEL_PREFIX')}{self.current_model_version}-{self.model_type}.{self.model_ext}")
+                f"{os.getenv('MODEL_PREFIX')}{self.current_model_version}-{model_type}.{self.model_ext}")
 
     def infer(self, frame: cv2.typing.MatLike):
         raise Exception('Infer not implemented')

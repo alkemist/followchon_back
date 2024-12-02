@@ -16,7 +16,7 @@ from detections.management.commands.vision_models.vision import Vision
 
 class Streamer:
 
-    def __init__(self, supervisor: Supervisor, model_all: Model, model_chons: Model):
+    def __init__(self, supervisor: Supervisor, model: Model):
         self.supervisor = supervisor
         self.vision = Vision(supervisor)
 
@@ -24,8 +24,7 @@ class Streamer:
 
         self.show_stream = os.getenv('SHOW_STREAM') == 'True'
 
-        self.model_all = model_all
-        self.model_chons = model_chons
+        self.model = model
 
     def begin_recording(self, log: bool = False) -> object | None:
         if log:
@@ -52,14 +51,12 @@ class Streamer:
                                 universal_newlines=True)
 
     def long_sleep(self, time_minutes):
-        self.model_all.release()
-        self.model_chons.release()
+        self.model.release()
         time.sleep(time_minutes * 60)
         self.supervisor.last_capture_seconds = time.time()
 
     def start(self):
-        self.model_all.check_model('start')
-        self.model_chons.check_model('start')
+        self.model.check_model('start')
         self.supervisor.log_start()
 
         hour = datetime.now().hour
@@ -107,7 +104,7 @@ class Streamer:
                     if self.supervisor.source == Source.VISION:
                         self.supervisor.add_processing_delay()
                     else:
-                        self.model_all.last_detections_dict = {}
+                        self.model.last_detections_dict = {}
                         self.model_chons.last_detections_dict = {}
 
                     os.remove(camera_record_filename)
@@ -173,7 +170,7 @@ class Streamer:
         if self.supervisor.source == Source.VISION:
             self.stop_recording()
 
-        self.model_all.release()
+        self.model.release()
         self.model_chons.release()
 
     def capture(self, camera_record_filename: str):
@@ -236,8 +233,7 @@ class Streamer:
         return None
 
     def read(self):
-        self.model_all.check_model('read')
-        self.model_chons.check_model('read')
+        self.model.check_model('read')
         self.supervisor.log_start()
 
         frame_saved_count = 0
@@ -275,22 +271,17 @@ class Streamer:
 
         self.supervisor.log_stopped()
 
-        self.model_all.release()
-        self.model_chons.release()
+        self.model.release()
 
     def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date):
-        yolo_results_all = self.model_all.infer(
-            frame
-        )
-
-        yolo_results_chons = self.model_chons.infer(
+        yolo_results_all = self.model.infer(
             frame
         )
 
         (frame, saved) = self.vision.analyze(
-            self.model_all.current_model_version,
+            self.model.current_model_version,
             frame, frame_count, capture_date,
-            yolo_results_all + yolo_results_chons
+            yolo_results_all
         )
 
         self.supervisor.last_frame_seconds = time.time()
