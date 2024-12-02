@@ -64,9 +64,14 @@ class Command(BaseCommand):
         try:
             if options["hailo"]:
                 from detections.management.commands.vision_models.model_hailo import Model_Hailo
+                from hailo_platform import (VDevice, HailoSchedulingAlgorithm)
 
-                model_all = Model_Hailo(supervisor, source, Type.ALL)
-                model_chons = Model_Hailo(supervisor, source, Type.CHONS)
+                params = VDevice.create_params()
+                params.scheduling_algorithm = HailoSchedulingAlgorithm.ROUND_ROBIN
+                vdevice = VDevice(params)
+
+                model_all = Model_Hailo(vdevice, supervisor, source, Type.ALL)
+                model_chons = Model_Hailo(vdevice, supervisor, source, Type.CHONS)
             else:
                 from detections.management.commands.vision_models.model_yolo import Model_YOLO
 

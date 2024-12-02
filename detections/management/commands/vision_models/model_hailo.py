@@ -4,6 +4,7 @@ import PIL.Image
 import cv2
 import numpy as np
 from PIL import Image
+from hailo_platform import VDevice
 from loguru import logger
 
 from detections.management.commands.vision_models.hailo_inference_async import HailoAsyncInference
@@ -16,12 +17,13 @@ from detections.management.commands.vision_models.type import Type
 
 class Model_Hailo(Model):
 
-    def __init__(self, supervisor: Supervisor, source: Source = Source.VISION,
+    def __init__(self, vdevice: VDevice, supervisor: Supervisor, source: Source = Source.VISION,
                  model_type: Type = Type.ALL):
         super().__init__(supervisor, 'hef', source, model_type)
 
         self.height = None
         self.width = None
+        self.vdevice = vdevice
 
     def check_model(self, origin: str):
         self.supervisor.fill_params()
@@ -38,7 +40,7 @@ class Model_Hailo(Model):
 
             self.current_model_version = self.supervisor.model_version
 
-            self.model = HailoAsyncInference(self.get_model_path())
+            self.model = HailoAsyncInference(self.vdevice, self.get_model_path())
             self.height, self.width, _ = self.model.get_input_shape()
 
     def preprocess(self, image: PIL.Image.Image):
