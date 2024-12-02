@@ -57,7 +57,7 @@ def train(train_dataset_name, train_type, classes):
         name=train_dataset_name,
         verbose=True,
         save=True,
-        cache='disk',
+        # cache='disk',
         plots=True,
         resume=train_resume,
         project=runs_dir,
