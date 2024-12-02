@@ -100,45 +100,58 @@ class Model_Hailo(Model):
             logger.info(f"Queue size too long : {len(raw_detections_queue)}")
 
         if len(raw_detections_queue) > 0:
-            raw_detections = self.model.remove_last_output_results()
+            yolo_results = self.transform(
+                self.model.remove_last_output_results_all(),
+                width_resized, height_resized, padded_size, padding
+            )
 
-            if raw_detections is not None and len(raw_detections) > 0:
-                # if self.supervisor.log_detections:
-                #     logger.info(f"Raw detections: {len(raw_detections)}")
-
-                for i, detection in enumerate(raw_detections):
-                    # if self.supervisor.log_detections:
-                    #     logger.info(f"Detection: {len(detection)}")
-
-                    for result in detection:
-                        bbox, score = result[:4], result[4]
-
-                        if score > 0:
-                            if self.supervisor.log_detections:
-                                logger.info(
-                                    f"Class: {i}, Score: {score}, Result: {bbox[0]} {bbox[1]} {bbox[2]} {bbox[3]}")
-
-                            if score >= self.supervisor.score_min:
-                                yolo_result = Result_yolo(
-                                    i,
-                                    float(score),
-                                    width_resized,
-                                    height_resized
-                                )
-
-                                yolo_result.import_hailo_without_padding(
-                                    padded_size,
-                                    padding,
-                                    float(bbox[1]),
-                                    float(bbox[0]),
-                                    float(bbox[3]),
-                                    float(bbox[2]),
-                                )
-
-                                yolo_results.append(yolo_result)
+            yolo_results = yolo_results + self.transform(
+                self.model.remove_last_output_results_chons(),
+                width_resized, height_resized, padded_size, padding
+            )
         else:
             # No traitement
             logger.info(f"Queue empty")
+
+        return yolo_results
+
+    def transform(self, raw_detections, width_resized, height_resized, padded_size, padding):
+        yolo_results = []
+
+        if raw_detections is not None and len(raw_detections) > 0:
+            # if self.supervisor.log_detections:
+            #     logger.info(f"Raw detections: {len(raw_detections)}")
+
+            for i, detection in enumerate(raw_detections):
+                # if self.supervisor.log_detections:
+                #     logger.info(f"Detection: {len(detection)}")
+
+                for result in detection:
+                    bbox, score = result[:4], result[4]
+
+                    if score > 0:
+                        if self.supervisor.log_detections:
+                            logger.info(
+                                f"Class: {i}, Score: {score}, Result: {bbox[0]} {bbox[1]} {bbox[2]} {bbox[3]}")
+
+                        if score >= self.supervisor.score_min:
+                            yolo_result = Result_yolo(
+                                i,
+                                float(score),
+                                width_resized,
+                                height_resized
+                            )
+
+                            yolo_result.import_hailo_without_padding(
+                                padded_size,
+                                padding,
+                                float(bbox[1]),
+                                float(bbox[0]),
+                                float(bbox[3]),
+                                float(bbox[2]),
+                            )
+
+                            yolo_results.append(yolo_result)
 
         return yolo_results
 

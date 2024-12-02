@@ -35,7 +35,8 @@ class HailoAsyncInference:
         self.configured_infer_model_all = self.infer_model_all.configure()
         self.configured_infer_model_chons = self.infer_model_chons.configure()
 
-        self.output_results = []
+        self.output_results_all = []
+        self.output_results_chons = []
 
     def _set_input_output(self, output_type):
         """
@@ -72,7 +73,7 @@ class HailoAsyncInference:
             logger.error(f'Inference error: {completion_info.exception}')
         else:
             for name in self.infer_model_all.output_names:
-                self.output_results.append(binding.output(name).get_buffer())
+                self.output_results_all.append(binding.output(name).get_buffer())
 
     def callback_chons(self, completion_info, binding, frame):
         """
@@ -86,10 +87,13 @@ class HailoAsyncInference:
             logger.error(f'Inference error: {completion_info.exception}')
         else:
             for name in self.infer_model_chons.output_names:
-                self.output_results.append(binding.output(name).get_buffer())
+                self.output_results_chons.append(binding.output(name).get_buffer())
 
-    def remove_last_output_results(self):
-        return self.output_results.pop()
+    def remove_last_output_results_all(self):
+        return self.output_results_all.pop()
+
+    def remove_last_output_results_chons(self):
+        return self.output_results_chons.pop()
 
     def _get_vstream_info_all(self):
         """
@@ -127,14 +131,23 @@ class HailoAsyncInference:
         """
         return self.input_vstream_info_chons[0].shape  # Assumes that the model has one input
 
-    def get_output_results(self):
+    def get_output_results_all(self):
         """
         Get the results of the inference.
 
         Returns:
             list: List of inference outputs.
         """
-        return self.output_results
+        return self.output_results_all
+
+    def get_output_results_chons(self):
+        """
+        Get the results of the inference.
+
+        Returns:
+            list: List of inference outputs.
+        """
+        return self.output_results_chons
 
     def run(self, input_data):
         """
@@ -184,7 +197,7 @@ class HailoAsyncInference:
         if job_chons is not None:
             job_chons.wait(10000)  # Wait for the last job
 
-        return self.output_results
+        return self.output_results_all + self.output_results_chons
 
     def _create_bindings_all(self):
         """

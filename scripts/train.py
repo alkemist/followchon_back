@@ -168,7 +168,7 @@ def commit(train_dataset_name, model_pt, model_hef):
     for path in execute(('git', 'pull')):
         print(path, end="")
 
-    for path in execute(('git', 'add', model_pt, model_hef)):
+    for path in execute(('git', 'add', model_pt, model_hef, f'{metrics_dir}/*')):
         print(path, end="")
 
     for path in execute(('git', 'commit', '-m', train_dataset_name)):
