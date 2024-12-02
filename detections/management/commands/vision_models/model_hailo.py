@@ -43,7 +43,7 @@ class Model_Hailo(Model):
             vdevice = VDevice(params)
 
             self.model = HailoAsyncInference(vdevice, self.get_model_path(Type.ALL), self.get_model_path(Type.CHONS))
-            self.height, self.width, _ = self.model.get_input_shape()
+            self.height, self.width, _ = self.model.get_input_shape_all()
 
     def preprocess(self, image: PIL.Image.Image):
         """
