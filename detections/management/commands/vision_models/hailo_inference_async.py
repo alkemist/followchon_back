@@ -29,7 +29,8 @@ class HailoAsyncInference:
         self.infer_model_chons.set_batch_size(batch_size)
 
         self._set_input_output(output_type)
-        self.input_vstream_info, self.output_vstream_info = self._get_vstream_info()
+        self.input_vstream_info_all, self.output_vstream_info_all = self._get_vstream_info_all()
+        self.input_vstream_info_chons, self.output_vstream_info_chons = self._get_vstream_info_chons()
 
         self.configured_infer_model_all = self.infer_model_all.configure()
         self.configured_infer_model_chons = self.infer_model_chons.configure()
@@ -90,23 +91,41 @@ class HailoAsyncInference:
     def remove_last_output_results(self):
         return self.output_results.pop()
 
-    def _get_vstream_info(self):
+    def _get_vstream_info_all(self):
         """
         Get information about input and output stream layers.
 
         Returns:
             tuple: List of input stream layer information, List of output stream layer information.
         """
-        return self.hef.get_input_vstream_infos(), self.hef_all.get_output_vstream_infos()
+        return self.hef_all.get_input_vstream_infos(), self.hef_all.get_output_vstream_infos()
 
-    def get_input_shape(self):
+    def _get_vstream_info_chons(self):
+        """
+        Get information about input and output stream layers.
+
+        Returns:
+            tuple: List of input stream layer information, List of output stream layer information.
+        """
+        return self.hef_chons.get_input_vstream_infos(), self.hef_chons.get_output_vstream_infos()
+
+    def get_input_shape_all(self):
         """
         Get the shape of the model's input layer.
 
         Returns:
             tuple: Shape of the model's input layer.
         """
-        return self.input_vstream_info[0].shape  # Assumes that the model has one input
+        return self.input_vstream_info_all[0].shape  # Assumes that the model has one input
+
+    def get_input_shape_chons(self):
+        """
+        Get the shape of the model's input layer.
+
+        Returns:
+            tuple: Shape of the model's input layer.
+        """
+        return self.input_vstream_info_chons[0].shape  # Assumes that the model has one input
 
     def get_output_results(self):
         """
