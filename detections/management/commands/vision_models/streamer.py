@@ -105,7 +105,6 @@ class Streamer:
                         self.supervisor.add_processing_delay()
                     else:
                         self.model.last_detections_dict = {}
-                        self.model_chons.last_detections_dict = {}
 
                     os.remove(camera_record_filename)
 
@@ -171,7 +170,6 @@ class Streamer:
             self.stop_recording()
 
         self.model.release()
-        self.model_chons.release()
 
     def capture(self, camera_record_filename: str):
         self.supervisor.last_frame_seconds = 0
