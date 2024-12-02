@@ -32,6 +32,8 @@ __pycache__
 
 notebooks/Wagon
 notebooks/Wagon/*.ipynb
+notebooks/Steam
+notebooks/Steam/*.ipynb
 notebooks/**/data/*
 
 notebooks/.ipynb_checkpoints
