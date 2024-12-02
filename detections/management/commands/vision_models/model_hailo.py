@@ -34,7 +34,7 @@ class Model_Hailo(Model):
 
             # if self.supervisor.current_model_version != self.supervisor.model_version:
             logger.info(
-                f'Load model version "{self.supervisor.model_version}" : {self.model_type} / {origin}')
+                f'Load model version "{self.supervisor.model_version}" : {origin}')
 
             self.current_model_version = self.supervisor.model_version
 
