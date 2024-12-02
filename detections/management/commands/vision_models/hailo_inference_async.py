@@ -156,10 +156,7 @@ class HailoAsyncInference:
 
         for frame in input_data:
             binding_all = self._create_bindings_all()
-            binding_chons = self._create_bindings_chons()
-
             binding_all.input().set_buffer(frame)
-            binding_chons.input().set_buffer(frame)
 
             self.configured_infer_model_all.wait_for_async_ready(timeout_ms=10000)
             job_all = self.configured_infer_model_all.run_async(
@@ -169,6 +166,13 @@ class HailoAsyncInference:
                 )
             )
 
+        if job_all is not None:
+            job_all.wait(10000)  # Wait for the last job
+
+        for frame in input_data:
+            binding_chons = self._create_bindings_chons()
+            binding_chons.input().set_buffer(frame)
+
             self.configured_infer_model_chons.wait_for_async_ready(timeout_ms=10000)
             job_chons = self.configured_infer_model_chons.run_async(
                 [binding_chons],
@@ -176,9 +180,6 @@ class HailoAsyncInference:
                     self.callback_chons, binding=binding_chons, frame=frame
                 )
             )
-
-        if job_all is not None:
-            job_all.wait(10000)  # Wait for the last job
 
         if job_chons is not None:
             job_chons.wait(10000)  # Wait for the last job
