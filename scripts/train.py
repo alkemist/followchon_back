@@ -197,6 +197,7 @@ if __name__ == '__main__':
     print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     for train_classes in trains_classes:
+
         train_name = f"{train_dataset_base_name}-{train_classes['name']}"
         model_run_dir = f"{runs_dir}/{train_name}"
         model_train_best = f"{model_run_dir}/weights/best.pt"
@@ -205,6 +206,8 @@ if __name__ == '__main__':
 
         if os.getenv('TRAIN_STEP_TRAIN'):
             if not os.path.exists(model_pt):
+                print(f"Start train at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
                 train(train_name, train_classes['name'], train_classes['classes'])
                 move(model_train_best, model_pt)
 
@@ -213,6 +216,8 @@ if __name__ == '__main__':
                             'confusion_matrix_normalized.png')
                 move_metric(model_run_dir, train_dataset_base_name, train_classes['name'], 'results.csv')
                 move_metric(model_run_dir, train_dataset_base_name, train_classes['name'], 'results.png')
+
+                print(f"End train at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
         if os.getenv('TRAIN_STEP_EXPORT'):
             export(model_pt, model_onnx)
@@ -229,7 +234,11 @@ if __name__ == '__main__':
 
         if os.getenv('TRAIN_STEP_COMPILE'):
             if not os.path.exists(model_hef):
+                print(f"Start compile at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
                 build(model_har, model_hef, train_classes['class_count'])
+
+                print(f"End compile at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     for train_classes in trains_classes:
         train_name = f"{train_dataset_base_name}-{train_classes['name']}"
