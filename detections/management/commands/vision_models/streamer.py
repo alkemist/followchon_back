@@ -7,6 +7,7 @@ from pathlib import Path
 from time import sleep
 
 import cv2
+from loguru import logger
 
 from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.source import Source
@@ -51,6 +52,8 @@ class Streamer:
                                 universal_newlines=True)
 
     def long_sleep(self, time_minutes):
+        logger.info(f'Long sleep')
+
         self.model.release()
         time.sleep(time_minutes * 60)
         self.supervisor.last_capture_seconds = time.time()

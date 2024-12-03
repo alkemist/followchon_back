@@ -1,5 +1,3 @@
-import sys
-
 import PIL.Image
 import cv2
 import numpy as np
@@ -26,7 +24,7 @@ class Model_Hailo(Model):
     def check_model(self, origin: str):
         self.supervisor.fill_params()
 
-        logger.info(f'Vérifie le compteur de références:{sys.getrefcount(self.model)}')
+        # logger.info(f'Vérifie le compteur de références:{sys.getrefcount(self.model)}')
 
         if self.model is None or self.current_model_version != self.supervisor.model_version:
             if self.model is not None:
