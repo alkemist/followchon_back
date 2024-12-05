@@ -24,10 +24,14 @@ train_dataset_yaml_path = f"{train_dataset_path}/data.yaml"
 train_dataset_base_name = os.getenv('TRAIN_DATASET_NAME')
 train_device = os.getenv('TRAIN_DEVICE')
 train_resume = os.getenv('TRAIN_RESUME')
+train_all = os.getenv('TRAIN_ALL')
+train_chons = os.getenv('TRAIN_CHONS')
 hailo_sdk_version = os.getenv('TRAIN_SDK_VERSION')
 model_base_version = os.getenv('TRAIN_MODEL_BASE_VERSION')
 model_nms_version = os.getenv('TRAIN_MODEL_NMS_VERSION')
 train_calib_dir = os.getenv('TRAIN_CALIB_DIR')
+
+is_cached = False
 
 end_node_names = (
     '/model.22/cv2.0/cv2.0.2/Conv',
@@ -38,10 +42,13 @@ end_node_names = (
     '/model.22/cv3.2/cv3.2.2/Conv'
 )
 
-trains_classes = [
-    {'name': 'all', 'classes': [0, 3, 4], 'class_count': 5},
-    {'name': 'chons', 'classes': [1, 2], 'class_count': 5},
-]
+trains_classes = []
+
+if train_all:
+    trains_classes.append({'name': 'all', 'classes': [0, 3, 4], 'class_count': 5})
+
+if train_chons:
+    trains_classes.append({'name': 'chons', 'classes': [1, 2], 'class_count': 5})
 
 
 def train(train_dataset_name, train_type, classes):
@@ -57,7 +64,7 @@ def train(train_dataset_name, train_type, classes):
         name=train_dataset_name,
         verbose=True,
         save=True,
-        # cache='disk',
+        cache='disk' if is_cached else None,
         plots=True,
         resume=train_resume,
         project=runs_dir,
@@ -194,7 +201,10 @@ if __name__ == '__main__':
     print("CUDA Devices :", torch.cuda.device_count())
     print(f"ONNX version={__version__!r}, opset={onnx_opset_version()}, ir_version={IR_VERSION}")
 
-    print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    train_start = None
+    train_end = None
+    compile_start = None
+    compile_end = None
 
     for train_classes in trains_classes:
 
@@ -206,7 +216,8 @@ if __name__ == '__main__':
 
         if os.getenv('TRAIN_STEP_TRAIN'):
             if not os.path.exists(model_pt):
-                print(f"Start train at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                train_start = datetime.now()
+                print(f"Start train at {train_start.strftime('%Y-%m-%d %H:%M:%S')}")
 
                 train(train_name, train_classes['name'], train_classes['classes'])
                 move(model_train_best, model_pt)
@@ -217,6 +228,7 @@ if __name__ == '__main__':
                 move_metric(model_run_dir, train_dataset_base_name, train_classes['name'], 'results.csv')
                 move_metric(model_run_dir, train_dataset_base_name, train_classes['name'], 'results.png')
 
+                train_end = datetime.now()
                 print(f"End train at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
         if os.getenv('TRAIN_STEP_EXPORT'):
@@ -234,11 +246,13 @@ if __name__ == '__main__':
 
         if os.getenv('TRAIN_STEP_COMPILE'):
             if not os.path.exists(model_hef):
-                print(f"Start compile at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                compile_start = datetime.now()
+                print(f"Start compile at {compile_start.strftime('%Y-%m-%d %H:%M:%S')}")
 
                 build(model_har, model_hef, train_classes['class_count'])
 
-                print(f"End compile at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+                compile_end = datetime.now()
+                print(f"End compile at {compile_end.strftime('%Y-%m-%d %H:%M:%S')}")
 
     for train_classes in trains_classes:
         train_name = f"{train_dataset_base_name}-{train_classes['name']}"
@@ -247,10 +261,29 @@ if __name__ == '__main__':
 
         if os.getenv('TRAIN_STEP_GIT'):
             if os.path.exists(model_pt) and os.path.exists(model_hef):
-                commit(train_name, model_pt, model_hef)
+                try:
+                    commit(train_name, model_pt, model_hef)
+                except Exception as ex:
+                    print(ex)
 
-    purge(f'{train_dataset_path}/train', '*.npy')
-    purge(f'{train_dataset_path}/val', '*.npy')
-    purge(f'{train_dataset_path}/test', '*.npy')
+    if is_cached:
+        try:
+            purge(f'{train_dataset_path}/train', '*.npy')
+            purge(f'{train_dataset_path}/val', '*.npy')
+            purge(f'{train_dataset_path}/test', '*.npy')
+        except Exception as ex:
+            print(ex)
+
+    if train_start:
+        print(f"Start train at {train_start.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    if train_end:
+        print(f"End train at {train_end.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    if compile_start:
+        print(f"Start compile at {compile_start.strftime('%Y-%m-%d %H:%M:%S')}")
+
+    if compile_end:
+        print(f"End compile at {compile_end.strftime('%Y-%m-%d %H:%M:%S')}")
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
