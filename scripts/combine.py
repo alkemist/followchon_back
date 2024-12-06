@@ -1,9 +1,9 @@
 from torch.nn import Module
 
 
-class CombinedYOLOModel(Module):
+class CombinedModel(Module):
     def __init__(self, models):
-        super(CombinedYOLOModel, self).__init__()
+        super(CombinedModel, self).__init__()
         self.models = models
 
     def forward(self, frame):
