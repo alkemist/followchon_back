@@ -10,6 +10,8 @@ from onnx import __version__, IR_VERSION
 from onnx.defs import onnx_opset_version
 from ultralytics import YOLO
 
+from scripts.combine import CombinedModel
+
 load_dotenv()
 
 # settings.update({'datasets_dir': ''})
@@ -42,14 +44,6 @@ end_node_names = (
     '/model.22/cv3.2/cv3.2.2/Conv'
 )
 
-trains_classes = []
-
-if train_all:
-    trains_classes.append({'name': 'all', 'classes': [0, 3, 4], 'class_count': 5})
-
-if train_chons:
-    trains_classes.append({'name': 'chons', 'classes': [1, 2], 'class_count': 5})
-
 
 def train(train_dataset_name, train_type, classes):
     train_filename = train_previous_path.replace('.pt', f'-{train_type}.pt') \
@@ -78,18 +72,43 @@ def train(train_dataset_name, train_type, classes):
 def move_metric(metric_dir, train_name, train_type, metric_file):
     shutil.move(
         f'{metric_dir}/{metric_file}',
-        f'{metrics_dir}/{train_type}/{train_name}-{metric_file}'
+        f'{metrics_dir}/{train_type}/{train_name}-{train_type}-{metric_file}'
     )
 
 
-def move(model_train_best, model_pt):
+def move_best(model_train_best, model_pt):
     shutil.move(model_train_best, model_pt)
 
     print(f'Model yolo saved in {model_pt}')
 
 
-def export(model_pt, model_onnx):
-    model = YOLO(model_pt)
+def train_full(train_type, train_classes):
+    train_name = f"{train_dataset_base_name}-{train_type}"
+    model_run_dir = f"{runs_dir}/{train_name}"
+    model_train_best = f"{model_run_dir}/weights/best.pt"
+    model_pt = f"{models_dir}/{train_name}.pt"
+
+    print(f"Start train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    train(train_name, train_type, train_classes)
+
+    print(f"End train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    move_best(model_train_best, model_pt)
+
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix.png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix_normalized.png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'results.csv')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'results.png')
+
+
+def combine(models):
+    return CombinedModel(
+        [YOLO(model) for model in models]
+    )
+
+
+def export(model, model_onnx):
     model.export(format="onnx")
 
     print(f'Model onnx saved in {model_onnx}')
@@ -171,12 +190,13 @@ def build(model_har, model_hef, classes_count):
     print(f'Model hef saved in {model_hef}')
 
 
-def commit(train_dataset_name, model_pt, model_hef):
+def commit(train_dataset_name, files):
     for path in execute(('git', 'pull')):
         print(path, end="")
 
-    for path in execute(('git', 'add', model_pt, model_hef, f'{metrics_dir}/*')):
-        print(path, end="")
+    for file in files:
+        for path in execute(('git', 'add', file)):
+            print(path, end="")
 
     for path in execute(('git', 'commit', '-m', train_dataset_name)):
         print(path, end="")
@@ -200,69 +220,54 @@ if __name__ == '__main__':
     print("PyTorch version :", torch.__version__)
     print("CUDA Devices :", torch.cuda.device_count())
     print(f"ONNX version={__version__!r}, opset={onnx_opset_version()}, ir_version={IR_VERSION}")
+    print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    train_start = None
+    train_start = datetime.now()
     train_end = None
     compile_start = None
     compile_end = None
 
-    for train_classes in trains_classes:
+    train_types = ['all', 'chons']
+    train_classes = [[0], [1, 2]]
 
-        train_name = f"{train_dataset_base_name}-{train_classes['name']}"
-        model_run_dir = f"{runs_dir}/{train_name}"
-        model_train_best = f"{model_run_dir}/weights/best.pt"
-        model_pt = f"{models_dir}/{train_name}.pt"
-        model_onnx = f"{models_dir}/{train_name}.onnx"
+    models = [
+        f"{models_dir}/{train_dataset_base_name}-{train_type}.pt"
+        for train_type in train_types
+    ]
 
-        if os.getenv('TRAIN_STEP_TRAIN'):
-            if not os.path.exists(model_pt):
-                train_start = datetime.now()
-                print(f"Start train at {train_start.strftime('%Y-%m-%d %H:%M:%S')}")
+    if train_all and not os.path.exists(models[0]):
+        train_full(train_types[0], train_classes[0])
 
-                train(train_name, train_classes['name'], train_classes['classes'])
-                move(model_train_best, model_pt)
+    if train_chons and not os.path.exists(models[1]):
+        train_full(train_types[1], train_classes[1])
 
-                move_metric(model_run_dir, train_dataset_base_name, train_classes['name'], 'confusion_matrix.png')
-                move_metric(model_run_dir, train_dataset_base_name, train_classes['name'],
-                            'confusion_matrix_normalized.png')
-                move_metric(model_run_dir, train_dataset_base_name, train_classes['name'], 'results.csv')
-                move_metric(model_run_dir, train_dataset_base_name, train_classes['name'], 'results.png')
+    train_end = datetime.now()
 
-                train_end = datetime.now()
-                print(f"End train at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-
-        if os.getenv('TRAIN_STEP_EXPORT'):
-            export(model_pt, model_onnx)
-
-    for train_classes in trains_classes:
-        train_name = f"{train_dataset_base_name}-{train_classes['name']}"
-
+    if all(os.path.exists(model) for model in models):
+        train_name = f"{train_dataset_base_name}"
         model_onnx = f"{models_dir}/{train_name}.onnx"
         model_har = f"{models_dir}/{train_name}.har"
         model_hef = f"{models_dir}/{train_name}.hef"
 
-        if os.getenv('TRAIN_STEP_PARSE'):
-            parse(model_onnx, model_har, train_classes['class_count'])
+        model = combine(models)
+        export(model, model_onnx)
 
-        if os.getenv('TRAIN_STEP_COMPILE'):
-            if not os.path.exists(model_hef):
-                compile_start = datetime.now()
-                print(f"Start compile at {compile_start.strftime('%Y-%m-%d %H:%M:%S')}")
+        if os.getenv('TRAIN_STEP_PARSE') and not os.path.exists(model_har):
+            parse(model_onnx, model_har, 5)
 
-                build(model_har, model_hef, train_classes['class_count'])
+        if os.getenv('TRAIN_STEP_COMPILE') and not os.path.exists(model_hef):
+            compile_start = datetime.now()
+            print(f"Start compile at {compile_start.strftime('%Y-%m-%d %H:%M:%S')}")
 
-                compile_end = datetime.now()
-                print(f"End compile at {compile_end.strftime('%Y-%m-%d %H:%M:%S')}")
+            build(model_har, model_hef, 5)
 
-    for train_classes in trains_classes:
-        train_name = f"{train_dataset_base_name}-{train_classes['name']}"
-        model_pt = f"{models_dir}/{train_name}.pt"
-        model_hef = f"{models_dir}/{train_name}.hef"
+            compile_end = datetime.now()
+            print(f"End compile at {compile_end.strftime('%Y-%m-%d %H:%M:%S')}")
 
         if os.getenv('TRAIN_STEP_GIT'):
-            if os.path.exists(model_pt) and os.path.exists(model_hef):
+            if os.path.exists(model_hef):
                 try:
-                    commit(train_name, model_pt, model_hef)
+                    commit(train_name, models + [model_hef, f'{metrics_dir}/*'])
                 except Exception as ex:
                     print(ex)
 
