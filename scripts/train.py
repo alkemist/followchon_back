@@ -72,7 +72,7 @@ def train(train_dataset_name, train_type, classes):
 def move_metric(metric_dir, train_name, train_type, metric_file):
     shutil.move(
         f'{metric_dir}/{metric_file}',
-        f'{metrics_dir}/{train_type}/{train_name}-{train_type}-{metric_file}'
+        f'{metrics_dir}/{train_name}-{train_type}-{metric_file}'
     )
 
 
@@ -98,6 +98,9 @@ def train_full(train_type, train_classes):
 
     move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix.png')
     move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix_normalized.png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'P_curve.png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'R_curve.png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'PR_curve.png')
     move_metric(model_run_dir, train_dataset_base_name, train_type, 'results.csv')
     move_metric(model_run_dir, train_dataset_base_name, train_type, 'results.png')
 
