@@ -69,10 +69,10 @@ def train(train_dataset_name, train_type, classes):
     )
 
 
-def move_metric(metric_dir, train_name, train_type, metric_file):
+def move_metric(metric_dir, train_name, train_type, metric_name, metric_ext):
     shutil.move(
-        f'{metric_dir}/{metric_file}',
-        f'{metrics_dir}/{train_name}-{train_type}-{metric_file}'
+        f'{metric_dir}/{metric_name}.{metric_ext}',
+        f'{metrics_dir}/{metric_name}/{train_name}-{train_type}-{metric_name}.{metric_ext}'
     )
 
 
@@ -96,13 +96,13 @@ def train_full(train_type, train_classes):
 
     move_best(model_train_best, model_pt)
 
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix.png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix_normalized.png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'P_curve.png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'R_curve.png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'PR_curve.png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'results.csv')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'results.png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix_normalized', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'F1_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'P_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'R_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'PR_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'results', 'csv')
 
 
 def combine(models):
