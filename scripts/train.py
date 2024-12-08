@@ -82,11 +82,10 @@ def move_best(model_train_best, model_pt):
     print(f'Model yolo saved in {model_pt}')
 
 
-def train_full(train_type, train_classes):
+def train_full(train_type, train_classes, model_pt):
     train_name = f"{train_dataset_base_name}-{train_type}"
     model_run_dir = f"{runs_dir}/{train_name}"
     model_train_best = f"{model_run_dir}/weights/best.pt"
-    model_pt = f"{models_dir}/{train_name}.pt"
 
     print(f"Start train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
@@ -234,45 +233,39 @@ if __name__ == '__main__':
     train_types = ['all', 'chons']
     train_classes = [[0], [1, 2]]
 
-    models = [
-        f"{models_dir}/{train_dataset_base_name}-{train_type}.pt"
-        for train_type in train_types
-    ]
+    for i, train_type in enumerate(train_types):
+        if i == 0 and train_all or i == 1 and train_chons:
 
-    if train_all and not os.path.exists(models[0]):
-        train_full(train_types[0], train_classes[0])
+            train_name = f"{train_dataset_base_name}-{train_type}"
+            model_pt = f"{models_dir}/{train_name}.pt"
+            model_onnx = f"{models_dir}/{train_name}.onnx"
+            model_har = f"{models_dir}/{train_name}.har"
+            model_hef = f"{models_dir}/{train_name}.hef"
 
-    if train_chons and not os.path.exists(models[1]):
-        train_full(train_types[1], train_classes[1])
+            if not os.path.exists(model_pt):
+                train_full(train_type, train_classes[i], model_pt)
+                train_end = datetime.now()
 
-    train_end = datetime.now()
+            export(model_pt, model_onnx)
 
-    for model in models:
-        train_name = f"{train_dataset_base_name}"
-        model_onnx = f"{models_dir}/{train_name}.onnx"
-        model_har = f"{models_dir}/{train_name}.har"
-        model_hef = f"{models_dir}/{train_name}.hef"
+            if os.getenv('TRAIN_STEP_PARSE') and not os.path.exists(model_har):
+                parse(model_onnx, model_har, 5)
 
-        export(model, model_onnx)
+            if os.getenv('TRAIN_STEP_COMPILE') and not os.path.exists(model_hef):
+                compile_start = datetime.now()
+                print(f"Start compile at {compile_start.strftime('%Y-%m-%d %H:%M:%S')}")
 
-        if os.getenv('TRAIN_STEP_PARSE') and not os.path.exists(model_har):
-            parse(model_onnx, model_har, 5)
+                build(model_har, model_hef, 5)
 
-        if os.getenv('TRAIN_STEP_COMPILE') and not os.path.exists(model_hef):
-            compile_start = datetime.now()
-            print(f"Start compile at {compile_start.strftime('%Y-%m-%d %H:%M:%S')}")
+                compile_end = datetime.now()
+                print(f"End compile at {compile_end.strftime('%Y-%m-%d %H:%M:%S')}")
 
-            build(model_har, model_hef, 5)
-
-            compile_end = datetime.now()
-            print(f"End compile at {compile_end.strftime('%Y-%m-%d %H:%M:%S')}")
-
-        if os.getenv('TRAIN_STEP_GIT'):
-            if os.path.exists(model_hef):
-                try:
-                    commit(train_name, [model, model_hef, f'{metrics_dir}/*'])
-                except Exception as ex:
-                    print(ex)
+            if os.getenv('TRAIN_STEP_GIT'):
+                if os.path.exists(model_hef):
+                    try:
+                        commit(train_name, [model_pt, model_hef, f'{metrics_dir}/*'])
+                    except Exception as ex:
+                        print(ex)
 
     if is_cached:
         try:
