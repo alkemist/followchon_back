@@ -111,7 +111,8 @@ def combine(models):
     )
 
 
-def export(model, model_onnx):
+def export(model_pt, model_onnx):
+    model = YOLO(model_pt)
     model.export(format="onnx")
 
     print(f'Model onnx saved in {model_onnx}')
@@ -246,13 +247,12 @@ if __name__ == '__main__':
 
     train_end = datetime.now()
 
-    if all(os.path.exists(model) for model in models):
+    for model in models:
         train_name = f"{train_dataset_base_name}"
         model_onnx = f"{models_dir}/{train_name}.onnx"
         model_har = f"{models_dir}/{train_name}.har"
         model_hef = f"{models_dir}/{train_name}.hef"
 
-        model = combine(models)
         export(model, model_onnx)
 
         if os.getenv('TRAIN_STEP_PARSE') and not os.path.exists(model_har):
@@ -270,7 +270,7 @@ if __name__ == '__main__':
         if os.getenv('TRAIN_STEP_GIT'):
             if os.path.exists(model_hef):
                 try:
-                    commit(train_name, models + [model_hef, f'{metrics_dir}/*'])
+                    commit(train_name, [model, model_hef, f'{metrics_dir}/*'])
                 except Exception as ex:
                     print(ex)
 

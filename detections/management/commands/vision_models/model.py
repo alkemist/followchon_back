@@ -17,7 +17,11 @@ class Model:
         self.source = source
         self.current_model_version = None
 
-    def get_model_path(self, model_type: Type = Type.ALL):
+    def get_model_path(self):
+        return (f"{os.getenv('MODEL_DIR')}/"
+                f"{os.getenv('MODEL_PREFIX')}{self.current_model_version}.{self.model_ext}")
+
+    def get_model_path_double(self, model_type: Type = Type.ALL):
         return (f"{os.getenv('MODEL_DIR')}/"
                 f"{os.getenv('MODEL_PREFIX')}{self.current_model_version}-{model_type}.{self.model_ext}")
 
