@@ -61,10 +61,11 @@ class Command(BaseCommand):
 
         try:
             if options["hailo"]:
-                from detections.management.commands.vision_models.model_hailo import Model_Hailo
-                model = Model_Hailo(supervisor, source)
+                from detections.management.commands.vision_models.model_hailo_double import Model_Hailo_Double
+                model = Model_Hailo_Double(supervisor, source)
             else:
                 from detections.management.commands.vision_models.model_yolo import Model_YOLO
+                model = Model_YOLO(supervisor, source)
 
             streamer = Streamer(supervisor, model)
 

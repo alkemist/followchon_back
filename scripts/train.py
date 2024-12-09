@@ -194,18 +194,27 @@ def build(model_har, model_hef, classes_count):
 
 
 def commit(train_dataset_name, files):
-    for path in execute(('git', 'pull')):
-        print(path, end="")
-
     for file in files:
         for path in execute(('git', 'add', file)):
             print(path, end="")
 
-    for path in execute(('git', 'commit', '-m', train_dataset_name)):
-        print(path, end="")
+    try:
+        for path in execute(('git', 'commit', '-m', train_dataset_name)):
+            print(path, end="")
+    except Exception as ex:
+        print(ex)
 
-    for path in execute(('git', 'push')):
-        print(path, end="")
+    try:
+        for path in execute(('git', 'fetch', 'origin')):
+            print(path, end="")
+    except Exception as ex:
+        print(ex)
+
+    try:
+        for path in execute(('git', 'push')):
+            print(path, end="")
+    except Exception as ex:
+        print(ex)
 
 
 def purge(dir, pattern):
@@ -262,10 +271,7 @@ if __name__ == '__main__':
 
             if os.getenv('TRAIN_STEP_GIT'):
                 if os.path.exists(model_hef):
-                    try:
-                        commit(train_name, [model_pt, model_hef, f'{metrics_dir}/*'])
-                    except Exception as ex:
-                        print(ex)
+                    commit(train_name, [model_pt, model_hef, f'{metrics_dir}/*'])
 
     if is_cached:
         try:

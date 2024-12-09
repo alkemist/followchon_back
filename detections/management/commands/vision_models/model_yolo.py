@@ -8,14 +8,12 @@ from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.result_yolo import Result_yolo
 from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.supervisor import Supervisor
-from detections.management.commands.vision_models.type import Type
 
 
 class Model_YOLO(Model):
 
-    def __init__(self, supervisor: Supervisor, source: Source = Source.VISION,
-                 model_type: Type = Type.ALL):
-        super().__init__(supervisor, 'pt', source, model_type)
+    def __init__(self, supervisor: Supervisor, source: Source = Source.VISION):
+        super().__init__(supervisor, 'pt', source)
 
     def check_model(self, origin: str):
         self.supervisor.fill_params()
