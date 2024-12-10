@@ -47,7 +47,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         load_dotenv()
 
-        chunk_number = int(os.getenv('DATASET_CHUNK_FIRST'))
+        chunk_number = int(os.getenv('DATASET_CHUNK_FIRST')) if os.getenv('DATASET_CHUNK_FIRST') else None
         dataset_chunk = int(os.getenv('DATASET_CHUNK'))
         dataset_base_result_dir = os.getenv('DATASET_RESULT_DIR')
 
