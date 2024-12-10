@@ -211,6 +211,12 @@ def commit(train_dataset_name, files):
         print(ex)
 
     try:
+        for path in execute(('git', 'pull')):
+            print(path, end="")
+    except Exception as ex:
+        print(ex)
+
+    try:
         for path in execute(('git', 'push')):
             print(path, end="")
     except Exception as ex:
