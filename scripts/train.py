@@ -3,6 +3,7 @@ import re
 import shutil
 import subprocess
 from datetime import datetime
+from pathlib import Path
 
 import torch
 from dotenv import load_dotenv
@@ -228,6 +229,11 @@ def purge(dir, pattern):
         if re.search(pattern, f):
             os.remove(os.path.join(dir, f))
 
+def calc_time_h_m(dt):
+    diff = datetime.now() - dt
+    hours, seconds = divmod(diff.total_seconds(), 3600)
+    minutes = seconds // 60
+    return f"{int(hours)} hours and {int(minutes)} minutes"
 
 if __name__ == '__main__':
     if torch.cuda.is_available():
@@ -256,10 +262,23 @@ if __name__ == '__main__':
             model_onnx = f"{models_dir}/{train_name}.onnx"
             model_har = f"{models_dir}/{train_name}.har"
             model_hef = f"{models_dir}/{train_name}.hef"
+            file_stats = f"{metrics_dir}/duration/{train_name}.txt"
+
+            if not os.path.exists(file_stats):
+                with open(file_stats, "w") as file:
+                    file.write("Train count : " + str(len(list(Path(f"{train_dataset_path}/train/labels").glob("*.txt")))) + "\n")
+                    file.write("Val count : " + str(len(list(Path(f"{train_dataset_path}/val/labels").glob("*.txt")))) + "\n")
+                    file.write("Test count : " + str(len(list(Path(f"{train_dataset_path}/test/labels").glob("*.txt")))) + "\n\n")
 
             if not os.path.exists(model_pt):
+                with open(file_stats, "a") as file:
+                    file.write("[Train] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+
                 train_full(train_type, train_classes[i], model_pt)
-                train_end = datetime.now()
+
+                with open(file_stats, "a") as file:
+                    file.write("[Train] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+                    file.write(f"[Train] {calc_time_h_m(train_start)}\n")
 
             export(model_pt, model_onnx)
 
@@ -268,12 +287,14 @@ if __name__ == '__main__':
 
             if os.getenv('TRAIN_STEP_COMPILE') and not os.path.exists(model_hef):
                 compile_start = datetime.now()
-                print(f"Start compile at {compile_start.strftime('%Y-%m-%d %H:%M:%S')}")
+                with open(file_stats, "a") as file:
+                    file.write("[Compile] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
 
                 build(model_har, model_hef, 5)
 
-                compile_end = datetime.now()
-                print(f"End compile at {compile_end.strftime('%Y-%m-%d %H:%M:%S')}")
+                with open(file_stats, "a") as file:
+                    file.write("[Compile] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+                    file.write(f"[Compile] {calc_time_h_m(compile_start)}\n")
 
             if os.getenv('TRAIN_STEP_GIT'):
                 if os.path.exists(model_hef):
@@ -286,17 +307,5 @@ if __name__ == '__main__':
             purge(f'{train_dataset_path}/test', '*.npy')
         except Exception as ex:
             print(ex)
-
-    if train_start:
-        print(f"Start train at {train_start.strftime('%Y-%m-%d %H:%M:%S')}")
-
-    if train_end:
-        print(f"End train at {train_end.strftime('%Y-%m-%d %H:%M:%S')}")
-
-    if compile_start:
-        print(f"Start compile at {compile_start.strftime('%Y-%m-%d %H:%M:%S')}")
-
-    if compile_end:
-        print(f"End compile at {compile_end.strftime('%Y-%m-%d %H:%M:%S')}")
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
