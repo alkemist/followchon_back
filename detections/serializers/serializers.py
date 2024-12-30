@@ -66,15 +66,15 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
 
             new_detection.score = detection.get('score')
 
-            new_detection.center_x = yolo_points['x_center']
-            new_detection.center_y = yolo_points['y_center']
-            new_detection.width = yolo_points['width']
-            new_detection.height = yolo_points['height']
+            new_detection.center_x = max(0, yolo_points['x_center'])
+            new_detection.center_y = max(0, yolo_points['y_center'])
+            new_detection.width = max(0, yolo_points['width'])
+            new_detection.height = max(0, yolo_points['height'])
 
             lines.append(
                 (f"{new_detection.family.index} " +
-                 f"{yolo_points['x_center']} {yolo_points['y_center']} " +
-                 f"{yolo_points['width']} {yolo_points['height']}")
+                 f"{new_detection.center_x} {new_detection.center_y} " +
+                 f"{new_detection.width} {new_detection.height}")
             )
 
             new_detection.save()

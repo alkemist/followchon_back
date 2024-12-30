@@ -4,10 +4,10 @@ class YoloHelper:
     def calc_yolo_points(x1, y1, x2, y2, w_img, h_img):
         (w_box, h_box) = x2 - x1, y2 - y1
         return {
-            'x_center': (x1 + (w_box / 2)) / w_img,
-            'y_center': (y1 + (h_box / 2)) / h_img,
-            'width': w_box / w_img,
-            'height': h_box / h_img,
+            'x_center': max(0, (x1 + (w_box / 2)) / w_img),
+            'y_center': max(0, (y1 + (h_box / 2)) / h_img),
+            'width': max(0, w_box / w_img),
+            'height': max(0, h_box / h_img),
         }
 
     @staticmethod

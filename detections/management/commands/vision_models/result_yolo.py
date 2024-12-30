@@ -38,10 +38,10 @@ class Result_yolo:
         self.import_hailo(tl_x, tl_y, br_x, br_y)
 
     def import_hailo(self, tl_x, tl_y, br_x, br_y):
-        self.norm_width = br_x - tl_x
-        self.norm_height = br_y - tl_y
-        self.norm_x_center = tl_x + self.norm_width / 2
-        self.norm_y_center = tl_y + self.norm_height / 2
+        self.norm_width = max(0, br_x - tl_x)
+        self.norm_height = max(0, br_y - tl_y)
+        self.norm_x_center = max(0, tl_x + self.norm_width / 2)
+        self.norm_y_center = max(0, tl_y + self.norm_height / 2)
 
         self.ortho_tl_x = tl_x * self.ref_width
         self.ortho_tl_y = tl_y * self.ref_height
@@ -49,10 +49,10 @@ class Result_yolo:
         self.ortho_br_y = br_y * self.ref_height
 
     def import_yolo(self, x_center, y_center, width, height):
-        self.norm_x_center = x_center
-        self.norm_y_center = y_center
-        self.norm_width = width
-        self.norm_height = height
+        self.norm_x_center = max(0, x_center)
+        self.norm_y_center = max(0, y_center)
+        self.norm_width = max(0, width)
+        self.norm_height = max(0, height)
 
         ortho = YoloHelper.calc_orthogonal_points(
             x_center,
