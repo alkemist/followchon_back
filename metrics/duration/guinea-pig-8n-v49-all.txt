@@ -1,0 +1,10 @@
+Train count : 1789
+Val count : 1033
+Test count : 114
+
+[Train] Start at : 2024-12-30 20:13:36
+[Train] End at : 2024-12-30 22:42:16
+[Train] 2 hours and 28 minutes
+[Compile] Start at : 2024-12-30 22:47:21
+[Compile] End at : 2024-12-31 01:52:00
+[Compile] 3 hours and 4 minutes
