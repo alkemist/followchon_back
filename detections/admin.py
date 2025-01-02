@@ -24,7 +24,7 @@ class CaptureAdmin(admin.ModelAdmin):
     list_editable = []
     search_fields = ['id', 'date', 'photo_file']
     ordering = ['-date']
-    list_filter = ['date', 'status', 'changed', 'version', 'source']
+    list_filter = ['date', 'status', 'changed', 'version', 'train_all', 'train_chons', 'source']
     actions = ['resize', 'mark_as_draft', 'mark_as_verified', 'mark_as_archived', 'mark_as_deleted', 'migrate']
     inlines = [
         DetectionInline,

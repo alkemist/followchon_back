@@ -45,6 +45,8 @@ class Capture(models.Model):
     date = models.DateTimeField(default=timezone.now)
     changed = models.BooleanField(default=False)
     version = models.IntegerField(null=True, default=None)
+    train_all = models.BooleanField(default=False)
+    train_chons = models.BooleanField(default=False)
 
     id = 0
     detections = []
@@ -192,6 +194,10 @@ class Detection(models.Model):
             '</a>' % (cast(self.capture, Capture).photo_path(self.capture),
                       cast(self.capture, Capture).photo_path(self.capture))
         )
+
+    def line(self):
+        return (f"{self.family.index} {self.center_x} {self.center_y} " +
+                f"{self.width} {self.height}")
 
     def coords(self):
         size = self.size()
