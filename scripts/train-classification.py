@@ -1,0 +1,205 @@
+import os
+import shutil
+import subprocess
+from datetime import datetime
+from pathlib import Path
+
+import torch
+from dotenv import load_dotenv
+from onnx import __version__, IR_VERSION
+from onnx.defs import onnx_opset_version
+from ultralytics import YOLO
+
+from scripts.combine import CombinedModel
+
+load_dotenv()
+
+# settings.update({'datasets_dir': ''})
+
+runs_dir = 'runs'
+models_dir = 'models'
+metrics_dir = 'metrics'
+
+train_previous_path = os.getenv('TRAIN_MODEL_PATH')
+train_dataset_path = os.getenv('TRAIN_DATASET_PATH')
+train_dataset_base_name = os.getenv('TRAIN_DATASET_NAME')
+train_device = os.getenv('TRAIN_DEVICE')
+train_resume = os.getenv('TRAIN_RESUME')
+train_all = os.getenv('TRAIN_ALL')
+train_chons = os.getenv('TRAIN_CHONS')
+hailo_sdk_version = os.getenv('TRAIN_SDK_VERSION')
+model_base_version = os.getenv('TRAIN_MODEL_BASE_VERSION')
+model_nms_version = os.getenv('TRAIN_MODEL_NMS_VERSION')
+train_calib_dir = os.getenv('TRAIN_CALIB_DIR')
+
+is_cached = False
+
+
+def train(train_dataset_name, train_type):
+    train_filename = train_previous_path.replace('.pt', f'-{train_type}.pt') \
+        if train_previous_path.startswith('models/') \
+        else train_previous_path
+
+    model = YOLO(train_filename)
+    model.train(
+        task='classify',
+        data=train_dataset_path,
+        epochs=50,
+        imgsz=640,
+        name=train_dataset_name,
+        verbose=True,
+        save=True,
+        cache='disk' if is_cached else None,
+        plots=True,
+        resume=train_resume,
+        project=runs_dir,
+        exist_ok=True,
+        device=train_device,
+        workers=8,
+    )
+
+
+def move_metric(metric_dir, train_name, train_type, metric_name, metric_ext):
+    shutil.move(
+        f'{metric_dir}/{metric_name}.{metric_ext}',
+        f'{metrics_dir}/{metric_name}/{train_name}-{train_type}-{metric_name}.{metric_ext}'
+    )
+
+
+def move_best(model_train_best, model_pt):
+    shutil.move(model_train_best, model_pt)
+
+    print(f'Model yolo saved in {model_pt}')
+
+
+def train_full(train_type, model_pt):
+    train_name = f"{train_dataset_base_name}-{train_type}"
+    model_run_dir = f"{runs_dir}/{train_name}"
+    model_train_best = f"{model_run_dir}/weights/best.pt"
+
+    print(f"Start train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    train(train_name, train_type)
+
+    print(f"End train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    move_best(model_train_best, model_pt)
+
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix_normalized', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'F1_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'P_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'R_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'PR_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, train_type, 'results', 'csv')
+
+
+def combine(models):
+    return CombinedModel(
+        [YOLO(model) for model in models]
+    )
+
+
+def export(model_pt, model_onnx):
+    model = YOLO(model_pt)
+    model.export(format="onnx")
+
+    print(f'Model onnx saved in {model_onnx}')
+
+
+def execute(cmd):
+    print(f'Execute : {cmd}')
+
+    popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+    for stdout_line in iter(popen.stdout.readline, ""):
+        yield stdout_line
+    popen.stdout.close()
+    return_code = popen.wait()
+    if return_code:
+        raise subprocess.CalledProcessError(return_code, cmd)
+
+
+def commit(train_dataset_name, files):
+    for file in files:
+        for path in execute(('git', 'add', file)):
+            print(path, end="")
+
+    try:
+        for path in execute(('git', 'commit', '-m', train_dataset_name)):
+            print(path, end="")
+    except Exception as ex:
+        print(ex)
+
+    try:
+        for path in execute(('git', 'fetch', 'origin')):
+            print(path, end="")
+    except Exception as ex:
+        print(ex)
+
+    try:
+        for path in execute(('git', 'pull')):
+            print(path, end="")
+    except Exception as ex:
+        print(ex)
+
+    try:
+        for path in execute(('git', 'push')):
+            print(path, end="")
+    except Exception as ex:
+        print(ex)
+
+
+def calc_time_h_m(dt):
+    diff = datetime.now() - dt
+    hours, seconds = divmod(diff.total_seconds(), 3600)
+    minutes = seconds // 60
+    return f"{int(hours)} hours and {int(minutes)} minutes"
+
+
+if __name__ == '__main__':
+    if torch.cuda.is_available():
+        print(":D GPU is available")
+    else:
+        print("T_T GPU is not available")
+
+    print("PyTorch version :", torch.__version__)
+    print("CUDA Devices :", torch.cuda.device_count())
+    print(f"ONNX version={__version__!r}, opset={onnx_opset_version()}, ir_version={IR_VERSION}")
+    print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    train_start = datetime.now()
+    train_end = None
+    compile_start = None
+    compile_end = None
+
+    train_type = 'chons'
+    train_classes = [1, 2]
+
+    train_name = f"{train_dataset_base_name}-{train_type}"
+    model_pt = f"{models_dir}/{train_name}.pt"
+    file_stats = f"{metrics_dir}/duration/{train_name}.txt"
+
+    if not os.path.exists(file_stats):
+        with open(file_stats, "w") as file:
+            file.write("Train count : " + str(
+                len(list(Path(f"{train_dataset_path}/train/labels").glob("*.txt")))) + "\n")
+            file.write(
+                "Val count : " + str(len(list(Path(f"{train_dataset_path}/val/labels").glob("*.txt")))) + "\n")
+            file.write("Test count : " + str(
+                len(list(Path(f"{train_dataset_path}/test/labels").glob("*.txt")))) + "\n\n")
+
+    if not os.path.exists(model_pt):
+        with open(file_stats, "a") as file:
+            file.write("[Train] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+
+        train_full(train_type, model_pt)
+
+        with open(file_stats, "a") as file:
+            file.write("[Train] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+            file.write(f"[Train] {calc_time_h_m(train_start)}\n")
+
+    if os.getenv('TRAIN_STEP_GIT'):
+        if os.path.exists(model_pt):
+            commit(train_name, [model_pt, f'{metrics_dir}/*'])
+
+    print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

@@ -172,15 +172,15 @@ class Detection(models.Model):
 
     capture = models.ForeignKey(Capture, on_delete=models.CASCADE, related_name='detections')
     family = models.ForeignKey(Family, on_delete=models.RESTRICT, related_name='detections')
-    zone = models.ForeignKey(Zone, on_delete=models.SET_NULL, null=True, default=None)
+    zone = models.ForeignKey(Zone, on_delete=models.SET_NULL, null=True, default=None, blank=True)
 
     center_x = models.FloatField(null=True, default=0)
     center_y = models.FloatField(null=True, default=0)
     width = models.FloatField(null=True, default=0)
     height = models.FloatField(null=True, default=0)
 
-    score = models.FloatField(null=True, default=0)
-    trigger = models.CharField(null=True, max_length=100, choices=Triggers.choices)
+    score = models.FloatField(null=True, default=0, blank=True)
+    trigger = models.CharField(null=True, max_length=100, choices=Triggers.choices, default=None, blank=True)
 
     coords = {'x1': 0, 'y1': 0, 'x2': 0, 'y2': 0}
 

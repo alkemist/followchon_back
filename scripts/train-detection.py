@@ -53,6 +53,7 @@ def train(train_dataset_name, train_type, classes):
 
     model = YOLO(train_filename)
     model.train(
+        task="detect",
         data=train_dataset_yaml_path,
         epochs=50,
         imgsz=1024,
@@ -229,11 +230,13 @@ def purge(dir, pattern):
         if re.search(pattern, f):
             os.remove(os.path.join(dir, f))
 
+
 def calc_time_h_m(dt):
     diff = datetime.now() - dt
     hours, seconds = divmod(diff.total_seconds(), 3600)
     minutes = seconds // 60
     return f"{int(hours)} hours and {int(minutes)} minutes"
+
 
 if __name__ == '__main__':
     if torch.cuda.is_available():
@@ -266,9 +269,12 @@ if __name__ == '__main__':
 
             if not os.path.exists(file_stats):
                 with open(file_stats, "w") as file:
-                    file.write("Train count : " + str(len(list(Path(f"{train_dataset_path}/train/labels").glob("*.txt")))) + "\n")
-                    file.write("Val count : " + str(len(list(Path(f"{train_dataset_path}/val/labels").glob("*.txt")))) + "\n")
-                    file.write("Test count : " + str(len(list(Path(f"{train_dataset_path}/test/labels").glob("*.txt")))) + "\n\n")
+                    file.write("Train count : " + str(
+                        len(list(Path(f"{train_dataset_path}/train/labels").glob("*.txt")))) + "\n")
+                    file.write(
+                        "Val count : " + str(len(list(Path(f"{train_dataset_path}/val/labels").glob("*.txt")))) + "\n")
+                    file.write("Test count : " + str(
+                        len(list(Path(f"{train_dataset_path}/test/labels").glob("*.txt")))) + "\n\n")
 
             if not os.path.exists(model_pt):
                 with open(file_stats, "a") as file:
