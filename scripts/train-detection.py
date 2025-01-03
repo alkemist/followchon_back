@@ -11,7 +11,7 @@ from onnx import __version__, IR_VERSION
 from onnx.defs import onnx_opset_version
 from ultralytics import YOLO
 
-from scripts.combine import CombinedModel
+# from scripts.combine import CombinedModel
 
 load_dotenv()
 

@@ -63,6 +63,10 @@ Tappas : `./install.sh`
 Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`
 Python : `venv/bin/pip install ~/Downloads/hailort-4.19.0-cp311-cp311-linux_aarch64.whl`
 
+### Scripts
+
+Train : `C:\Users\Salon\.virtualenvs\followchon_py11\Scripts\python.exe scripts\train.py`
+
 ### Tools
 
 Show usage : `hailortcli monitor`
