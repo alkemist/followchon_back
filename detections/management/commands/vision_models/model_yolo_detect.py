@@ -1,4 +1,5 @@
 import math
+import os
 
 import cv2
 from loguru import logger
@@ -10,7 +11,7 @@ from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.supervisor import Supervisor
 
 
-class Model_YOLO(Model):
+class Model_YOLO_Detect(Model):
 
     def __init__(self, supervisor: Supervisor, source: Source = Source.VISION):
         super().__init__(supervisor, 'pt', source)
@@ -18,13 +19,16 @@ class Model_YOLO(Model):
     def check_model(self, origin: str):
         self.supervisor.fill_params()
 
-        if self.model is None or not self.supervisor.current_model_version != self.supervisor.model_version:
-            if self.supervisor.current_model_version != self.supervisor.model_version:
-                logger.info(f'Load model version "{self.supervisor.model_version}" : {origin}')
+        if self.model is None or not self.current_model_version != self.supervisor.model_version_detect:
+            if self.current_model_version != self.supervisor.model_version_detect:
+                logger.info(f'Load model version "{self.supervisor.model_version_detect}" : {origin}')
 
-            self.supervisor.current_model_version = self.supervisor.model_version
+            self.current_model_version = self.supervisor.model_version_detect
 
-            self.model = YOLO(self.get_model_path(), task='detect')
+            model_path = (f"{os.getenv('MODEL_DIR')}/"
+                          f"{os.getenv('MODEL_DETECT_PREFIX')}{self.current_model_version}-all.{self.model_ext}")
+
+            self.model = YOLO(model_path, task='detect')
 
     def infer(self, frame: cv2.typing.MatLike):
         results = self.model(frame, stream=True, verbose=False)
@@ -47,10 +51,10 @@ class Model_YOLO(Model):
                     )
 
                     yolo_result.import_ortho(
-                        float(tl_x),
-                        float(tl_y),
-                        float(br_x),
-                        float(br_y),
+                        math.floor(tl_x),
+                        math.floor(tl_y),
+                        math.ceil(br_x),
+                        math.ceil(br_y),
                     )
 
                     yolo_results.append(yolo_result)

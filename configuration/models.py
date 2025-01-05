@@ -18,6 +18,7 @@ class Family(models.Model):
 
     index = models.IntegerField(null=True)
     name = models.CharField(max_length=200)
+    slug = models.CharField(max_length=200, null=True)
     parent = models.ForeignKey('Family', on_delete=models.CASCADE, null=True, blank=True)
     is_tracked = models.BooleanField(default=False)
     is_trigger = models.BooleanField(default=False)

@@ -84,19 +84,6 @@ def train_full(train_type, model_pt):
     move_metric(model_run_dir, train_dataset_base_name, train_type, 'results', 'csv')
 
 
-def combine(models):
-    return CombinedModel(
-        [YOLO(model) for model in models]
-    )
-
-
-def export(model_pt, model_onnx):
-    model = YOLO(model_pt)
-    model.export(format="onnx")
-
-    print(f'Model onnx saved in {model_onnx}')
-
-
 def execute(cmd):
     print(f'Execute : {cmd}')
 

@@ -1,3 +1,5 @@
+import math
+
 from utils.yolo import YoloHelper
 
 
@@ -43,10 +45,10 @@ class Result_yolo:
         self.norm_x_center = max(0, tl_x + self.norm_width / 2)
         self.norm_y_center = max(0, tl_y + self.norm_height / 2)
 
-        self.ortho_tl_x = tl_x * self.ref_width
-        self.ortho_tl_y = tl_y * self.ref_height
-        self.ortho_br_x = br_x * self.ref_width
-        self.ortho_br_y = br_y * self.ref_height
+        self.ortho_tl_x = math.floor(tl_x * self.ref_width)
+        self.ortho_tl_y = math.floor(tl_y * self.ref_height)
+        self.ortho_br_x = math.ceil(br_x * self.ref_width)
+        self.ortho_br_y = math.ceil(br_y * self.ref_height)
 
     def import_yolo(self, x_center, y_center, width, height):
         self.norm_x_center = max(0, x_center)
@@ -85,6 +87,26 @@ class Result_yolo:
         self.norm_y_center = yolo['y_center']
         self.norm_width = yolo['width']
         self.norm_height = yolo['height']
+
+    def clone(self, cls, score):
+        clone = Result_yolo(
+            cls,
+            score,
+            self.ref_width,
+            self.ref_height
+        )
+
+        clone.norm_width = self.norm_width
+        clone.norm_height = self.norm_height
+        clone.norm_x_center = self.norm_x_center
+        clone.norm_y_center = self.norm_y_center
+
+        clone.ortho_tl_x = self.ortho_tl_x
+        clone.ortho_tl_y = self.ortho_tl_y
+        clone.ortho_br_x = self.ortho_br_x
+        clone.ortho_br_y = self.ortho_br_y
+
+        return clone
 
     def to_array(self):
         return [

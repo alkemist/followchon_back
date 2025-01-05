@@ -2,8 +2,12 @@ import os
 import time
 from datetime import datetime
 
+import cv2
+
 from configuration.models import Family, Zone
+from detections.management.commands.vision_models.archi import Archi
 from detections.management.commands.vision_models.capture_analyse import Capture_analyse
+from detections.management.commands.vision_models.model_yolo_classify import Model_YOLO_Classify
 from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.supervisor import Supervisor
 from detections.models import Detection
@@ -16,7 +20,8 @@ class Vision:
         self.supervisor = supervisor
         self.families = []
         self.zones = []
-        self.families_dict = {}
+        self.families_index_dict = {}
+        self.families_slug_dict = {}
         self.last_detections_dict = {}
 
         self.save_time = 0
@@ -24,7 +29,9 @@ class Vision:
         self.capture_width = int(os.getenv('CAPTURE_WIDTH'))
 
         self.families = Family.objects.all()
-        self.families_dict = ArrayHelper.object_list_to_dict(self.families, 'index')
+        self.families_index_dict = ArrayHelper.object_list_to_dict(self.families, 'index')
+        self.families_slug_dict = ArrayHelper.object_list_to_dict(self.families, 'slug')
+        self.model_classify = None
 
         if self.supervisor.source == Source.VISION:
             last_detections = Detection.objects.raw(
@@ -51,21 +58,59 @@ class Vision:
 
         self.fill_objects()
 
+        if self.supervisor.archi == Archi.HAILO:
+            from detections.management.commands.vision_models.model_hailo_detect import Model_Hailo_Detect
+            self.model_detect = Model_Hailo_Detect(supervisor, self.supervisor.source)
+        else:
+            from detections.management.commands.vision_models.model_yolo_detect import Model_YOLO_Detect
+            self.model_detect = Model_YOLO_Detect(supervisor, self.supervisor.source)
+
+        self.model_classify = Model_YOLO_Classify(supervisor)
+
+    def release(self):
+        if self.supervisor.archi == Archi.HAILO:
+            self.model_detect.release()
+
+    def check_model(self, origin):
+        if self.model_detect is not None:
+            self.model_detect.check_model(origin)
+
+        if self.model_classify is not None:
+            self.model_classify.check_model(origin)
+
     def fill_objects(self):
         if self.supervisor.source == Source.VISION:
             self.zones = Zone.objects.all().filter(is_enabled=True).order_by('id')
 
-    def analyze(self, model_version, frame, frame_count, capture_date: datetime, yolo_results):
+    def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date: datetime):
         saved = False
 
-        if len(yolo_results) > 0:
-            analyse = Capture_analyse(model_version,
-                                      frame, capture_date, frame_count,
-                                      self.last_detections_dict, self.families_dict, self.zones,
-                                      self.supervisor
-                                      )
+        yolo_results = self.model_detect.infer(frame)
+        yolo_all_results = list()
 
-            frame = analyse.detect(yolo_results)
+        for yolo_result in yolo_results:
+            image_result = frame[
+                           yolo_result.ortho_tl_y:yolo_result.ortho_br_y,
+                           yolo_result.ortho_tl_x:yolo_result.ortho_br_x
+                           ]
+
+            classify_result = self.model_classify.infer(image_result)
+
+            if classify_result is not None:
+                cls = self.families_slug_dict[classify_result[0]].index
+
+                yolo_all_results.append(yolo_result)
+                yolo_all_results.append(yolo_result.clone(cls, classify_result[1]))
+
+        if len(yolo_all_results) > 0:
+            analyse = Capture_analyse(
+                self.model_detect.current_model_version, self.model_classify.current_model_version,
+                frame, capture_date, frame_count,
+                self.last_detections_dict, self.families_index_dict, self.zones,
+                self.supervisor
+            )
+
+            frame = analyse.detect(yolo_all_results)
 
             if analyse.is_triggered:
                 analyse.save()

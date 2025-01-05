@@ -1,3 +1,6 @@
+import os
+import sys
+
 import PIL.Image
 import cv2
 import numpy as np
@@ -5,15 +8,14 @@ from PIL import Image
 from hailo_platform import (VDevice, HailoSchedulingAlgorithm)
 from loguru import logger
 
-from detections.management.commands.vision_models.hailo_inference_double_async import HailoDoubleAsyncInference
+from detections.management.commands.vision_models.hailo_inference_async import HailoAsyncInference
 from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.result_yolo import Result_yolo
 from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.supervisor import Supervisor
-from detections.management.commands.vision_models.type import Type
 
 
-class Model_Hailo_Double(Model):
+class Model_Hailo_Detect(Model):
 
     def __init__(self, supervisor: Supervisor, source: Source = Source.VISION):
         super().__init__(supervisor, 'hef', source)
@@ -24,25 +26,27 @@ class Model_Hailo_Double(Model):
     def check_model(self, origin: str):
         self.supervisor.fill_params()
 
-        # logger.info(f'Vérifie le compteur de références:{sys.getrefcount(self.model)}')
+        logger.info(f'Vérifie le compteur de références:{sys.getrefcount(self.model)}')
 
-        if self.model is None or self.current_model_version != self.supervisor.model_version:
+        if self.model is None or self.current_model_version != self.supervisor.model_version_detect:
             if self.model is not None:
                 self.release()
 
             # if self.supervisor.current_model_version != self.supervisor.model_version:
             logger.info(
-                f'Load model version "{self.supervisor.model_version}" : {origin}')
+                f'Load model version "{self.supervisor.model_version_detect}" : {origin}')
 
-            self.current_model_version = self.supervisor.model_version
+            self.current_model_version = self.supervisor.model_version_detect
 
             params = VDevice.create_params()
             params.scheduling_algorithm = HailoSchedulingAlgorithm.ROUND_ROBIN
             vdevice = VDevice(params)
 
-            self.model = HailoDoubleAsyncInference(vdevice, self.get_model_path_double(Type.ALL),
-                                                   self.get_model_path_double(Type.CHONS))
-            self.height, self.width, _ = self.model.get_input_shape_all()
+            model_path = (f"{os.getenv('MODEL_DIR')}/"
+                          f"{os.getenv('MODEL_DETECT_PREFIX')}{self.current_model_version}-all.{self.model_ext}")
+
+            self.model = HailoAsyncInference(vdevice, model_path)
+            self.height, self.width, _ = self.model.get_input_shape()
 
     def preprocess(self, image: PIL.Image.Image):
         """
@@ -87,9 +91,6 @@ class Model_Hailo_Double(Model):
 
         yolo_results = list()
 
-        if self.model is None:
-            self.check_model('infer')
-
         raw_detections_queue = self.model.run(np.array(processed_image))
 
         # if self.supervisor.log_detections:
@@ -99,58 +100,45 @@ class Model_Hailo_Double(Model):
             logger.info(f"Queue size too long : {len(raw_detections_queue)}")
 
         if len(raw_detections_queue) > 0:
-            yolo_results = self.transform(
-                self.model.remove_last_output_results_all(),
-                width_resized, height_resized, padded_size, padding
-            )
+            raw_detections = self.model.remove_last_output_results()
 
-            yolo_results = yolo_results + self.transform(
-                self.model.remove_last_output_results_chons(),
-                width_resized, height_resized, padded_size, padding
-            )
+            if raw_detections is not None and len(raw_detections) > 0:
+                # if self.supervisor.log_detections:
+                #     logger.info(f"Raw detections: {len(raw_detections)}")
+
+                for i, detection in enumerate(raw_detections):
+                    # if self.supervisor.log_detections:
+                    #     logger.info(f"Detection: {len(detection)}")
+
+                    for result in detection:
+                        bbox, score = result[:4], result[4]
+
+                        if score > 0:
+                            if self.supervisor.log_detections:
+                                logger.info(
+                                    f"Class: {i}, Score: {score}, Result: {bbox[0]} {bbox[1]} {bbox[2]} {bbox[3]}")
+
+                            if score >= self.supervisor.score_min:
+                                yolo_result = Result_yolo(
+                                    i,
+                                    float(score),
+                                    width_resized,
+                                    height_resized
+                                )
+
+                                yolo_result.import_hailo_without_padding(
+                                    padded_size,
+                                    padding,
+                                    float(bbox[1]),
+                                    float(bbox[0]),
+                                    float(bbox[3]),
+                                    float(bbox[2]),
+                                )
+
+                                yolo_results.append(yolo_result)
         else:
             # No traitement
             logger.info(f"Queue empty")
-
-        return yolo_results
-
-    def transform(self, raw_detections, width_resized, height_resized, padded_size, padding):
-        yolo_results = []
-
-        if raw_detections is not None and len(raw_detections) > 0:
-            # if self.supervisor.log_detections:
-            #     logger.info(f"Raw detections: {len(raw_detections)}")
-
-            for i, detection in enumerate(raw_detections):
-                # if self.supervisor.log_detections:
-                #     logger.info(f"Detection: {len(detection)}")
-
-                for result in detection:
-                    bbox, score = result[:4], result[4]
-
-                    if score > 0:
-                        if self.supervisor.log_detections:
-                            logger.info(
-                                f"Class: {i}, Score: {score}, Result: {bbox[0]} {bbox[1]} {bbox[2]} {bbox[3]}")
-
-                        if score >= self.supervisor.score_min:
-                            yolo_result = Result_yolo(
-                                i,
-                                float(score),
-                                width_resized,
-                                height_resized
-                            )
-
-                            yolo_result.import_hailo_without_padding(
-                                padded_size,
-                                padding,
-                                float(bbox[1]),
-                                float(bbox[0]),
-                                float(bbox[3]),
-                                float(bbox[2]),
-                            )
-
-                            yolo_results.append(yolo_result)
 
         return yolo_results
 

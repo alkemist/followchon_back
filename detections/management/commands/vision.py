@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 from dotenv import load_dotenv
 from loguru import logger
 
+from detections.management.commands.vision_models.archi import Archi
 from detections.management.commands.vision_models.levels import Levels
 from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.streamer import Streamer
@@ -37,11 +38,11 @@ class Command(BaseCommand):
             from vcgencmd import Vcgencmd
 
             model_name = 'hailo'
-            model_ext = 'hef'
+            archi = Archi.HAILO
             log_temp = Vcgencmd()
         else:
             model_name = 'yolo'
-            model_ext = 'pt'
+            archi = Archi.NATIF
             log_temp = None
 
         if options["video"]:
@@ -55,19 +56,12 @@ class Command(BaseCommand):
                    format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
                    rotation="1 day", retention=7)
 
-        supervisor = Supervisor(log_temp, source)
-        model = None
+        supervisor = Supervisor(log_temp, source, archi)
         error = None
+        streamer = None
 
         try:
-            if options["hailo"]:
-                from detections.management.commands.vision_models.model_hailo_double import Model_Hailo_Double
-                model = Model_Hailo_Double(supervisor, source)
-            else:
-                from detections.management.commands.vision_models.model_yolo import Model_YOLO
-                model = Model_YOLO(supervisor, source)
-
-            streamer = Streamer(supervisor, model)
+            streamer = Streamer(supervisor)
 
             if options["photo"]:
                 streamer.read()
@@ -87,8 +81,8 @@ class Command(BaseCommand):
 
                 tb = tb.tb_next
 
-            if model is not None:
-                model.release()
+            if streamer is not None:
+                streamer.release()
 
             supervisor.log(
                 type(error).__name__,

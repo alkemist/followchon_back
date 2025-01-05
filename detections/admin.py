@@ -18,13 +18,14 @@ class CaptureAdmin(admin.ModelAdmin):
         ('Identification',
          {'fields': ['date', 'photo_file', 'image_tag', 'status'], 'classes': []}),
     ]
-    list_display = ['id', 'date', 'status', 'changed', 'version', 'image_tag', 'front_url']
+    list_display = ['id', 'date', 'status', 'changed', 'version_detect', 'version_classify', 'image_tag', 'front_url']
     list_display_links = ['date']
     readonly_fields = ['image_tag', 'status', 'source']
     list_editable = []
     search_fields = ['id', 'date', 'photo_file']
     ordering = ['-date']
-    list_filter = ['date', 'status', 'changed', 'version', 'train_all', 'train_chons', 'source']
+    list_filter = ['date', 'status', 'changed', 'version_detect', 'version_classify', 'train_all', 'train_chons',
+                   'source']
     actions = ['resize', 'mark_as_draft', 'mark_as_verified', 'mark_as_archived', 'mark_as_deleted', 'migrate']
     inlines = [
         DetectionInline,

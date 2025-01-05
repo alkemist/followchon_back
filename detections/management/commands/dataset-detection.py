@@ -100,127 +100,125 @@ class Command(BaseCommand):
             )
             chunk_number = int(params_dict['vision_model_version'].value) + 1
 
-        capture_statuses = ['archived', 'verifed']
+        capture_statuses = ['archived', 'verified']
         capture_version = None
-        family_indexes = {
-            'all': [0],
-            'chons': [1, 2],
-        }
+        family_type = 'all'
+        family_indexes = [0]
+
         type_video_percent = 0.2
         type_vision_percent = 1 - type_video_percent
         dataset_min_count = 1000
 
-        for family_type in family_indexes:
-            family_type_db = f'train_{family_type}'
+        family_type_db = f'train_{family_type}'
 
-            df = query_to_dataframe(
-                'SELECT c.id'
-                + f' ,c.source'
-                + f' ,c.status'
-                + f' ,c.photo_file'
-                + f' ,c.date'
-                + f' FROM detections_capture c'
-                + f' WHERE EXISTS ('
-                + f'    SELECT d.id'
-                + f'    FROM detections_detection d'
-                + f'    LEFT JOIN configuration_family f ON d.family_id = f.id'
-                + f'    WHERE d.capture_id = c.id'
-                + f'    AND ('
-                + f'    ' + ' OR '.join([f"f.'index' = {i}" for i in family_indexes[family_type]])
-                + f'    )'
-                + f' )'
-                + f' AND {family_type_db} = False'
-                + f' AND c.status IN ("' + '","'.join(capture_statuses) + '")'
-                + (f' AND c.version = {capture_version}' if capture_version else '')
-            )
+        df = query_to_dataframe(
+            'SELECT c.id'
+            + f' ,c.source'
+            + f' ,c.status'
+            + f' ,c.photo_file'
+            + f' ,c.date'
+            + f' FROM detections_capture c'
+            + f' WHERE EXISTS ('
+            + f'    SELECT d.id'
+            + f'    FROM detections_detection d'
+            + f'    LEFT JOIN configuration_family f ON d.family_id = f.id'
+            + f'    WHERE d.capture_id = c.id'
+            + f'    AND ('
+            + f'    ' + ' OR '.join([f"f.'index' = {i}" for i in family_indexes])
+            + f'    )'
+            + f' )'
+            + f' AND {family_type_db} = False'
+            + f' AND c.status IN ("' + '","'.join(capture_statuses) + '")'
+            + (f' AND c.version = {capture_version}' if capture_version else '')
+        )
 
-            df['filename'] = df['photo_file'].apply(replace_extension)
-            df['ext'] = df['photo_file'].apply(get_extension)
-            df['image_path'] = './static/captures/' + df['status'] + '/images/' + df['photo_file']
-            df['label_path'] = './static/captures/' + df['status'] + '/labels/' + df['photo_file'].apply(
-                replace_extension,
-                new_ext=".txt")
+        df['filename'] = df['photo_file'].apply(replace_extension)
+        df['ext'] = df['photo_file'].apply(get_extension)
+        df['image_path'] = './static/captures/' + df['status'] + '/images/' + df['photo_file']
+        df['label_path'] = './static/captures/' + df['status'] + '/labels/' + df['photo_file'].apply(
+            replace_extension,
+            new_ext=".txt")
 
-            df_vision = df[df['source'] == 'vision'].sample(frac=1, random_state=42).reset_index(drop=True)
-            df_video = df[df['source'] == 'video'].sample(frac=1, random_state=42).reset_index(drop=True)
+        df_vision = df[df['source'] == 'vision'].sample(frac=1, random_state=42).reset_index(drop=True)
+        df_video = df[df['source'] == 'video'].sample(frac=1, random_state=42).reset_index(drop=True)
 
-            if (df_vision.shape[0] > 0) & (df_video.shape[0] > 0):
-                if df['source'].value_counts(normalize=True).loc['video'] < type_video_percent:
-                    df_vision = df_vision.sample(
-                        n=int(df_video.shape[0] * (1 - type_video_percent) / type_video_percent),
-                        random_state=42
-                    )
-                else:
-                    df_video = df_video.sample(
-                        n=int(df_vision.shape[0] * (1 - type_vision_percent) / type_vision_percent),
-                        random_state=42
-                    )
+        if (df_vision.shape[0] > 0) & (df_video.shape[0] > 0):
+            if df['source'].value_counts(normalize=True).loc['video'] < type_video_percent:
+                df_vision = df_vision.sample(
+                    n=int(df_video.shape[0] * (1 - type_video_percent) / type_video_percent),
+                    random_state=42
+                )
+            else:
+                df_video = df_video.sample(
+                    n=int(df_vision.shape[0] * (1 - type_vision_percent) / type_vision_percent),
+                    random_state=42
+                )
 
-                if (df_video.shape[0] + df_vision.shape[0]) > dataset_min_count:
-                    video_val_count = floor(df_video.shape[0] * dataset_val_percent)
-                    vision_val_count = floor(df_vision.shape[0] * dataset_val_percent)
-                    video_test_count = floor(df_video.shape[0] * dataset_test_percent)
-                    vision_test_count = floor(df_vision.shape[0] * dataset_test_percent)
+            if (df_video.shape[0] + df_vision.shape[0]) > dataset_min_count:
+                video_val_count = floor(df_video.shape[0] * dataset_val_percent)
+                vision_val_count = floor(df_vision.shape[0] * dataset_val_percent)
+                video_test_count = floor(df_video.shape[0] * dataset_test_percent)
+                vision_test_count = floor(df_vision.shape[0] * dataset_test_percent)
 
-                    df_val = pd.concat([
-                        df_vision.iloc[:vision_val_count],
-                        df_video.iloc[:video_val_count],
-                    ]).reset_index(drop=True)
-                    df_val['type'] = 'val'
+                df_val = pd.concat([
+                    df_vision.iloc[:vision_val_count],
+                    df_video.iloc[:video_val_count],
+                ]).reset_index(drop=True)
+                df_val['type'] = 'val'
 
-                    df_test = pd.concat([
-                        df_vision.iloc[vision_val_count:vision_val_count + vision_test_count],
-                        df_video.iloc[video_val_count:video_val_count + video_test_count],
-                    ]).reset_index(drop=True)
-                    df_test['type'] = 'test'
+                df_test = pd.concat([
+                    df_vision.iloc[vision_val_count:vision_val_count + vision_test_count],
+                    df_video.iloc[video_val_count:video_val_count + video_test_count],
+                ]).reset_index(drop=True)
+                df_test['type'] = 'test'
 
-                    df_train = pd.concat([
-                        df_vision.iloc[vision_val_count + vision_test_count:],
-                        df_video.iloc[video_val_count + video_test_count:],
-                    ]).reset_index(drop=True)
-                    df_train['type'] = 'train'
+                df_train = pd.concat([
+                    df_vision.iloc[vision_val_count + vision_test_count:],
+                    df_video.iloc[video_val_count + video_test_count:],
+                ]).reset_index(drop=True)
+                df_train['type'] = 'train'
 
-                    dataset_dir = f'{dataset_base_result_dir}{chunk_number}-{family_type}'
+                dataset_dir = f'{dataset_base_result_dir}{chunk_number}-{family_type}'
 
-                    if active:
-                        if not os.path.exists(dataset_dir):
-                            os.makedirs(dataset_dir)
+                if active:
+                    if not os.path.exists(dataset_dir):
+                        os.makedirs(dataset_dir)
 
-                        shutil.copy("./static/captures/data.yaml",
-                                    f"{dataset_dir}/data.yaml")
+                    shutil.copy("./static/captures/data.yaml",
+                                f"{dataset_dir}/data.yaml")
 
-                        copy_to(df_val, f'{dataset_dir}/val')
-                        copy_to(df_test, f'{dataset_dir}/test')
-                        copy_to(df_train, f'{dataset_dir}/train')
+                    copy_to(df_val, f'{dataset_dir}/val')
+                    copy_to(df_test, f'{dataset_dir}/test')
+                    copy_to(df_train, f'{dataset_dir}/train')
 
-                        capture_ids = df_vision['id'].to_list() + df_video['id'].to_list()
-                        Capture.objects.filter(id__in=capture_ids) \
-                            .update(**{family_type_db: True})
+                    capture_ids = df_vision['id'].to_list() + df_video['id'].to_list()
+                    Capture.objects.filter(id__in=capture_ids) \
+                        .update(**{family_type_db: True})
 
-                    print('TRAIN : ')
-                    print(df_train['source'].value_counts(normalize=True))
-                    print('VAL : ')
-                    print(df_val['source'].value_counts(normalize=True))
-                    print('TEST : ')
-                    print(df_test['source'].value_counts(normalize=True))
-                    print('ALL : ')
-                    print(pd.concat([df_train, df_val, df_test])['type'].value_counts(normalize=True))
-                    print(pd.concat([df_train, df_val, df_test])['type'].value_counts(normalize=False))
-                    print(pd.concat([df_train, df_val, df_test])['source'].value_counts(normalize=True))
-                    print(pd.concat([df_train, df_val, df_test])['source'].value_counts(normalize=False))
+                print('TRAIN : ')
+                print(df_train['source'].value_counts(normalize=True))
+                print('VAL : ')
+                print(df_val['source'].value_counts(normalize=True))
+                print('TEST : ')
+                print(df_test['source'].value_counts(normalize=True))
+                print('ALL : ')
+                print(pd.concat([df_train, df_val, df_test])['type'].value_counts(normalize=True))
+                print(pd.concat([df_train, df_val, df_test])['type'].value_counts(normalize=False))
+                print(pd.concat([df_train, df_val, df_test])['source'].value_counts(normalize=True))
+                print(pd.concat([df_train, df_val, df_test])['source'].value_counts(normalize=False))
 
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            (
-                                '[DEMO]' if not active else '') + f'[{family_type}][{chunk_number}] Successfully finished with {df_vision.shape[0] + df_video.shape[0]} items')
-                    )
-                else:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            (
-                                '[DEMO]' if not active else '') + f'[{family_type}] Not enough items: {df_vision.shape[0] + df_video.shape[0]} ')
-                    )
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        (
+                            '[DEMO]' if not active else '') + f'[{family_type}][{chunk_number}] Successfully finished with {df_vision.shape[0] + df_video.shape[0]} items')
+                )
             else:
                 self.stdout.write(
-                    self.style.ERROR(('[DEMO]' if not active else '') + f'[{family_type}] No "video" items ')
+                    self.style.ERROR(
+                        (
+                            '[DEMO]' if not active else '') + f'[{family_type}] Not enough items: {df_vision.shape[0] + df_video.shape[0]} ')
                 )
+        else:
+            self.stdout.write(
+                self.style.ERROR(('[DEMO]' if not active else '') + f'[{family_type}] No "video" items ')
+            )

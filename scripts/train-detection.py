@@ -44,12 +44,8 @@ end_node_names = (
 )
 
 
-def train(train_dataset_name, train_type, classes):
-    train_filename = train_previous_path.replace('.pt', f'-{train_type}.pt') \
-        if train_previous_path.startswith('models/') \
-        else train_previous_path
-
-    model = YOLO(train_filename)
+def train(train_dataset_name, classes):
+    model = YOLO(train_previous_path)
     model.train(
         task="detect",
         data=train_dataset_yaml_path,
@@ -89,7 +85,7 @@ def train_full(train_type, train_classes, model_pt):
 
     print(f"Start train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    train(train_name, train_type, train_classes)
+    train(train_name, train_classes)
 
     print(f"End train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
@@ -102,12 +98,6 @@ def train_full(train_type, train_classes, model_pt):
     move_metric(model_run_dir, train_dataset_base_name, train_type, 'R_curve', 'png')
     move_metric(model_run_dir, train_dataset_base_name, train_type, 'PR_curve', 'png')
     move_metric(model_run_dir, train_dataset_base_name, train_type, 'results', 'csv')
-
-
-def combine(models):
-    return CombinedModel(
-        [YOLO(model) for model in models]
-    )
 
 
 def export(model_pt, model_onnx):
@@ -252,57 +242,54 @@ if __name__ == '__main__':
     compile_start = None
     compile_end = None
 
-    train_types = ['all', 'chons']
-    train_classes = [[0], [1, 2]]
+    train_type = 'all'
+    train_classes = [0]
 
-    for i, train_type in enumerate(train_types):
-        if i == 0 and train_all or i == 1 and train_chons:
+    train_name = f"{train_dataset_base_name}-{train_type}"
+    model_pt = f"{models_dir}/{train_name}.pt"
+    model_onnx = f"{models_dir}/{train_name}.onnx"
+    model_har = f"{models_dir}/{train_name}.har"
+    model_hef = f"{models_dir}/{train_name}.hef"
+    file_stats = f"{metrics_dir}/duration/{train_name}.txt"
 
-            train_name = f"{train_dataset_base_name}-{train_type}"
-            model_pt = f"{models_dir}/{train_name}.pt"
-            model_onnx = f"{models_dir}/{train_name}.onnx"
-            model_har = f"{models_dir}/{train_name}.har"
-            model_hef = f"{models_dir}/{train_name}.hef"
-            file_stats = f"{metrics_dir}/duration/{train_name}.txt"
+    if not os.path.exists(file_stats):
+        with open(file_stats, "w") as file:
+            file.write("Train count : " + str(
+                len(list(Path(f"{train_dataset_path}/train/labels").glob("*.txt")))) + "\n")
+            file.write(
+                "Val count : " + str(len(list(Path(f"{train_dataset_path}/val/labels").glob("*.txt")))) + "\n")
+            file.write("Test count : " + str(
+                len(list(Path(f"{train_dataset_path}/test/labels").glob("*.txt")))) + "\n\n")
 
-            if not os.path.exists(file_stats):
-                with open(file_stats, "w") as file:
-                    file.write("Train count : " + str(
-                        len(list(Path(f"{train_dataset_path}/train/labels").glob("*.txt")))) + "\n")
-                    file.write(
-                        "Val count : " + str(len(list(Path(f"{train_dataset_path}/val/labels").glob("*.txt")))) + "\n")
-                    file.write("Test count : " + str(
-                        len(list(Path(f"{train_dataset_path}/test/labels").glob("*.txt")))) + "\n\n")
+    if not os.path.exists(model_pt):
+        with open(file_stats, "a") as file:
+            file.write("[Train] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
 
-            if not os.path.exists(model_pt):
-                with open(file_stats, "a") as file:
-                    file.write("[Train] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+        train_full(train_type, train_classes, model_pt)
 
-                train_full(train_type, train_classes[i], model_pt)
+        with open(file_stats, "a") as file:
+            file.write("[Train] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+            file.write(f"[Train] {calc_time_h_m(train_start)}\n")
 
-                with open(file_stats, "a") as file:
-                    file.write("[Train] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
-                    file.write(f"[Train] {calc_time_h_m(train_start)}\n")
+    export(model_pt, model_onnx)
 
-            export(model_pt, model_onnx)
+    if os.getenv('TRAIN_STEP_PARSE') and not os.path.exists(model_har):
+        parse(model_onnx, model_har, 5)
 
-            if os.getenv('TRAIN_STEP_PARSE') and not os.path.exists(model_har):
-                parse(model_onnx, model_har, 5)
+    if os.getenv('TRAIN_STEP_COMPILE') and not os.path.exists(model_hef):
+        compile_start = datetime.now()
+        with open(file_stats, "a") as file:
+            file.write("[Compile] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
 
-            if os.getenv('TRAIN_STEP_COMPILE') and not os.path.exists(model_hef):
-                compile_start = datetime.now()
-                with open(file_stats, "a") as file:
-                    file.write("[Compile] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+        build(model_har, model_hef, 5)
 
-                build(model_har, model_hef, 5)
+        with open(file_stats, "a") as file:
+            file.write("[Compile] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+            file.write(f"[Compile] {calc_time_h_m(compile_start)}\n")
 
-                with open(file_stats, "a") as file:
-                    file.write("[Compile] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
-                    file.write(f"[Compile] {calc_time_h_m(compile_start)}\n")
-
-            if os.getenv('TRAIN_STEP_GIT'):
-                if os.path.exists(model_hef):
-                    commit(train_name, [model_pt, model_hef, f'{metrics_dir}/*'])
+    if os.getenv('TRAIN_STEP_GIT'):
+        if os.path.exists(model_hef):
+            commit(train_name, [model_pt, model_hef, f'{metrics_dir}/*'])
 
     if is_cached:
         try:

@@ -9,7 +9,6 @@ from time import sleep
 import cv2
 from loguru import logger
 
-from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.supervisor import Supervisor
 from detections.management.commands.vision_models.vision import Vision
@@ -17,15 +16,13 @@ from detections.management.commands.vision_models.vision import Vision
 
 class Streamer:
 
-    def __init__(self, supervisor: Supervisor, model: Model):
+    def __init__(self, supervisor: Supervisor):
         self.supervisor = supervisor
         self.vision = Vision(supervisor)
 
         self.stream_path = os.getenv('LIVE_STREAM_PATH')
 
         self.show_stream = os.getenv('SHOW_STREAM') == 'True'
-
-        self.model = model
 
     def begin_recording(self, log: bool = False) -> object | None:
         if log:
@@ -54,12 +51,12 @@ class Streamer:
     def long_sleep(self, time_minutes):
         logger.info(f'Long sleep')
 
-        self.model.release()
+        self.vision.release()
         time.sleep(time_minutes * 60)
         self.supervisor.last_capture_seconds = time.time()
 
     def start(self):
-        self.model.check_model('start')
+        self.vision.check_model('start')
         self.supervisor.log_start()
 
         hour = datetime.now().hour
@@ -172,7 +169,7 @@ class Streamer:
         if self.supervisor.source == Source.VISION:
             self.stop_recording()
 
-        self.model.release()
+        self.vision.release()
 
     def capture(self, camera_record_filename: str):
         self.supervisor.last_frame_seconds = 0
@@ -234,7 +231,7 @@ class Streamer:
         return None
 
     def read(self):
-        self.model.check_model('read')
+        self.vision.check_model('read')
         self.supervisor.log_start()
 
         frame_saved_count = 0
@@ -272,17 +269,11 @@ class Streamer:
 
         self.supervisor.log_stopped()
 
-        self.model.release()
+        self.vision.release()
 
     def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date):
-        yolo_results_all = self.model.infer(
-            frame
-        )
-
-        (frame, saved) = self.vision.analyze(
-            self.model.current_model_version,
-            frame, frame_count, capture_date,
-            yolo_results_all
+        (frame, saved) = self.vision.infer(
+            frame, frame_count, capture_date
         )
 
         self.supervisor.last_frame_seconds = time.time()
@@ -291,3 +282,6 @@ class Streamer:
             cv2.imshow('Camera', frame)
 
         return saved
+
+    def release(self):
+        self.vision.release()

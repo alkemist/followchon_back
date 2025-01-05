@@ -19,29 +19,35 @@
 - model: configuration.parameter
   pk: 5
   fields:
-    slug: vision_model_version
-    name: 'Vision : Version du model'
-    value: '23'
+    slug: vision_model_version_detect
+    name: 'Vision : Version du model de detection'
+    value: '50'
 - model: configuration.parameter
   pk: 6
+  fields:
+    slug: vision_model_version_classify
+    name: 'Vision : Version du model de classification'
+    value: '50'
+- model: configuration.parameter
+  pk: 7
   fields:
     slug: vision_enabled
     name: 'Vision : Stop si 0'
     value: '1'
 - model: configuration.parameter
-  pk: 7
+  pk: 8
   fields:
     slug: vision_frame_seconds
     name: 'Vision : Image par nombre de secondes'
     value: '0.08'
 - model: configuration.parameter
-  pk: 8
+  pk: 9
   fields:
     slug: vision_pause_records_minutes
     name: 'Vision : Pause quand il a tout traité'
     value: '2'
 - model: configuration.parameter
-  pk: 9
+  pk: 10
   fields:
     slug: vision_records_max
     name: 'Vision : Max enreg. avant pause enreg.'

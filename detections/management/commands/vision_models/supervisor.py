@@ -8,6 +8,7 @@ import psutil
 from loguru import logger
 
 from configuration.models import Parameter, Log
+from detections.management.commands.vision_models.archi import Archi
 from detections.management.commands.vision_models.levels import Levels
 from detections.management.commands.vision_models.source import Source
 from utils.array import ArrayHelper
@@ -17,12 +18,14 @@ from utils.file import FileHelper
 
 class Supervisor:
 
-    def __init__(self, vcgencmd=None, source: Source = Source.VISION):
+    def __init__(self, vcgencmd=None, source: Source = Source.VISION, archi: Archi = Archi.NATIF):
         self.records_directory = f"./records/{source}"
         self.source = source
+        self.archi = archi
         self.record_exts = 'jpg|png' if source == Source.PHOTO else 'mkv|mp4'
 
-        self.model_version = ''
+        self.model_version_detect = ''
+        self.model_version_classify = ''
         self.model_path = ''
         self.score_min = 0
         self.hour_min = 0
@@ -133,7 +136,8 @@ class Supervisor:
     def fill_params(self):
         self.get_params()
 
-        self.model_version = int(self.get_param('vision_model_version'))
+        self.model_version_detect = int(self.get_param('vision_model_version_detect'))
+        self.model_version_classify = int(self.get_param('vision_model_version_classify'))
         self.score_min = float(self.get_param('vision_score_min'))
         self.hour_min = int(self.get_param('vision_hour_min'))
         self.hour_max = int(self.get_param('vision_hour_max'))

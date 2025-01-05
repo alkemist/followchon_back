@@ -82,7 +82,7 @@ class CaptureViewSet(UpdateViewSet):
             )
             .values('date_only').distinct()
             .annotate(
-                version=Min('version'),
+                version=Min('version_detect'),
                 capture_count=Count('id'),
                 capture_changed_count=Count(
                     Case(
