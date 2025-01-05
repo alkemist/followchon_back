@@ -33,12 +33,8 @@ train_calib_dir = os.getenv('TRAIN_CALIB_DIR')
 is_cached = False
 
 
-def train(train_dataset_name, train_type):
-    train_filename = train_previous_path.replace('.pt', f'-{train_type}.pt') \
-        if train_previous_path.startswith('models/') \
-        else train_previous_path
-
-    model = YOLO(train_filename)
+def train(train_dataset_name):
+    model = YOLO(train_previous_path)
     model.train(
         task='classify',
         data=train_dataset_path,
@@ -77,7 +73,7 @@ def train_full(train_type, model_pt):
 
     print(f"Start train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    train(train_name, train_type)
+    train(train_name)
 
     print(f"End train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
@@ -179,12 +175,18 @@ if __name__ == '__main__':
 
     if not os.path.exists(file_stats):
         with open(file_stats, "w") as file:
-            file.write("Train count : " + str(
-                len(list(Path(f"{train_dataset_path}/train/labels").glob("*.txt")))) + "\n")
+            file.write("Train noisette count : " + str(
+                len(list(Path(f"{train_dataset_path}/train/noisette").glob("*.*")))) + "\n")
+            file.write("Train stitch count : " + str(
+                len(list(Path(f"{train_dataset_path}/train/stitch").glob("*.*")))) + "\n")
             file.write(
-                "Val count : " + str(len(list(Path(f"{train_dataset_path}/val/labels").glob("*.txt")))) + "\n")
-            file.write("Test count : " + str(
-                len(list(Path(f"{train_dataset_path}/test/labels").glob("*.txt")))) + "\n\n")
+                "Val noisette count : " + str(len(list(Path(f"{train_dataset_path}/val/noisette").glob("*.*")))) + "\n")
+            file.write(
+                "Val stitch count : " + str(len(list(Path(f"{train_dataset_path}/val/stitch").glob("*.*")))) + "\n")
+            file.write("Test noisette count : " + str(
+                len(list(Path(f"{train_dataset_path}/test/noisette").glob("*.*")))) + "\n")
+            file.write("Test stitch count : " + str(
+                len(list(Path(f"{train_dataset_path}/test/stitch").glob("*.*")))) + "\n\n")
 
     if not os.path.exists(model_pt):
         with open(file_stats, "a") as file:
