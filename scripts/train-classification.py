@@ -81,10 +81,6 @@ def train_full(train_type, model_pt):
 
     move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix', 'png')
     move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix_normalized', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'F1_curve', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'P_curve', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'R_curve', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'PR_curve', 'png')
     move_metric(model_run_dir, train_dataset_base_name, train_type, 'results', 'csv')
 
 
@@ -169,7 +165,7 @@ if __name__ == '__main__':
     train_type = 'chons'
     train_classes = [1, 2]
 
-    train_name = f"{train_dataset_base_name}-{train_type}"
+    train_name = f"{train_dataset_base_name}"
     model_pt = f"{models_dir}/{train_name}.pt"
     file_stats = f"{metrics_dir}/duration/{train_name}.txt"
 

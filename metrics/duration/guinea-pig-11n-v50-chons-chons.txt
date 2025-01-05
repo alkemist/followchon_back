@@ -1,0 +1,10 @@
+Train noisette count : 15723
+Train stitch count : 13895
+Val noisette count : 4476
+Val stitch count : 4171
+Test noisette count : 2285
+Test stitch count : 2147
+
+[Train] Start at : 2025-01-05 16:08:16
+[Train] End at : 2025-01-05 23:07:46
+[Train] 7 hours
