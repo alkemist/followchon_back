@@ -3,6 +3,7 @@ import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
+import gc
 
 import torch
 from dotenv import load_dotenv
@@ -30,8 +31,10 @@ model_base_version = os.getenv('TRAIN_MODEL_BASE_VERSION')
 model_nms_version = os.getenv('TRAIN_MODEL_NMS_VERSION')
 train_calib_dir = os.getenv('TRAIN_CALIB_DIR')
 
-is_cached = False
+is_cached = True
 
+gc.collect()
+torch.cuda.empty_cache()
 
 def train(train_dataset_name):
     model = YOLO(train_previous_path)
