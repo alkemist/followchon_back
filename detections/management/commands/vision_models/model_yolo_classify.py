@@ -1,12 +1,17 @@
 import os
 
 import cv2
+import sympy
 from loguru import logger
+from sympy import mpmath
 from ultralytics import YOLO
 
 from detections.management.commands.vision_models.model import Model
 from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.supervisor import Supervisor
+
+sympy.__version__
+mpmath.__version__
 
 
 class Model_YOLO_Classify(Model):
