@@ -15,6 +15,10 @@ load_dotenv()
 
 # settings.update({'datasets_dir': ''})
 
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:64"
+os.environ["TORCH_USE_CUDA_DSA"] = "1"
+os.environ["CUDA_VISIBLE_DEVICE"] = "0"
+
 runs_dir = 'runs'
 models_dir = 'models'
 metrics_dir = 'metrics'
@@ -31,7 +35,7 @@ model_base_version = os.getenv('TRAIN_MODEL_BASE_VERSION')
 model_nms_version = os.getenv('TRAIN_MODEL_NMS_VERSION')
 train_calib_dir = os.getenv('TRAIN_CALIB_DIR')
 
-is_cached = True
+is_cached = False
 
 gc.collect()
 torch.cuda.empty_cache()
@@ -42,7 +46,8 @@ def train(train_dataset_name):
         task='classify',
         data=train_dataset_path,
         epochs=50,
-        imgsz=640,
+        batch=16,
+        imgsz=480,
         name=train_dataset_name,
         verbose=True,
         save=True,
