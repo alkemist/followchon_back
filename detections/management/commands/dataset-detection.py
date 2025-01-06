@@ -98,7 +98,7 @@ class Command(BaseCommand):
             params_dict: dict[str, Parameter] = (
                 ArrayHelper.object_list_to_dict(parameters, 'slug')
             )
-            chunk_number = int(params_dict['vision_model_version'].value) + 1
+            chunk_number = int(params_dict['vision_model_version_detect'].value) + 1
 
         capture_statuses = ['archived', 'verified']
         capture_version = None
@@ -118,15 +118,6 @@ class Command(BaseCommand):
             + f' ,c.photo_file'
             + f' ,c.date'
             + f' FROM detections_capture c'
-            + f' WHERE EXISTS ('
-            + f'    SELECT d.id'
-            + f'    FROM detections_detection d'
-            + f'    LEFT JOIN configuration_family f ON d.family_id = f.id'
-            + f'    WHERE d.capture_id = c.id'
-            + f'    AND ('
-            + f'    ' + ' OR '.join([f"f.'index' = {i}" for i in family_indexes])
-            + f'    )'
-            + f' )'
             + f' AND {family_type_db} = False'
             + f' AND c.status IN ("' + '","'.join(capture_statuses) + '")'
             + (f' AND c.version = {capture_version}' if capture_version else '')
@@ -210,15 +201,15 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.SUCCESS(
                         (
-                            '[DEMO]' if not active else '') + f'[{family_type}][{chunk_number}] Successfully finished with {df_vision.shape[0] + df_video.shape[0]} items')
+                            '[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished with {df_vision.shape[0] + df_video.shape[0]} items')
                 )
             else:
                 self.stdout.write(
                     self.style.ERROR(
                         (
-                            '[DEMO]' if not active else '') + f'[{family_type}] Not enough items: {df_vision.shape[0] + df_video.shape[0]} ')
+                            '[DEMO]' if not active else '') + f'Not enough items: {df_vision.shape[0] + df_video.shape[0]} ')
                 )
         else:
             self.stdout.write(
-                self.style.ERROR(('[DEMO]' if not active else '') + f'[{family_type}] No "video" items ')
+                self.style.ERROR(('[DEMO]' if not active else '') + 'No "video" items ')
             )

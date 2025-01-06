@@ -53,10 +53,10 @@ def train(train_dataset_name):
     )
 
 
-def move_metric(metric_dir, train_name, train_type, metric_name, metric_ext):
+def move_metric(metric_dir, train_name, metric_name, metric_ext):
     shutil.move(
         f'{metric_dir}/{metric_name}.{metric_ext}',
-        f'{metrics_dir}/{metric_name}/{train_name}-{train_type}-{metric_name}.{metric_ext}'
+        f'{metrics_dir}/{metric_name}/{train_name}-{metric_name}.{metric_ext}'
     )
 
 
@@ -66,22 +66,22 @@ def move_best(model_train_best, model_pt):
     print(f'Model yolo saved in {model_pt}')
 
 
-def train_full(train_type, model_pt):
-    train_name = f"{train_dataset_base_name}-{train_type}"
+def train_full(model_pt):
+    train_name = f"{train_dataset_base_name}"
     model_run_dir = f"{runs_dir}/{train_name}"
     model_train_best = f"{model_run_dir}/weights/best.pt"
 
-    print(f"Start train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Start train at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     train(train_name)
 
-    print(f"End train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"End train at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     move_best(model_train_best, model_pt)
 
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix_normalized', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'results', 'csv')
+    move_metric(model_run_dir, train_dataset_base_name, 'confusion_matrix', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, 'confusion_matrix_normalized', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, 'results', 'csv')
 
 
 def execute(cmd):
@@ -149,7 +149,6 @@ if __name__ == '__main__':
     compile_start = None
     compile_end = None
 
-    train_type = 'chons'
     train_classes = [1, 2]
 
     train_name = f"{train_dataset_base_name}"
@@ -171,18 +170,25 @@ if __name__ == '__main__':
             file.write("Test stitch count : " + str(
                 len(list(Path(f"{train_dataset_path}/test/stitch").glob("*.*")))) + "\n\n")
 
-    if not os.path.exists(model_pt):
-        with open(file_stats, "a") as file:
-            file.write("[Train] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+    try:
+        if not os.path.exists(model_pt):
+            with open(file_stats, "a") as file:
+                file.write("[Train] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
 
-        train_full(train_type, model_pt)
+            train_full(model_pt)
 
+            with open(file_stats, "a") as file:
+                file.write("[Train] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+                file.write(f"[Train] {calc_time_h_m(train_start)}\n")
+
+        if os.getenv('TRAIN_STEP_GIT'):
+            if os.path.exists(model_pt):
+                commit(train_name, [model_pt, f'{metrics_dir}/*'])
+
+    except Exception as ex:
+        print(ex)
         with open(file_stats, "a") as file:
-            file.write("[Train] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+            file.write("[Train] Fail at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
             file.write(f"[Train] {calc_time_h_m(train_start)}\n")
-
-    if os.getenv('TRAIN_STEP_GIT'):
-        if os.path.exists(model_pt):
-            commit(train_name, [model_pt, f'{metrics_dir}/*'])
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")

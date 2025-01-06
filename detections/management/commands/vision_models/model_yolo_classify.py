@@ -28,14 +28,20 @@ class Model_YOLO_Classify(Model):
 
             self.model = YOLO(model_path, task='classify')
 
-    def infer(self, frame: cv2.typing.MatLike):
+    def infer(self, frame: cv2.typing.MatLike, ):
         results = self.model(frame, stream=True, verbose=False)
+        infers = list()
+        classes = list('guinea-pig')
 
         for result in results:
-            cls = result.names[result.probs.top1]
-            score = result.probs.data.numpy()[0]
+            sub_results = result.probs.top5
 
-            if score >= self.supervisor.score_min:
-                return (cls, score)
+            for i, index in enumerate(sub_results):
+                cls = result.names[index]
+                score = result.probs.top5conf.numpy()[i]
 
-        return None
+                if score >= self.supervisor.score_min and cls not in classes:
+                    classes.append(cls)
+                    infers.append([cls, score])
+
+        return infers

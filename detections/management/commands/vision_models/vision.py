@@ -56,6 +56,8 @@ class Vision:
                 )
             )
 
+            self.model_classify = Model_YOLO_Classify(supervisor)
+
         self.fill_objects()
 
         if self.supervisor.archi == Archi.HAILO:
@@ -64,8 +66,6 @@ class Vision:
         else:
             from detections.management.commands.vision_models.model_yolo_detect import Model_YOLO_Detect
             self.model_detect = Model_YOLO_Detect(supervisor, self.supervisor.source)
-
-        self.model_classify = Model_YOLO_Classify(supervisor)
 
     def release(self):
         if self.supervisor.archi == Archi.HAILO:
@@ -82,38 +82,86 @@ class Vision:
         if self.supervisor.source == Source.VISION:
             self.zones = Zone.objects.all().filter(is_enabled=True).order_by('id')
 
+    def filter(self, yolo_all_results, detect_safes, detect_unsafes):
+        detect_unsafes_bis = list()
+
+        try_ok = False
+
+        for detect in detect_unsafes:
+            infers = list(
+                filter(
+                    lambda infer: self.families_slug_dict[infer[0]].index not in detect_safes,
+                    detect['infers']
+                )
+            )
+
+            if len(infers) > 0:
+                if len(infers) == 1 or detect['try'] > 0:
+                    cls = self.families_slug_dict[infers[0][0]].index
+
+                    yolo_all_results.append(detect['result'].clone(cls, infers[0][1]))
+
+                    detect_safes.append(cls)
+                else:
+                    if not try_ok:
+                        detect['try'] = 1
+                        try_ok = True
+
+                    detect_unsafes_bis.append(detect)
+
+        return yolo_all_results, detect_safes, detect_unsafes_bis
+
     def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date: datetime):
         saved = False
-
-        # self.supervisor.local_log('Detections Start')
 
         yolo_results = self.model_detect.infer(frame)
         yolo_all_results = list()
 
-        # self.supervisor.local_log('Detections Ok', str(len(yolo_results)) + " detections")
+        detect_safes = list()
+        detect_unsafes = list()
 
         if len(yolo_results) > 0:
-            for yolo_result in yolo_results:
-                image_result = frame[
-                               yolo_result.ortho_tl_y:yolo_result.ortho_br_y,
-                               yolo_result.ortho_tl_x:yolo_result.ortho_br_x
-                               ]
 
-                # self.supervisor.local_log('Classification Start')
+            if self.model_classify is not None:
+                for yolo_result in yolo_results:
+                    image_result = frame[
+                                   yolo_result.ortho_tl_y:yolo_result.ortho_br_y,
+                                   yolo_result.ortho_tl_x:yolo_result.ortho_br_x
+                                   ]
 
-                classify_result = self.model_classify.infer(image_result)
+                    classify_results = self.model_classify.infer(image_result)
 
-                # self.supervisor.local_log('Classification End', classify_result)
+                    if len(classify_results) > 0:
+                        if len(classify_results) == 1:
+                            cls = self.families_slug_dict[classify_results[0][0]].index
 
-                if classify_result is not None:
-                    cls = self.families_slug_dict[classify_result[0]].index
+                            if cls > 0:
+                                yolo_all_results.append(yolo_result.clone(cls, classify_results[0][1]))
+
+                                detect_safes.append(cls)
+                        else:
+                            detect_unsafes.append({
+                                'result': yolo_result,
+                                'infers': classify_results,
+                                'try': 0
+                            })
 
                     yolo_all_results.append(yolo_result)
-                    yolo_all_results.append(yolo_result.clone(cls, classify_result[1]))
+
+                if len(detect_unsafes) > 0:
+                    while True:
+                        if len(detect_unsafes) == 0:
+                            break
+
+                        yolo_all_results, detect_safes, detect_unsafes = self.filter(yolo_all_results, detect_safes,
+                                                                                     detect_unsafes)
+            else:
+                yolo_all_results = yolo_results
 
             if len(yolo_all_results) > 0:
                 analyse = Capture_analyse(
-                    self.model_detect.current_model_version, self.model_classify.current_model_version,
+                    self.model_detect.current_model_version,
+                    self.model_classify.current_model_version if self.model_classify is not None else None,
                     frame, capture_date, frame_count,
                     self.last_detections_dict, self.families_index_dict, self.zones,
                     self.supervisor
@@ -126,7 +174,5 @@ class Vision:
 
                     self.save_time = time.time()
                     saved = True
-
-        # self.supervisor.local_log('Detections End', str(len(yolo_results)) + " detections")
 
         return ImageHelper.resize_with_ratio(frame, self.capture_width, None), saved
