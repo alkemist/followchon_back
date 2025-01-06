@@ -158,7 +158,7 @@ class Supervisor:
 
         self.temp = self.vcgm.measure_temp() if self.vcgm is not None else 0
 
-    def local_log(self, event: str, info: str, level: Levels = Levels.INFO):
+    def local_log(self, event: str, info: str = '', level: Levels = Levels.INFO):
         message = f"{event} : {info}"
 
         if self.vcgm is not None:

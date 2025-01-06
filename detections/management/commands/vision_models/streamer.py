@@ -7,7 +7,6 @@ from pathlib import Path
 from time import sleep
 
 import cv2
-from loguru import logger
 
 from detections.management.commands.vision_models.source import Source
 from detections.management.commands.vision_models.supervisor import Supervisor
@@ -49,10 +48,11 @@ class Streamer:
                                 universal_newlines=True)
 
     def long_sleep(self, time_minutes):
-        logger.info(f'Long sleep')
+        self.supervisor.local_log(f'Long sleep start')
 
         self.vision.release()
         time.sleep(time_minutes * 60)
+        self.supervisor.local_log(f'Long sleep end')
         self.supervisor.last_capture_seconds = time.time()
 
     def start(self):
@@ -95,6 +95,8 @@ class Streamer:
                 last_record = records[0]
                 camera_record_filename = f"{self.supervisor.records_directory}/{last_record}"
 
+                # self.supervisor.local_log('Begin file', camera_record_filename)
+
                 self.supervisor.delay_start = time.time()
                 duration = self.capture(camera_record_filename)
 
@@ -104,8 +106,9 @@ class Streamer:
                     if self.supervisor.source == Source.VISION:
                         self.supervisor.add_processing_delay()
                     else:
-                        self.model.last_detections_dict = {}
+                        self.vision.last_detections_dict = {}
 
+                    # self.supervisor.local_log('End file', camera_record_filename)
                     os.remove(camera_record_filename)
 
             # Pas assez de vidéo, on peut attendre un peu
@@ -200,9 +203,13 @@ class Streamer:
             frame_seconds_elapsed = time.time() - self.supervisor.last_frame_seconds
             ret, frame = cap.read()
 
+            # self.supervisor.local_log('Read frame', str(ret))
+
             if ret:
                 # Si l'appareil n'est pas assez rapide pour analyser toutes les images
                 if frame_seconds_elapsed > self.supervisor.frame_seconds:
+                    # self.supervisor.local_log('Infer frame')
+
                     saved = self.infer(frame, frame_saved_count, capture_date)
                     self.supervisor.last_frame_seconds = time.time()
 
@@ -211,12 +218,15 @@ class Streamer:
                         frame_saved_count = frame_saved_count + 1
 
                     if self.supervisor.pause_capture_seconds:
+                        # self.supervisor.local_log('Pause', str(self.supervisor.pause_capture_seconds))
                         sleep(self.supervisor.pause_capture_seconds)
             else:
                 break
 
             if self.show_stream and cv2.waitKey(1) == ord('q'):
                 self.supervisor.enabled = False
+
+            # self.supervisor.local_log('End frame', str(cap.isOpened()))
 
         if self.supervisor.source == Source.VISION:
             if frame_saved_count > self.supervisor.popcorn_frame_count:

@@ -85,37 +85,48 @@ class Vision:
     def infer(self, frame: cv2.typing.MatLike, frame_count, capture_date: datetime):
         saved = False
 
+        # self.supervisor.local_log('Detections Start')
+
         yolo_results = self.model_detect.infer(frame)
         yolo_all_results = list()
 
-        for yolo_result in yolo_results:
-            image_result = frame[
-                           yolo_result.ortho_tl_y:yolo_result.ortho_br_y,
-                           yolo_result.ortho_tl_x:yolo_result.ortho_br_x
-                           ]
+        # self.supervisor.local_log('Detections Ok', str(len(yolo_results)) + " detections")
 
-            classify_result = self.model_classify.infer(image_result)
+        if len(yolo_results) > 0:
+            for yolo_result in yolo_results:
+                image_result = frame[
+                               yolo_result.ortho_tl_y:yolo_result.ortho_br_y,
+                               yolo_result.ortho_tl_x:yolo_result.ortho_br_x
+                               ]
 
-            if classify_result is not None:
-                cls = self.families_slug_dict[classify_result[0]].index
+                # self.supervisor.local_log('Classification Start')
 
-                yolo_all_results.append(yolo_result)
-                yolo_all_results.append(yolo_result.clone(cls, classify_result[1]))
+                classify_result = self.model_classify.infer(image_result)
 
-        if len(yolo_all_results) > 0:
-            analyse = Capture_analyse(
-                self.model_detect.current_model_version, self.model_classify.current_model_version,
-                frame, capture_date, frame_count,
-                self.last_detections_dict, self.families_index_dict, self.zones,
-                self.supervisor
-            )
+                # self.supervisor.local_log('Classification End', classify_result)
 
-            frame = analyse.detect(yolo_all_results)
+                if classify_result is not None:
+                    cls = self.families_slug_dict[classify_result[0]].index
 
-            if analyse.is_triggered:
-                analyse.save()
+                    yolo_all_results.append(yolo_result)
+                    yolo_all_results.append(yolo_result.clone(cls, classify_result[1]))
 
-                self.save_time = time.time()
-                saved = True
+            if len(yolo_all_results) > 0:
+                analyse = Capture_analyse(
+                    self.model_detect.current_model_version, self.model_classify.current_model_version,
+                    frame, capture_date, frame_count,
+                    self.last_detections_dict, self.families_index_dict, self.zones,
+                    self.supervisor
+                )
+
+                frame = analyse.detect(yolo_all_results)
+
+                if analyse.is_triggered:
+                    analyse.save()
+
+                    self.save_time = time.time()
+                    saved = True
+
+        # self.supervisor.local_log('Detections End', str(len(yolo_results)) + " detections")
 
         return ImageHelper.resize_with_ratio(frame, self.capture_width, None), saved

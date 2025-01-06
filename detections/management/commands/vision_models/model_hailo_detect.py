@@ -1,5 +1,4 @@
 import os
-import sys
 
 import PIL.Image
 import cv2
@@ -26,15 +25,9 @@ class Model_Hailo_Detect(Model):
     def check_model(self, origin: str):
         self.supervisor.fill_params()
 
-        logger.info(f'Vérifie le compteur de références:{sys.getrefcount(self.model)}')
-
         if self.model is None or self.current_model_version != self.supervisor.model_version_detect:
             if self.model is not None:
                 self.release()
-
-            # if self.supervisor.current_model_version != self.supervisor.model_version:
-            logger.info(
-                f'Load model version "{self.supervisor.model_version_detect}" : {origin}')
 
             self.current_model_version = self.supervisor.model_version_detect
 
@@ -44,6 +37,10 @@ class Model_Hailo_Detect(Model):
 
             model_path = (f"{os.getenv('MODEL_DIR')}/"
                           f"{os.getenv('MODEL_DETECT_PREFIX')}{self.current_model_version}-all.{self.model_ext}")
+
+            # if self.supervisor.current_model_version != self.supervisor.model_version:
+            self.supervisor.local_log('Load model',
+                                      f"version {self.supervisor.model_version_detect} / {origin} / {model_path}")
 
             self.model = HailoAsyncInference(vdevice, model_path)
             self.height, self.width, _ = self.model.get_input_shape()
@@ -90,6 +87,9 @@ class Model_Hailo_Detect(Model):
         (height_resized, width_resized) = processed_image.size
 
         yolo_results = list()
+
+        if self.model is None:
+            self.check_model('infer')
 
         raw_detections_queue = self.model.run(np.array(processed_image))
 

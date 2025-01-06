@@ -72,6 +72,8 @@ class Command(BaseCommand):
             error = ex
             trace = ""
 
+            print(error)
+
             tb = ex.__traceback__
             while tb is not None:
                 file = tb.tb_frame.f_code.co_filename.replace(
