@@ -133,6 +133,8 @@ class Model_Hailo_Detect(Model):
                                     float(bbox[0]),
                                     float(bbox[3]),
                                     float(bbox[2]),
+                                    frame.shape[1],
+                                    frame.shape[0],
                                 )
 
                                 yolo_results.append(yolo_result)

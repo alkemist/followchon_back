@@ -65,10 +65,10 @@ def train(train_dataset_name, classes):
     )
 
 
-def move_metric(metric_dir, train_name, train_type, metric_name, metric_ext):
+def move_metric(metric_dir, train_name, metric_name, metric_ext):
     shutil.move(
         f'{metric_dir}/{metric_name}.{metric_ext}',
-        f'{metrics_dir}/{metric_name}/{train_name}-{train_type}-{metric_name}.{metric_ext}'
+        f'{metrics_dir}/{metric_name}/{train_name}-{metric_name}.{metric_ext}'
     )
 
 
@@ -78,26 +78,26 @@ def move_best(model_train_best, model_pt):
     print(f'Model yolo saved in {model_pt}')
 
 
-def train_full(train_type, train_classes, model_pt):
-    train_name = f"{train_dataset_base_name}-{train_type}"
+def train_full(train_classes, model_pt):
+    train_name = f"{train_dataset_base_name}"
     model_run_dir = f"{runs_dir}/{train_name}"
     model_train_best = f"{model_run_dir}/weights/best.pt"
 
-    print(f"Start train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Start train at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     train(train_name, train_classes)
 
-    print(f"End train '{train_type}' at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"End train at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     move_best(model_train_best, model_pt)
 
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'confusion_matrix_normalized', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'F1_curve', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'P_curve', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'R_curve', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'PR_curve', 'png')
-    move_metric(model_run_dir, train_dataset_base_name, train_type, 'results', 'csv')
+    move_metric(model_run_dir, train_dataset_base_name, 'confusion_matrix', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, 'confusion_matrix_normalized', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, 'F1_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, 'P_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, 'R_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, 'PR_curve', 'png')
+    move_metric(model_run_dir, train_dataset_base_name, 'results', 'csv')
 
 
 def export(model_pt, model_onnx):
@@ -241,11 +241,11 @@ if __name__ == '__main__':
     train_end = None
     compile_start = None
     compile_end = None
+    training = False
 
-    train_type = 'all'
     train_classes = [0]
 
-    train_name = f"{train_dataset_base_name}-{train_type}"
+    train_name = f"{train_dataset_base_name}"
     model_pt = f"{models_dir}/{train_name}.pt"
     model_onnx = f"{models_dir}/{train_name}.onnx"
     model_har = f"{models_dir}/{train_name}.har"
@@ -265,7 +265,8 @@ if __name__ == '__main__':
         with open(file_stats, "a") as file:
             file.write("[Train] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
 
-        train_full(train_type, train_classes, model_pt)
+        training = True
+        train_full(train_classes, model_pt)
 
         with open(file_stats, "a") as file:
             file.write("[Train] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
@@ -281,6 +282,7 @@ if __name__ == '__main__':
         with open(file_stats, "a") as file:
             file.write("[Compile] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
 
+        training = True
         build(model_har, model_hef, 5)
 
         with open(file_stats, "a") as file:
@@ -300,3 +302,7 @@ if __name__ == '__main__':
             print(ex)
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    if os.getenv('TRAIN_SHUTDOWN') and training:
+        print(f"Shutdown")
+        os.system("shutdown /s /t 600")

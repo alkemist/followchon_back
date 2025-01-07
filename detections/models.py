@@ -72,7 +72,7 @@ class Capture(models.Model):
         if not os.path.exists(photo_dir):
             os.makedirs(photo_dir)
 
-        self.resize(frame)
+        self.save_image(frame)
         self.save()
 
         for annotation in annotations:
@@ -100,7 +100,7 @@ class Capture(models.Model):
         self.changed = any([d.score is None or d.score == 0 for d in detections])
         self.save()
 
-    def resize(self, image):
+    def save_image(self, image):
         cv2.imwrite(
             self.photo_path(None, True),
             ImageHelper.resize_with_ratio(image, int(os.getenv('CAPTURE_WIDTH')))
@@ -109,7 +109,7 @@ class Capture(models.Model):
     def resize_auto(self):
         image = cv2.imread(self.photo_path(None, True))
 
-        self.resize(image)
+        self.save_image(image)
 
     def size(self):
         im = cv2.imread(self.photo_path(None, True))

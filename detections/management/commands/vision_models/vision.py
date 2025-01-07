@@ -56,9 +56,10 @@ class Vision:
                 )
             )
 
-            self.model_classify = Model_YOLO_Classify(supervisor)
-
         self.fill_objects()
+
+        if self.supervisor.source == Source.VISION or os.getenv('CAPTURE_WIDTH'):
+            self.model_classify = Model_YOLO_Classify(supervisor)
 
         if self.supervisor.archi == Archi.HAILO:
             from detections.management.commands.vision_models.model_hailo_detect import Model_Hailo_Detect
@@ -121,7 +122,6 @@ class Vision:
         detect_unsafes = list()
 
         if len(yolo_results) > 0:
-
             if self.model_classify is not None:
                 for yolo_result in yolo_results:
                     image_result = frame[
@@ -170,7 +170,8 @@ class Vision:
                 frame = analyse.detect(yolo_all_results)
 
                 if analyse.is_triggered:
-                    analyse.save()
+                    if os.getenv('ENABLE_SAVE'):
+                        analyse.save()
 
                     self.save_time = time.time()
                     saved = True

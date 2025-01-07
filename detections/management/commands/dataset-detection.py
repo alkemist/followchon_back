@@ -118,7 +118,7 @@ class Command(BaseCommand):
             + f' ,c.photo_file'
             + f' ,c.date'
             + f' FROM detections_capture c'
-            + f' AND {family_type_db} = False'
+            + f' WHERE {family_type_db} = False'
             + f' AND c.status IN ("' + '","'.join(capture_statuses) + '")'
             + (f' AND c.version = {capture_version}' if capture_version else '')
         )

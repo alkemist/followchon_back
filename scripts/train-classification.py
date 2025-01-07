@@ -1,9 +1,9 @@
+import gc
 import os
 import shutil
 import subprocess
 from datetime import datetime
 from pathlib import Path
-import gc
 
 import torch
 from dotenv import load_dotenv
@@ -39,6 +39,7 @@ is_cached = False
 
 gc.collect()
 torch.cuda.empty_cache()
+
 
 def train(train_dataset_name):
     model = YOLO(train_previous_path)
@@ -156,6 +157,7 @@ if __name__ == '__main__':
     train_end = None
     compile_start = None
     compile_end = None
+    training = False
 
     train_classes = [1, 2]
 
@@ -183,6 +185,7 @@ if __name__ == '__main__':
             with open(file_stats, "a") as file:
                 file.write("[Train] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
 
+            training = True
             train_full(model_pt)
 
             with open(file_stats, "a") as file:
@@ -200,3 +203,7 @@ if __name__ == '__main__':
             file.write(f"[Train] {calc_time_h_m(train_start)}\n")
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+    if os.getenv('TRAIN_SHUTDOWN') and training:
+        print(f"Shutdown")
+        os.system("shutdown /s /t 600")
