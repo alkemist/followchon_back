@@ -46,8 +46,8 @@ class Result_yolo:
     def import_hailo(self, tl_x, tl_y, br_x, br_y):
         self.norm_width = max(0, br_x - tl_x)
         self.norm_height = max(0, br_y - tl_y)
-        self.norm_x_center = max(0, tl_x + self.norm_width / 2)
-        self.norm_y_center = max(0, tl_y + self.norm_height / 2)
+        self.norm_x_center = min(1, max(0, tl_x + self.norm_width / 2))
+        self.norm_y_center = min(1, max(0, tl_y + self.norm_height / 2))
 
         self.ortho_tl_x = math.floor(tl_x * self.ref_width)
         self.ortho_tl_y = math.floor(tl_y * self.ref_height)
@@ -55,8 +55,8 @@ class Result_yolo:
         self.ortho_br_y = math.ceil(br_y * self.ref_height)
 
     def import_yolo(self, x_center, y_center, width, height):
-        self.norm_x_center = max(0, x_center)
-        self.norm_y_center = max(0, y_center)
+        self.norm_x_center = min(1, max(0, x_center))
+        self.norm_y_center = min(1, max(0, y_center))
         self.norm_width = max(0, width)
         self.norm_height = max(0, height)
 

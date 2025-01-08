@@ -43,7 +43,6 @@ class Supervisor:
         self.log_detections_fail = False
         self.params_dict = {}
 
-        self.detection_near_margin_norm = 1
         self.detection_move_margin_norm = 1
 
         self.records_count = 0
@@ -153,7 +152,6 @@ class Supervisor:
         self.log_detections = self.get_param('vision_detection_log') == '1'
         self.log_detections_fail = self.get_param('vision_detection_fail') == '1'
 
-        self.detection_near_margin_norm = float(self.get_param('vision_detection_near_margin_norm'))
         self.detection_move_margin_norm = float(self.get_param('vision_detection_move_margin_norm'))
 
         self.temp = self.vcgm.measure_temp() if self.vcgm is not None else 0

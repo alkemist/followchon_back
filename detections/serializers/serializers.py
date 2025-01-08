@@ -66,8 +66,8 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
 
             new_detection.score = detection.get('score')
 
-            new_detection.center_x = max(0, yolo_points['x_center'])
-            new_detection.center_y = max(0, yolo_points['y_center'])
+            new_detection.center_x = min(1, max(0, yolo_points['x_center']))
+            new_detection.center_y = min(1, max(0, yolo_points['y_center']))
             new_detection.width = max(0, yolo_points['width'])
             new_detection.height = max(0, yolo_points['height'])
 

@@ -58,7 +58,7 @@ class Vision:
 
         self.fill_objects()
 
-        if self.supervisor.source == Source.VISION or os.getenv('CAPTURE_WIDTH'):
+        if self.supervisor.source == Source.VISION or os.getenv('ENABLE_CLASSIFY'):
             self.model_classify = Model_YOLO_Classify(supervisor)
 
         if self.supervisor.archi == Archi.HAILO:

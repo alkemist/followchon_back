@@ -13,8 +13,6 @@ from utils.array import ArrayHelper
 
 
 def query_to_dataframe(query):
-    print(query)
-
     """
     Exécute une requête SQL brute et retourne un DataFrame Pandas
     avec les colonnes automatiquement définies.

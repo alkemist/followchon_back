@@ -71,12 +71,6 @@
     name: 'Vision : Pause si température trop haute'
     value: '30'
 - model: configuration.parameter
-  pk: 17
-  fields:
-    slug: vision_detection_near_margin_norm
-    name: 'Vision : Rapport face à la taille de l''image pour rapprochement'
-    value: '0.015'
-- model: configuration.parameter
   pk: 18
   fields:
     slug: vision_detection_move_margin_norm

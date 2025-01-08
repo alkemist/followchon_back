@@ -48,11 +48,11 @@ class Streamer:
                                 universal_newlines=True)
 
     def long_sleep(self, time_minutes):
-        self.supervisor.local_log(f'Long sleep start')
+        # self.supervisor.local_log(f'Long sleep start')
 
         self.vision.release()
         time.sleep(time_minutes * 60)
-        self.supervisor.local_log(f'Long sleep end')
+        # self.supervisor.local_log(f'Long sleep end')
         self.supervisor.last_capture_seconds = time.time()
 
     def start(self):
@@ -112,35 +112,35 @@ class Streamer:
                     os.remove(camera_record_filename)
 
             # Pas assez de vidéo, on peut attendre un peu
-            if (self.supervisor.records_count <= self.supervisor.min_records_capture
-                    and self.supervisor.pause_records_minutes
-                    and self.supervisor.is_recording
-                    and datetime.now().hour < self.supervisor.hour_max
-            ):
-                records_count_before = self.supervisor.records_count
-
-                # self.supervisor.log_sleeping()
-                # self.supervisor.add_temperature(True)
-
-                self.long_sleep(self.supervisor.pause_records_minutes)
-
-                # self.supervisor.add_temperature(True)
-                self.supervisor.get_records_count()
-
-                # self.supervisor.log_awakened()
-
-                capture_minutes = self.supervisor.record_time / 60
-                capture_count_new = (self.supervisor.pause_records_minutes / capture_minutes)
-                capture_count_margin = capture_count_new / 10 \
-                    if self.supervisor.pause_records_minutes > 10 \
-                    else 1 if self.supervisor.pause_records_minutes > 1 else 0
-
-                if (self.supervisor.is_recording_ok()
-                        and self.supervisor.records_count <
-                        records_count_before + capture_count_new - capture_count_margin
-                ):
-                    self.supervisor.log_restart_recording()
-                    self.begin_recording()
+            # if (self.supervisor.records_count <= self.supervisor.min_records_capture
+            #         and self.supervisor.pause_records_minutes
+            #         and self.supervisor.is_recording
+            #         and datetime.now().hour < self.supervisor.hour_max
+            # ):
+            #     records_count_before = self.supervisor.records_count
+            #
+            #     # self.supervisor.log_sleeping()
+            #     # self.supervisor.add_temperature(True)
+            #
+            #     self.long_sleep(self.supervisor.pause_records_minutes)
+            #
+            #     # self.supervisor.add_temperature(True)
+            #     self.supervisor.get_records_count()
+            #
+            #     # self.supervisor.log_awakened()
+            #
+            #     capture_minutes = self.supervisor.record_time / 60
+            #     capture_count_new = (self.supervisor.pause_records_minutes / capture_minutes)
+            #     capture_count_margin = capture_count_new / 10 \
+            #         if self.supervisor.pause_records_minutes > 10 \
+            #         else 1 if self.supervisor.pause_records_minutes > 1 else 0
+            #
+            #     if (self.supervisor.is_recording_ok()
+            #             and self.supervisor.records_count <
+            #             records_count_before + capture_count_new - capture_count_margin
+            #     ):
+            #         self.supervisor.log_restart_recording()
+            #         self.begin_recording()
 
             if self.supervisor.temp > self.supervisor.temp_alert:
                 self.supervisor.log_warning_temperature()

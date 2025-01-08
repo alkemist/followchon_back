@@ -33,8 +33,8 @@ class Command(BaseCommand):
 
                         detection.width = max(0, detection.width)
                         detection.height = max(0, detection.height)
-                        detection.center_x = max(0, detection.center_x)
-                        detection.center_y = max(0, detection.center_y)
+                        detection.center_x = min(1, max(0, detection.center_x))
+                        detection.center_y = min(1, max(0, detection.center_y))
                         detection.save()
 
                 if detections_error:
