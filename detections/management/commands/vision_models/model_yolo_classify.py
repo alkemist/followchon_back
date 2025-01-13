@@ -28,8 +28,14 @@ class Model_YOLO_Classify(Model):
 
             self.model = YOLO(model_path, task='classify')
 
-    def infer(self, frame: cv2.typing.MatLike, ):
-        results = self.model(frame, stream=True, verbose=False)
+    def infer(self, frame: cv2.typing.MatLike):
+        if frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
+            return list()
+
+        if self.model is None:
+            self.check_model('infer')
+
+        results = self.model(frame, verbose=False)
         infers = list()
         classes = list('guinea-pig')
 

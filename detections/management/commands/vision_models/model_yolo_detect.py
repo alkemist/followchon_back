@@ -31,6 +31,9 @@ class Model_YOLO_Detect(Model):
             self.model = YOLO(model_path, task='detect')
 
     def infer(self, frame: cv2.typing.MatLike):
+        if self.model is None:
+            self.check_model('infer')
+
         results = self.model(frame, stream=True, verbose=False)
 
         (width, height) = frame.shape[1::-1]

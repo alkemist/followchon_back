@@ -1,4 +1,5 @@
 import os
+import random
 import re
 import subprocess
 import time
@@ -187,6 +188,7 @@ class Streamer:
                 int(date_values[3]),
                 int(date_values[4]),
                 int(date_values[5]),
+                random.randint(0, 500)
             )
         else:
             capture_date = datetime.now()
@@ -206,20 +208,21 @@ class Streamer:
             # self.supervisor.local_log('Read frame', str(ret))
 
             if ret:
-                # Si l'appareil n'est pas assez rapide pour analyser toutes les images
-                if frame_seconds_elapsed > self.supervisor.frame_seconds:
-                    # self.supervisor.local_log('Infer frame')
+                if frame is not None and frame.size > 0 and frame.shape[0] > 10 and frame.shape[1] > 10:
+                    # Si l'appareil n'est pas assez rapide pour analyser toutes les images
+                    if frame_seconds_elapsed > self.supervisor.frame_seconds:
+                        # self.supervisor.local_log('Infer frame')
 
-                    saved = self.infer(frame, frame_saved_count, capture_date)
-                    self.supervisor.last_frame_seconds = time.time()
+                        saved = self.infer(frame, frame_saved_count, capture_date)
+                        self.supervisor.last_frame_seconds = time.time()
 
-                    analyse_count = analyse_count + 1
-                    if saved:
-                        frame_saved_count = frame_saved_count + 1
+                        analyse_count = analyse_count + 1
+                        if saved:
+                            frame_saved_count = frame_saved_count + 1
 
-                    if self.supervisor.pause_capture_seconds:
-                        # self.supervisor.local_log('Pause', str(self.supervisor.pause_capture_seconds))
-                        sleep(self.supervisor.pause_capture_seconds)
+                        if self.supervisor.pause_capture_seconds:
+                            # self.supervisor.local_log('Pause', str(self.supervisor.pause_capture_seconds))
+                            sleep(self.supervisor.pause_capture_seconds)
             else:
                 break
 

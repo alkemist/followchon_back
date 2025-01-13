@@ -32,7 +32,7 @@ class Capture_analyse:
             capture_date.hour,
             capture_date.minute,
             capture_date.second,
-            frame_count,
+            capture_date.microsecond + frame_count,
         )
 
         self.families_dict = families_dict
@@ -75,7 +75,7 @@ class Capture_analyse:
                     annotations_by_family[annotation.family.index] = True
 
                 annotations.append(annotation)
-                
+
                 self.is_triggered = self.is_trigger_annotation(annotation)
 
         if self.supervisor.log_detections_fail:
