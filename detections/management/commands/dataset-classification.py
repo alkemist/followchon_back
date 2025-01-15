@@ -1,5 +1,5 @@
 import os
-from math import isnan, floor
+from math import isnan
 
 import pandas as pd
 from PIL import Image
@@ -8,7 +8,7 @@ from django.db import connection
 from dotenv import load_dotenv
 
 from configuration.models import Parameter
-from detections.models import Capture
+from detections.management.commands.vision_models.source import Source
 from utils.array import ArrayHelper
 
 
@@ -113,25 +113,25 @@ class Command(BaseCommand):
         type_chons_percent = 1 - type_others_percent
         dataset_min_count = 1000
 
-        df_chons = query_to_dataframe(
-            'SELECT c.id'
-            + f' ,c.status'
-            + f' ,c.photo_file'
-            + f' ,f."index"'
-            + f' ,d.center_x'
-            + f' ,d.center_y'
-            + f' ,d.width'
-            + f' ,d.height'
-            + f' FROM detections_detection d'
-            + f' LEFT JOIN detections_capture c ON d.capture_id = c.id'
-            + f' LEFT JOIN configuration_family f ON d.family_id = f.id'
-            + f' WHERE c.status IN ("' + '","'.join(capture_statuses) + '")'
-            + f' AND {family_type_db} = False'
-            + f' AND ('
-            + f' ' + ' OR '.join([f"f.'index' = {i}" for i in family_indexes])
-            + f' )'
-            + (f' AND c.version = {capture_version}' if capture_version else '')
-        ).sample(frac=1, random_state=42).reset_index(drop=True)
+        # df_chons = query_to_dataframe(
+        #    'SELECT c.id'
+        #    + f' ,c.status'
+        #    + f' ,c.photo_file'
+        #    + f' ,f."index"'
+        #    + f' ,d.center_x'
+        #    + f' ,d.center_y'
+        #    + f' ,d.width'
+        #    + f' ,d.height'
+        #    + f' FROM detections_detection d'
+        #    + f' LEFT JOIN detections_capture c ON d.capture_id = c.id'
+        #    + f' LEFT JOIN configuration_family f ON d.family_id = f.id'
+        #    + f' WHERE c.status IN ("' + '","'.join(capture_statuses) + '")'
+        #    + f' AND {family_type_db} = False'
+        #    + f' AND ('
+        #    + f' ' + ' OR '.join([f"f.'index' = {i}" for i in family_indexes])
+        #    + f' )'
+        #    + (f' AND c.version = {capture_version}' if capture_version else '')
+        # ).sample(frac=1, random_state=42).reset_index(drop=True)
 
         df_others = query_to_dataframe(
             'SELECT c.id'
@@ -145,101 +145,109 @@ class Command(BaseCommand):
             + f' FROM detections_detection d'
             + f' LEFT JOIN detections_capture c ON d.capture_id = c.id'
             + f' LEFT JOIN configuration_family f ON d.family_id = f.id'
-            + f' WHERE NOT EXISTS ('
-            + f'    SELECT d2.id'
-            + f'    FROM detections_detection d2'
-            + f'    LEFT JOIN configuration_family f2 ON d2.family_id = f2.id'
-            + f'    WHERE d2.capture_id = c.id'
-            + f'    AND ('
-            + f'    ' + ' OR '.join([f"f2.'index' = {i}" for i in family_indexes])
-            + f'    )'
-            + f' )'
+            + f' WHERE c.source = "{Source.VISION}"'
+            # + f' WHERE NOT EXISTS ('
+            # + f'    SELECT d2.id'
+            # + f'    FROM detections_detection d2'
+            # + f'    LEFT JOIN configuration_family f2 ON d2.family_id = f2.id'
+            # + f'    WHERE d2.capture_id = c.id'
+            # + f'    AND ('
+            # + f'    ' + ' OR '.join([f"f2.'index' = {i}" for i in family_indexes])
+            # + f'    )'
+            # + f' )'
             + f' AND f."index" = {family_indexes_all[0]}'
-            + f' AND {family_type_db} = False'
+            # + f' AND {family_type_db} = False'
             + f' AND c.status IN ("' + '","'.join(capture_statuses) + '")'
-            + (f' AND c.version = {capture_version}' if capture_version else '')
+            # + (f' AND c.version = {capture_version}' if capture_version else '')
         ).sample(frac=1, random_state=42).reset_index(drop=True)
 
-        df_chons['image_path'] = './static/captures/' + df_chons['status'] + '/images/' + df_chons['photo_file']
+        # df_chons['image_path'] = './static/captures/' + df_chons['status'] + '/images/' + df_chons['photo_file']
         df_others['image_path'] = './static/captures/' + df_others['status'] + '/images/' + df_others['photo_file']
-        df_chons['source'] = 'chons'
+        # df_chons['source'] = 'chons'
         df_others['source'] = 'others'
 
-        df = pd.concat([
-            df_chons,
+        generate_dir(
             df_others,
-        ]).reset_index(drop=True)
+            f'{dataset_base_result_dir}-chons',
+            'train',
+            'guinea-pig'
+        )
 
-        if (df_chons.shape[0] > 0) & (df_others.shape[0] > 0):
-            if df['source'].value_counts(normalize=True).loc['chons'] < type_chons_percent:
-                df_others = df_others.sample(
-                    n=int(df_chons.shape[0] * (1 - type_chons_percent) / type_chons_percent),
-                    random_state=42
-                )
-            else:
-                df_chons = df_chons.sample(
-                    n=int(df_others.shape[0] * (1 - type_others_percent) / type_others_percent),
-                    random_state=42
-                )
-
-            if (df_chons.shape[0] + df_others.shape[0]) > dataset_min_count:
-                for i, family_index in enumerate(family_indexes_all):
-                    df_family = df[df['index'] == family_index] \
-                        .sample(frac=1, random_state=42) \
-                        .reset_index(drop=True)
-
-                    family_cls = family_classes[i]
-
-                    val_count = floor(df_family.shape[0] * dataset_val_percent)
-                    test_count = floor(df_family.shape[0] * dataset_test_percent)
-
-                    dataset_dir = f'{dataset_base_result_dir}{chunk_number}-chons'
-
-                    if not os.path.exists(dataset_dir):
-                        os.makedirs(dataset_dir)
-
-                    generate_dir(
-                        df_family.iloc[:val_count],
-                        dataset_dir,
-                        'val',
-                        family_cls
-                    )
-
-                    generate_dir(
-                        df_family.iloc[val_count:val_count + test_count],
-                        dataset_dir,
-                        'test',
-                        family_cls
-                    )
-
-                    generate_dir(
-                        df_family.iloc[val_count + test_count:],
-                        dataset_dir,
-                        'train',
-                        family_cls
-                    )
-
-                Capture.objects.filter(id__in=df_chons['id'].to_list()) \
-                    .update(**{family_type_db: True})
-
-                Capture.objects.filter(id__in=df_others['id'].to_list()) \
-                    .update(**{family_type_db: True})
-
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        (
-                            '[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished with {df.shape[0]} items')
-                )
-
-            else:
-                self.stdout.write(
-                    self.style.ERROR(
-                        (
-                            '[DEMO]' if not active else '') + f'Not enough items: chons {df_chons.shape[0]} / others {df_others.shape[0]} ')
-                )
-        else:
-            self.stdout.write(
-                self.style.ERROR(
-                    (
-                        '[DEMO]' if not active else '') + f'No items : chons {df_chons.shape[0]} / others {df_others.shape[0]}')
-            )
+        # df = pd.concat([
+        #     df_chons,
+        #     df_others,
+        # ]).reset_index(drop=True)
+        #
+        # if (df_chons.shape[0] > 0) & (df_others.shape[0] > 0):
+        #     if df['source'].value_counts(normalize=True).loc['chons'] < type_chons_percent:
+        #         df_others = df_others.sample(
+        #             n=int(df_chons.shape[0] * (1 - type_chons_percent) / type_chons_percent),
+        #             random_state=42
+        #         )
+        #     else:
+        #         df_chons = df_chons.sample(
+        #             n=int(df_others.shape[0] * (1 - type_others_percent) / type_others_percent),
+        #             random_state=42
+        #         )
+        #
+        #     if (df_chons.shape[0] + df_others.shape[0]) > dataset_min_count:
+        #         for i, family_index in enumerate(family_indexes_all):
+        #             df_family = df[df['index'] == family_index] \
+        #                 .sample(frac=1, random_state=42) \
+        #                 .reset_index(drop=True)
+        #
+        #             family_cls = family_classes[i]
+        #
+        #             val_count = floor(df_family.shape[0] * dataset_val_percent)
+        #             test_count = floor(df_family.shape[0] * dataset_test_percent)
+        #
+        #             dataset_dir = f'{dataset_base_result_dir}{chunk_number}-chons'
+        #
+        #             if not os.path.exists(dataset_dir):
+        #                 os.makedirs(dataset_dir)
+        #
+        #             generate_dir(
+        #                 df_family.iloc[:val_count],
+        #                 dataset_dir,
+        #                 'val',
+        #                 family_cls
+        #             )
+        #
+        #             generate_dir(
+        #                 df_family.iloc[val_count:val_count + test_count],
+        #                 dataset_dir,
+        #                 'test',
+        #                 family_cls
+        #             )
+        #
+        #             generate_dir(
+        #                 df_family.iloc[val_count + test_count:],
+        #                 dataset_dir,
+        #                 'train',
+        #                 family_cls
+        #             )
+        #
+        #         Capture.objects.filter(id__in=df_chons['id'].to_list()) \
+        #             .update(**{family_type_db: True})
+        #
+        #         Capture.objects.filter(id__in=df_others['id'].to_list()) \
+        #             .update(**{family_type_db: True})
+        #
+        #         self.stdout.write(
+        #             self.style.SUCCESS(
+        #                 (
+        #                     '[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished with {df.shape[0]} items')
+        #         )
+        #
+        #     else:
+        #         self.stdout.write(
+        #             self.style.ERROR(
+        #                 (
+        #                     '[DEMO]' if not active else '') + f'Not enough items: chons {df_chons.shape[0]} / others {df_others.shape[0]} ')
+        #         )
+        # else:
+        #    self.stdout.write(
+        #        self.style.ERROR(
+        #            (
+        #                '[DEMO]' if not active else '') + f'No items : chons {df_chons.shape[0]} / others {df_others.shape[0]}')
+        #    )
