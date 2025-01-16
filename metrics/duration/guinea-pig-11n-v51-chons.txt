@@ -1,0 +1,10 @@
+Train noisette count : 10000
+Train stitch count : 10000
+Val noisette count : 2000
+Val stitch count : 2000
+Test noisette count : 2000
+Test stitch count : 2000
+
+[Train] Start at : 2025-01-16 12:27:03
+[Train] End at : 2025-01-16 16:03:36
+[Train] 3 hours and 36 minutes
