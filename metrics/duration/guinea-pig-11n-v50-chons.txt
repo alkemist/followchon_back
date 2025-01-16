@@ -5,4 +5,6 @@ Val stitch count : 2000
 Test noisette count : 2000
 Test stitch count : 2000
 
-[Train] Start at : 2025-01-15 12:28:07
+[Train] Start at : 2025-01-16 08:43:52
+[Train] End at : 2025-01-16 12:19:40
+[Train] 3 hours and 35 minutes
