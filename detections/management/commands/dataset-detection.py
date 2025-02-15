@@ -105,7 +105,8 @@ class Command(BaseCommand):
         family_type = 'all'
         family_indexes = [0]
 
-        type_video_percent = 0.2
+        type_video_percent = 0.1
+        changed_percent = 0.8
         type_vision_percent = 1 - type_video_percent
         dataset_min_count = 1000
 
@@ -117,6 +118,7 @@ class Command(BaseCommand):
             + f' ,c.status'
             + f' ,c.photo_file'
             + f' ,c.date'
+            + f' ,c.changed'
             + f' FROM detections_capture c'
             + f' WHERE {family_type_db} = False'
             + f' AND c.status IN ("' + '","'.join(capture_statuses) + '")'
@@ -145,26 +147,47 @@ class Command(BaseCommand):
                     random_state=42
                 )
 
-            if (df_video.shape[0] + df_vision.shape[0]) > dataset_min_count:
+            df_vision_changed = df_vision[df_vision['changed']]
+            df_vision_unchanged = df_vision[~df_vision['changed']]
+
+            if df_vision['changed'].value_counts(normalize=True).loc[True] < changed_percent:
+                df_vision_unchanged = df_vision_unchanged.sample(
+                    n=int(df_vision_changed.shape[0] * (1 - changed_percent) / changed_percent),
+                    random_state=42
+                )
+            else:
+                df_vision_changed = df_vision_changed.sample(
+                    n=int(df_vision_unchanged.shape[0] * (1 - changed_percent) / changed_percent),
+                    random_state=42
+                )
+
+            if (df_video.shape[0] + df_vision_changed.shape[0] + df_vision_unchanged.shape[0]) > dataset_min_count:
                 video_val_count = floor(df_video.shape[0] * dataset_val_percent)
-                vision_val_count = floor(df_vision.shape[0] * dataset_val_percent)
+                vision_changed_val_count = floor(df_vision_changed.shape[0] * dataset_val_percent)
+                vision_unchanged_val_count = floor(df_vision_unchanged.shape[0] * dataset_val_percent)
                 video_test_count = floor(df_video.shape[0] * dataset_test_percent)
-                vision_test_count = floor(df_vision.shape[0] * dataset_test_percent)
+                vision_changed_test_count = floor(df_vision_changed.shape[0] * dataset_test_percent)
+                vision_unchanged_test_count = floor(df_vision_unchanged.shape[0] * dataset_test_percent)
 
                 df_val = pd.concat([
-                    df_vision.iloc[:vision_val_count],
+                    df_vision_changed.iloc[:vision_changed_val_count],
+                    df_vision_unchanged.iloc[:vision_unchanged_val_count],
                     df_video.iloc[:video_val_count],
                 ]).reset_index(drop=True)
                 df_val['type'] = 'val'
 
                 df_test = pd.concat([
-                    df_vision.iloc[vision_val_count:vision_val_count + vision_test_count],
+                    df_vision_changed.iloc[
+                    vision_changed_val_count:vision_changed_val_count + vision_changed_test_count],
+                    df_vision_unchanged.iloc[
+                    vision_unchanged_val_count:vision_unchanged_val_count + vision_unchanged_test_count],
                     df_video.iloc[video_val_count:video_val_count + video_test_count],
                 ]).reset_index(drop=True)
                 df_test['type'] = 'test'
 
                 df_train = pd.concat([
-                    df_vision.iloc[vision_val_count + vision_test_count:],
+                    df_vision_changed.iloc[vision_changed_val_count + vision_changed_test_count:],
+                    df_vision_unchanged.iloc[vision_unchanged_val_count + vision_unchanged_test_count:],
                     df_video.iloc[video_val_count + video_test_count:],
                 ]).reset_index(drop=True)
                 df_train['type'] = 'train'
@@ -182,21 +205,27 @@ class Command(BaseCommand):
                     copy_to(df_test, f'{dataset_dir}/test')
                     copy_to(df_train, f'{dataset_dir}/train')
 
-                    capture_ids = df_vision['id'].to_list() + df_video['id'].to_list()
+                    capture_ids = df_vision_changed['id'].to_list() + df_vision_unchanged['id'].to_list() + df_video[
+                        'id'].to_list()
                     Capture.objects.filter(id__in=capture_ids) \
                         .update(**{family_type_db: True})
 
                 print('TRAIN : ')
                 print(df_train['source'].value_counts(normalize=True))
+                print(df_train['changed'].value_counts(normalize=True))
                 print('VAL : ')
                 print(df_val['source'].value_counts(normalize=True))
+                print(df_val['changed'].value_counts(normalize=True))
                 print('TEST : ')
                 print(df_test['source'].value_counts(normalize=True))
+                print(df_test['changed'].value_counts(normalize=True))
                 print('ALL : ')
                 print(pd.concat([df_train, df_val, df_test])['type'].value_counts(normalize=True))
                 print(pd.concat([df_train, df_val, df_test])['type'].value_counts(normalize=False))
                 print(pd.concat([df_train, df_val, df_test])['source'].value_counts(normalize=True))
                 print(pd.concat([df_train, df_val, df_test])['source'].value_counts(normalize=False))
+                print(pd.concat([df_train, df_val, df_test])['changed'].value_counts(normalize=True))
+                print(pd.concat([df_train, df_val, df_test])['changed'].value_counts(normalize=False))
 
                 self.stdout.write(
                     self.style.SUCCESS(
@@ -207,7 +236,7 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.ERROR(
                         (
-                            '[DEMO]' if not active else '') + f'Not enough items: {df_vision.shape[0] + df_video.shape[0]} ')
+                            '[DEMO]' if not active else '') + f'Not enough items: {df_vision_changed.shape[0] + df_vision_unchanged.shape[0] + df_video.shape[0]} ')
                 )
         else:
             self.stdout.write(
