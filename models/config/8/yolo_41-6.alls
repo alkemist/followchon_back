@@ -1,0 +1,8 @@
+quantization_param([conv42, conv53, conv63], force_range_out=[0.0, 1.0])
+normalization1 = normalization([0.0, 0.0, 0.0], [255.0, 255.0, 255.0])
+change_output_activation(conv42, sigmoid)
+change_output_activation(conv53, sigmoid)
+change_output_activation(conv63, sigmoid)
+performance_param(compiler_optimization_level=max)
+model_optimization_flavor(optimization_level=1, compression_level=0, batch_size=2)
+nms_postprocess("/local/shared_with_docker/followchon_back/models/config/8/n_nms_config_41-6.json", meta_arch=yolov8, engine=cpu)

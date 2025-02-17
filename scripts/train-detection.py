@@ -244,6 +244,7 @@ if __name__ == '__main__':
     training = False
 
     train_classes = [0]
+    classes_count = 6
 
     train_name = f"{train_dataset_base_name}"
     model_pt = f"{models_dir}/{train_name}.pt"
@@ -275,7 +276,7 @@ if __name__ == '__main__':
     export(model_pt, model_onnx)
 
     if os.getenv('TRAIN_STEP_PARSE') and not os.path.exists(model_har):
-        parse(model_onnx, model_har, 5)
+        parse(model_onnx, model_har, classes_count)
 
     if os.getenv('TRAIN_STEP_COMPILE') and not os.path.exists(model_hef):
         compile_start = datetime.now()
@@ -283,7 +284,7 @@ if __name__ == '__main__':
             file.write("[Compile] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
 
         training = True
-        build(model_har, model_hef, 5)
+        build(model_har, model_hef, classes_count)
 
         with open(file_stats, "a") as file:
             file.write("[Compile] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
