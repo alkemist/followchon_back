@@ -4,7 +4,6 @@ import random
 import shutil
 from math import isnan
 
-import numpy as np
 import pandas as pd
 from django.core.management.base import BaseCommand
 from django.db import connection
@@ -80,79 +79,6 @@ def get_extension(path):
     return os.path.splitext(path)[1][1:]
 
 
-def split_stratified_dataset(df, val_size=0.2, test_size=0.1, video_ratio=0.2, changed_ratio=0.2, random_state=42):
-    """
-    Sépare un DataFrame en trois sous-ensembles (train, validation, test) en maintenant
-    exactement les proportions souhaitées pour les colonnes 'source' et 'changed'.
-
-    Parameters:
-    -----------
-    df : pandas.DataFrame
-        Le DataFrame d'entrée avec les colonnes 'source' et 'changed'
-    val_size : float
-        Proportion pour l'ensemble de validation (défaut: 0.2)
-    test_size : float
-        Proportion pour l'ensemble de test (défaut: 0.1)
-    video_ratio : float
-        Proportion souhaitée de 'video' dans chaque sous-ensemble (défaut: 0.2)
-    changed_ratio : float
-        Proportion souhaitée de False dans 'changed' pour chaque sous-ensemble (défaut: 0.2)
-    random_state : int
-        Graine aléatoire pour la reproductibilité
-    """
-    np.random.seed(random_state)
-
-    def create_subset(total_size, video_ratio, changed_ratio):
-        # Calcul des tailles exactes pour chaque groupe
-        n_total = int(total_size)
-        n_video = int(n_total * video_ratio)
-        n_vision = n_total - n_video
-
-        n_video_changed_false = int(n_video * changed_ratio)
-        n_video_changed_true = n_video - n_video_changed_false
-
-        n_vision_changed_false = int(n_vision * changed_ratio)
-        n_vision_changed_true = n_vision - n_vision_changed_false
-
-        # Séparation du DataFrame original en 4 groupes
-        video_changed_false = df[(df['source'] == 'video') & (df['changed'] == False)]
-        video_changed_true = df[(df['source'] == 'video') & (df['changed'] == True)]
-        vision_changed_false = df[(df['source'] == 'vision') & (df['changed'] == False)]
-        vision_changed_true = df[(df['source'] == 'vision') & (df['changed'] == True)]
-
-        # Sélection aléatoire dans chaque groupe
-        selected_video_false = video_changed_false.sample(n=min(n_video_changed_false, len(video_changed_false)))
-        selected_video_true = video_changed_true.sample(n=min(n_video_changed_true, len(video_changed_true)))
-        selected_vision_false = vision_changed_false.sample(n=min(n_vision_changed_false, len(vision_changed_false)))
-        selected_vision_true = vision_changed_true.sample(n=min(n_vision_changed_true, len(vision_changed_true)))
-
-        # Combinaison des sélections
-        subset = pd.concat([
-            selected_video_false,
-            selected_video_true,
-            selected_vision_false,
-            selected_vision_true
-        ])
-
-        # Retrait des lignes sélectionnées du DataFrame original
-        df.drop(subset.index, inplace=True)
-
-        return subset.sample(frac=1)  # Mélange final
-
-    # Calcul des tailles pour chaque sous-ensemble
-    total_size = len(df)
-    test_size_n = int(total_size * test_size)
-    val_size_n = int(total_size * val_size)
-    train_size_n = total_size - test_size_n - val_size_n
-
-    # Création des sous-ensembles
-    test_df = create_subset(test_size_n, video_ratio, changed_ratio)
-    val_df = create_subset(val_size_n, video_ratio, changed_ratio)
-    train_df = create_subset(train_size_n, video_ratio, changed_ratio)
-
-    return train_df, val_df, test_df
-
-
 class Command(BaseCommand):
     help = ""
 
@@ -203,22 +129,15 @@ class Command(BaseCommand):
         df['label_path'] = './static/captures/' + df['status'] + '/labels/' + df['photo_file'].apply(
             replace_extension,
             new_ext=".txt")
+        df['type'] = ''
 
         df = df.sample(frac=1, random_state=42)  # random_state pour la reproductibilité
 
-        df_train, df_val, df_test = split_stratified_dataset(
-            df,
-            val_size=0.2,  # 20% pour la validation
-            test_size=0.1,  # 10% pour le test
-            video_ratio=0.2,  # 20% de vidéos dans chaque ensemble
-            changed_ratio=0.2  # 20% de changed=False dans chaque ensemble
-        )
+        # df_val['type'] = 'val'
+        # df_test['type'] = 'test'
+        # df_train['type'] = 'train'
 
-        df_val['type'] = 'val'
-        df_test['type'] = 'test'
-        df_train['type'] = 'train'
-
-        df_all = pd.concat([df_train, df_val, df_test])
+        df_all = df  # pd.concat([df_train, df_val, df_test])
         df_video = df_all[df_all['source'] == 'video']
         df_changed = df_all[df_all['changed']]
 
@@ -233,20 +152,20 @@ class Command(BaseCommand):
         print("\n[ALL] Répartition des CHANGED dans:\n", df_all['changed'].value_counts(normalize=True))
         print("\n[ALL] Répartition des CHANGED dans:\n", df_all['changed'].value_counts(normalize=False))
 
-        print("\n[VAL] Répartition des SOURCES dans:\n", df_val['source'].value_counts(normalize=True))
-        print("\n[VAL] Répartition des SOURCES dans:\n", df_val['source'].value_counts(normalize=False))
-        print("\n[VAL] Répartition des CHANGED dans:\n", df_val['changed'].value_counts(normalize=True))
-        print("\n[VAL] Répartition des CHANGED dans:\n", df_val['changed'].value_counts(normalize=False))
-
-        print("\n[TEST] Répartition des SOURCES dans:\n", df_test['source'].value_counts(normalize=True))
-        print("\n[TEST] Répartition des SOURCES dans:\n", df_test['source'].value_counts(normalize=False))
-        print("\n[TEST] Répartition des CHANGED dans:\n", df_test['changed'].value_counts(normalize=True))
-        print("\n[TEST] Répartition des CHANGED dans:\n", df_test['changed'].value_counts(normalize=False))
-
-        print("\n[TRAIN] Répartition des SOURCES dans:\n", df_train['source'].value_counts(normalize=True))
-        print("\n[TRAIN] Répartition des SOURCES dans:\n", df_train['source'].value_counts(normalize=False))
-        print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=True))
-        print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=False))
+        # print("\n[VAL] Répartition des SOURCES dans:\n", df_val['source'].value_counts(normalize=True))
+        # print("\n[VAL] Répartition des SOURCES dans:\n", df_val['source'].value_counts(normalize=False))
+        # print("\n[VAL] Répartition des CHANGED dans:\n", df_val['changed'].value_counts(normalize=True))
+        # print("\n[VAL] Répartition des CHANGED dans:\n", df_val['changed'].value_counts(normalize=False))
+        #
+        # print("\n[TEST] Répartition des SOURCES dans:\n", df_test['source'].value_counts(normalize=True))
+        # print("\n[TEST] Répartition des SOURCES dans:\n", df_test['source'].value_counts(normalize=False))
+        # print("\n[TEST] Répartition des CHANGED dans:\n", df_test['changed'].value_counts(normalize=True))
+        # print("\n[TEST] Répartition des CHANGED dans:\n", df_test['changed'].value_counts(normalize=False))
+        #
+        # print("\n[TRAIN] Répartition des SOURCES dans:\n", df_train['source'].value_counts(normalize=True))
+        # print("\n[TRAIN] Répartition des SOURCES dans:\n", df_train['source'].value_counts(normalize=False))
+        # print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=True))
+        # print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=False))
 
         # df_vision = df[(df['source'] == 'vision') & (df['changed'])].sample(frac=1, random_state=42) \
         #     .reset_index(drop=True)
