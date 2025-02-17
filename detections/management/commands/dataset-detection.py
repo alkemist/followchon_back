@@ -4,6 +4,7 @@ import random
 import shutil
 from math import isnan
 
+import numpy as np
 import pandas as pd
 from django.core.management.base import BaseCommand
 from django.db import connection
@@ -79,6 +80,79 @@ def get_extension(path):
     return os.path.splitext(path)[1][1:]
 
 
+def split_stratified_dataset(df, val_size=0.2, test_size=0.1, video_ratio=0.2, changed_ratio=0.2, random_state=42):
+    """
+    Sépare un DataFrame en trois sous-ensembles (train, validation, test) en maintenant
+    exactement les proportions souhaitées pour les colonnes 'source' et 'changed'.
+
+    Parameters:
+    -----------
+    df : pandas.DataFrame
+        Le DataFrame d'entrée avec les colonnes 'source' et 'changed'
+    val_size : float
+        Proportion pour l'ensemble de validation (défaut: 0.2)
+    test_size : float
+        Proportion pour l'ensemble de test (défaut: 0.1)
+    video_ratio : float
+        Proportion souhaitée de 'video' dans chaque sous-ensemble (défaut: 0.2)
+    changed_ratio : float
+        Proportion souhaitée de False dans 'changed' pour chaque sous-ensemble (défaut: 0.2)
+    random_state : int
+        Graine aléatoire pour la reproductibilité
+    """
+    np.random.seed(random_state)
+
+    def create_subset(total_size, video_ratio, changed_ratio):
+        # Calcul des tailles exactes pour chaque groupe
+        n_total = int(total_size)
+        n_video = int(n_total * video_ratio)
+        n_vision = n_total - n_video
+
+        n_video_changed_false = int(n_video * changed_ratio)
+        n_video_changed_true = n_video - n_video_changed_false
+
+        n_vision_changed_false = int(n_vision * changed_ratio)
+        n_vision_changed_true = n_vision - n_vision_changed_false
+
+        # Séparation du DataFrame original en 4 groupes
+        video_changed_false = df[(df['source'] == 'video') & (df['changed'] == False)]
+        video_changed_true = df[(df['source'] == 'video') & (df['changed'] == True)]
+        vision_changed_false = df[(df['source'] == 'vision') & (df['changed'] == False)]
+        vision_changed_true = df[(df['source'] == 'vision') & (df['changed'] == True)]
+
+        # Sélection aléatoire dans chaque groupe
+        selected_video_false = video_changed_false.sample(n=min(n_video_changed_false, len(video_changed_false)))
+        selected_video_true = video_changed_true.sample(n=min(n_video_changed_true, len(video_changed_true)))
+        selected_vision_false = vision_changed_false.sample(n=min(n_vision_changed_false, len(vision_changed_false)))
+        selected_vision_true = vision_changed_true.sample(n=min(n_vision_changed_true, len(vision_changed_true)))
+
+        # Combinaison des sélections
+        subset = pd.concat([
+            selected_video_false,
+            selected_video_true,
+            selected_vision_false,
+            selected_vision_true
+        ])
+
+        # Retrait des lignes sélectionnées du DataFrame original
+        df.drop(subset.index, inplace=True)
+
+        return subset.sample(frac=1)  # Mélange final
+
+    # Calcul des tailles pour chaque sous-ensemble
+    total_size = len(df)
+    test_size_n = int(total_size * test_size)
+    val_size_n = int(total_size * val_size)
+    train_size_n = total_size - test_size_n - val_size_n
+
+    # Création des sous-ensembles
+    test_df = create_subset(test_size_n, video_ratio, changed_ratio)
+    val_df = create_subset(val_size_n, video_ratio, changed_ratio)
+    train_df = create_subset(train_size_n, video_ratio, changed_ratio)
+
+    return train_df, val_df, test_df
+
+
 class Command(BaseCommand):
     help = ""
 
@@ -132,64 +206,28 @@ class Command(BaseCommand):
 
         df = df.sample(frac=1, random_state=42)  # random_state pour la reproductibilité
 
-        total_size = len(df)
-        val_size = int(0.2 * total_size)
-        test_size = int(0.1 * total_size)
-        train_size = total_size - val_size - test_size
-
-        # Fonction pour créer un sous-ensemble avec les contraintes spécifiées
-        def create_subset(df, size, video_percentage=0.2, changed_false_percentage=0.2):
-            video_size = int(size * video_percentage)
-            changed_false_size = int(size * changed_false_percentage)
-
-            # Sélectionner les lignes avec source = 'video'
-            video_rows = df[df['source'] == 'video']
-            selected_video_rows = video_rows.sample(n=min(video_size, len(video_rows)), random_state=42)
-
-            # Sélectionner les lignes avec changed = False
-            changed_false_rows = df[df['changed'] == False]
-            selected_changed_false_rows = changed_false_rows.sample(n=min(changed_false_size, len(changed_false_rows)),
-                                                                    random_state=42)
-
-            # Sélectionner le reste des lignes
-            remaining_rows = df.drop(selected_video_rows.index).drop(selected_changed_false_rows.index)
-            selected_remaining_rows = remaining_rows.sample(
-                n=size - len(selected_video_rows) - len(selected_changed_false_rows), random_state=42)
-
-            # Combiner les lignes sélectionnées
-            subset = pd.concat([selected_video_rows, selected_changed_false_rows, selected_remaining_rows])
-
-            # Vérifier et ajuster les proportions
-            while len(subset[subset['source'] == 'video']) < video_size:
-                additional_video_rows = video_rows.drop(subset.index).sample(
-                    n=min(video_size - len(subset[subset['source'] == 'video']),
-                          len(video_rows) - len(subset[subset['source'] == 'video'])), random_state=42)
-                subset = pd.concat([subset, additional_video_rows])
-
-            while len(subset[subset['changed'] == False]) < changed_false_size:
-                additional_changed_false_rows = changed_false_rows.drop(subset.index).sample(
-                    n=min(changed_false_size - len(subset[subset['changed'] == False]),
-                          len(changed_false_rows) - len(subset[subset['changed'] == False])), random_state=42)
-                subset = pd.concat([subset, additional_changed_false_rows])
-
-            # Tronquer le sous-ensemble à la taille souhaitée
-            subset = subset.sample(n=size, random_state=42).reset_index(drop=True)
-
-            return subset
-
-        # Créer les sous-ensembles val, test et train
-        df_val = create_subset(df, val_size)
-        df_test = create_subset(df.drop(df_val.index), test_size)
-        df_train = create_subset(df.drop(df_val.index).drop(df_test.index), train_size)
+        df_train, df_val, df_test = split_stratified_dataset(
+            df,
+            val_size=0.2,  # 20% pour la validation
+            test_size=0.1,  # 10% pour le test
+            video_ratio=0.2,  # 20% de vidéos dans chaque ensemble
+            changed_ratio=0.2  # 20% de changed=False dans chaque ensemble
+        )
 
         df_val['type'] = 'val'
         df_test['type'] = 'test'
         df_train['type'] = 'train'
 
         df_all = pd.concat([df_train, df_val, df_test])
+        df_video = df_all[df_all['source'] == 'video']
+        df_changed = df_all[df_all['changed']]
 
         print("\n[ALL] Répartition des TYPES dans:\n", df_all['type'].value_counts(normalize=True))
         print("\n[ALL] Répartition des TYPES dans:\n", df_all['type'].value_counts(normalize=False))
+        print("\n[ALL] Répartition des TYPES pour VIDEO dans:\n", df_video['type'].value_counts(normalize=True))
+        print("\n[ALL] Répartition des TYPES pour VIDEO dans:\n", df_video['type'].value_counts(normalize=False))
+        print("\n[ALL] Répartition des TYPES pour CHANGED dans:\n", df_changed['type'].value_counts(normalize=True))
+        print("\n[ALL] Répartition des TYPES pour CHANGED dans:\n", df_changed['type'].value_counts(normalize=False))
         print("\n[ALL] Répartition des SOURCES dans:\n", df_all['source'].value_counts(normalize=True))
         print("\n[ALL] Répartition des SOURCES dans:\n", df_all['source'].value_counts(normalize=False))
         print("\n[ALL] Répartition des CHANGED dans:\n", df_all['changed'].value_counts(normalize=True))
