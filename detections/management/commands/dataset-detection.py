@@ -158,6 +158,23 @@ class Command(BaseCommand):
 
             # Combiner les lignes sélectionnées
             subset = pd.concat([selected_video_rows, selected_changed_false_rows, selected_remaining_rows])
+
+            # Vérifier et ajuster les proportions
+            while len(subset[subset['source'] == 'video']) < video_size:
+                additional_video_rows = video_rows.drop(subset.index).sample(
+                    n=min(video_size - len(subset[subset['source'] == 'video']),
+                          len(video_rows) - len(subset[subset['source'] == 'video'])), random_state=42)
+                subset = pd.concat([subset, additional_video_rows])
+
+            while len(subset[subset['changed'] == False]) < changed_false_size:
+                additional_changed_false_rows = changed_false_rows.drop(subset.index).sample(
+                    n=min(changed_false_size - len(subset[subset['changed'] == False]),
+                          len(changed_false_rows) - len(subset[subset['changed'] == False])), random_state=42)
+                subset = pd.concat([subset, additional_changed_false_rows])
+
+            # Tronquer le sous-ensemble à la taille souhaitée
+            subset = subset.sample(n=size, random_state=42).reset_index(drop=True)
+
             return subset
 
         # Créer les sous-ensembles val, test et train
