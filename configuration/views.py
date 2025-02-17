@@ -20,14 +20,14 @@ class ParameterViewSet(ReadOnlyViewSet):
 
 
 class FamilyViewSet(ReadOnlyViewSet):
-    queryset = Family.objects.all().order_by('id')
+    queryset = Family.objects.all().filter(is_listed=True).order_by('index')
     serializer_class = FamilySerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     pagination_class = CustomPageNumberPagination
     http_method_names = ['get', 'head', 'options']
 
     def get_queryset(self):
-        queryset = Family.objects.all()
+        queryset = Family.objects.all().filter(is_listed=True).order_by('index')
 
         if 'pk' in self.kwargs:
 

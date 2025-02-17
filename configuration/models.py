@@ -25,6 +25,7 @@ class Family(models.Model):
     is_abstract = models.BooleanField(default=False)
     is_unique = models.BooleanField(default=False)
     is_zoned = models.BooleanField(default=False)
+    is_listed = models.BooleanField(default=False)
     color = models.CharField(null=True, max_length=100, choices=Colors.choices)
 
     class Meta:
