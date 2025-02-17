@@ -1,5 +1,6 @@
 import gc
 import os
+import re
 import shutil
 import subprocess
 from datetime import datetime
@@ -35,7 +36,7 @@ model_base_version = os.getenv('TRAIN_MODEL_BASE_VERSION')
 model_nms_version = os.getenv('TRAIN_MODEL_NMS_VERSION')
 train_calib_dir = os.getenv('TRAIN_CALIB_DIR')
 
-is_cached = False
+is_cached = True
 
 gc.collect()
 torch.cuda.empty_cache()
@@ -47,8 +48,8 @@ def train(train_dataset_name):
         task='classify',
         data=train_dataset_path,
         epochs=50,
-        batch=12,
-        imgsz=480,
+        # batch=12,
+        imgsz=1024,  # 480,
         name=train_dataset_name,
         verbose=True,
         save=True,
@@ -142,6 +143,12 @@ def calc_time_h_m(dt):
     return f"{int(hours)} hours and {int(minutes)} minutes"
 
 
+def purge(dir, pattern):
+    for f in os.listdir(dir):
+        if re.search(pattern, f):
+            os.remove(os.path.join(dir, f))
+
+
 if __name__ == '__main__':
     if torch.cuda.is_available():
         print(":D GPU is available")
@@ -171,14 +178,20 @@ if __name__ == '__main__':
                 len(list(Path(f"{train_dataset_path}/train/noisette").glob("*.*")))) + "\n")
             file.write("Train stitch count : " + str(
                 len(list(Path(f"{train_dataset_path}/train/stitch").glob("*.*")))) + "\n")
+            file.write("Train sundae count : " + str(
+                len(list(Path(f"{train_dataset_path}/train/sundae").glob("*.*")))) + "\n")
             file.write(
                 "Val noisette count : " + str(len(list(Path(f"{train_dataset_path}/val/noisette").glob("*.*")))) + "\n")
             file.write(
                 "Val stitch count : " + str(len(list(Path(f"{train_dataset_path}/val/stitch").glob("*.*")))) + "\n")
+            file.write(
+                "Val sundae count : " + str(len(list(Path(f"{train_dataset_path}/val/sundae").glob("*.*")))) + "\n")
             file.write("Test noisette count : " + str(
                 len(list(Path(f"{train_dataset_path}/test/noisette").glob("*.*")))) + "\n")
             file.write("Test stitch count : " + str(
                 len(list(Path(f"{train_dataset_path}/test/stitch").glob("*.*")))) + "\n\n")
+            file.write("Test sundae count : " + str(
+                len(list(Path(f"{train_dataset_path}/test/sundae").glob("*.*")))) + "\n\n")
 
     try:
         if not os.path.exists(model_pt):
@@ -192,15 +205,32 @@ if __name__ == '__main__':
                 file.write("[Train] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
                 file.write(f"[Train] {calc_time_h_m(train_start)}\n")
 
-        if os.getenv('TRAIN_STEP_GIT'):
-            if os.path.exists(model_pt):
-                commit(train_name, [model_pt, f'{metrics_dir}/*'])
-
     except Exception as ex:
         print(ex)
         with open(file_stats, "a") as file:
             file.write("[Train] Fail at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
             file.write(f"[Train] {calc_time_h_m(train_start)}\n")
+
+    if os.getenv('TRAIN_STEP_GIT'):
+        if os.path.exists(model_pt):
+            try:
+                commit(train_name, [model_pt, f'{metrics_dir}/*'])
+            except Exception as ex:
+                print(ex)
+
+    if is_cached:
+        try:
+            purge(f'{train_dataset_path}/train/stitch', '*.npy')
+            purge(f'{train_dataset_path}/train/noisette', '*.npy')
+            purge(f'{train_dataset_path}/train/sundae', '*.npy')
+            purge(f'{train_dataset_path}/val/stitch', '*.npy')
+            purge(f'{train_dataset_path}/val/noisette', '*.npy')
+            purge(f'{train_dataset_path}/val/sundae', '*.npy')
+            purge(f'{train_dataset_path}/test/stitch', '*.npy')
+            purge(f'{train_dataset_path}/test/noisette', '*.npy')
+            purge(f'{train_dataset_path}/test/sundae', '*.npy')
+        except Exception as ex:
+            print(ex)
 
     print(f"End at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 

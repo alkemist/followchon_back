@@ -32,7 +32,7 @@ model_base_version = os.getenv('TRAIN_MODEL_BASE_VERSION')
 model_nms_version = os.getenv('TRAIN_MODEL_NMS_VERSION')
 train_calib_dir = os.getenv('TRAIN_CALIB_DIR')
 
-is_cached = False
+is_cached = True
 
 end_node_names = (
     '/model.22/cv2.0/cv2.0.2/Conv',
