@@ -79,25 +79,6 @@ def get_extension(path):
     return os.path.splitext(path)[1][1:]
 
 
-def repartir_echantillon(df, taille_cible, proportions_internes):
-    echantillon = []
-    for (source, changed), proportion in proportions_internes.items():
-        df_filtre = df[(df['source'] == source) & (df['changed'] == changed)]
-        taille_groupe = len(df_filtre)
-
-        # Calcul de la taille de l'échantillon pour ce groupe, en tenant compte des proportions globales
-        taille_echantillon_groupe = int(taille_cible * proportion)
-
-        # Ajustement si le groupe est trop petit
-        if taille_echantillon_groupe > taille_groupe:
-            taille_echantillon_groupe = taille_groupe
-
-        if taille_echantillon_groupe > 0:
-            echantillon.append(df_filtre.sample(n=taille_echantillon_groupe, random_state=42))
-
-    return pd.concat(echantillon)
-
-
 class Command(BaseCommand):
     help = ""
 
@@ -151,37 +132,38 @@ class Command(BaseCommand):
 
         df = df.sample(frac=1, random_state=42)  # random_state pour la reproductibilité
 
-        # Calcul des tailles des échantillons
-        taille_val = int(len(df) * 0.2)
-        taille_test = int(len(df) * 0.1)
-        taille_train = len(df) - taille_val - taille_test
+        total_size = len(df)
+        val_size = int(0.2 * total_size)
+        test_size = int(0.1 * total_size)
+        train_size = total_size - val_size - test_size
 
-        # Proportions pour chaque DataFrame
-        proportions_val = {
-            ('video', True): 0.04,
-            ('video', False): 0.04,
-            ('vision', True): 0.04,
-            ('vision', False): 0.04
-        }
+        # Fonction pour créer un sous-ensemble avec les contraintes spécifiées
+        def create_subset(df, size, video_percentage=0.2, changed_false_percentage=0.2):
+            video_size = int(size * video_percentage)
+            changed_false_size = int(size * changed_false_percentage)
 
-        proportions_test = {
-            ('video', True): 0.02,
-            ('video', False): 0.02,
-            ('vision', True): 0.02,
-            ('vision', False): 0.02
-        }
+            # Sélectionner les lignes avec source = 'video'
+            video_rows = df[df['source'] == 'video']
+            selected_video_rows = video_rows.sample(n=min(video_size, len(video_rows)), random_state=42)
 
-        proportions_train = {
-            ('video', True): 0.14,
-            ('video', False): 0.14,
-            ('vision', True): 0.14,
-            ('vision', False): 0.14
-        }
+            # Sélectionner les lignes avec changed = False
+            changed_false_rows = df[df['changed'] == False]
+            selected_changed_false_rows = changed_false_rows.sample(n=min(changed_false_size, len(changed_false_rows)),
+                                                                    random_state=42)
 
-        # Création des DataFrames
-        df_val = repartir_echantillon(df, taille_val, proportions_val)
-        df_test = repartir_echantillon(df, taille_test, proportions_test)
-        df_train = repartir_echantillon(df, taille_train, proportions_train)
+            # Sélectionner le reste des lignes
+            remaining_rows = df.drop(selected_video_rows.index).drop(selected_changed_false_rows.index)
+            selected_remaining_rows = remaining_rows.sample(
+                n=size - len(selected_video_rows) - len(selected_changed_false_rows), random_state=42)
+
+            # Combiner les lignes sélectionnées
+            subset = pd.concat([selected_video_rows, selected_changed_false_rows, selected_remaining_rows])
+            return subset
+
+        # Créer les sous-ensembles val, test et train
+        df_val = create_subset(df, val_size)
+        df_test = create_subset(df.drop(df_val.index), test_size)
+        df_train = create_subset(df.drop(df_val.index).drop(df_test.index), train_size)
 
         df_val['type'] = 'val'
         df_test['type'] = 'test'
