@@ -183,24 +183,33 @@ class Command(BaseCommand):
         df_test = repartir_echantillon(df, taille_test, proportions_test)
         df_train = repartir_echantillon(df, taille_train, proportions_train)
 
-        print("Taille DataFrame val:", len(df_val))
-        print("Taille DataFrame test:", len(df_test))
-        print("Taille DataFrame train:", len(df_train))
+        df_val['type'] = 'val'
+        df_test['type'] = 'test'
+        df_train['type'] = 'train'
 
-        print("\nRépartition des sources dans df_val:\n", df_val['source'].value_counts(normalize=True))
-        print("\nRépartition des sources dans df_val:\n", df_val['source'].value_counts(normalize=False))
-        print("\nRépartition des 'changed' dans df_val:\n", df_val['changed'].value_counts(normalize=True))
-        print("\nRépartition des 'changed' dans df_val:\n", df_val['changed'].value_counts(normalize=False))
+        df_all = pd.concat([df_train, df_val, df_test])
 
-        print("\nRépartition des sources dans df_test:\n", df_test['source'].value_counts(normalize=True))
-        print("\nRépartition des sources dans df_test:\n", df_test['source'].value_counts(normalize=False))
-        print("\nRépartition des 'changed' dans df_test:\n", df_test['changed'].value_counts(normalize=True))
-        print("\nRépartition des 'changed' dans df_test:\n", df_test['changed'].value_counts(normalize=False))
+        print("\n[ALL] Répartition des TYPES dans:\n", df_all['type'].value_counts(normalize=True))
+        print("\n[ALL] Répartition des TYPES dans:\n", df_all['type'].value_counts(normalize=False))
+        print("\n[ALL] Répartition des SOURCES dans:\n", df_all['source'].value_counts(normalize=True))
+        print("\n[ALL] Répartition des SOURCES dans:\n", df_all['source'].value_counts(normalize=False))
+        print("\n[ALL] Répartition des CHANGED dans:\n", df_all['changed'].value_counts(normalize=True))
+        print("\n[ALL] Répartition des CHANGED dans:\n", df_all['changed'].value_counts(normalize=False))
 
-        print("\nRépartition des sources dans df_train:\n", df_train['source'].value_counts(normalize=True))
-        print("\nRépartition des sources dans df_train:\n", df_train['source'].value_counts(normalize=False))
-        print("\nRépartition des 'changed' dans df_train:\n", df_train['changed'].value_counts(normalize=True))
-        print("\nRépartition des 'changed' dans df_train:\n", df_train['changed'].value_counts(normalize=False))
+        print("\n[VAL] Répartition des SOURCES dans:\n", df_val['source'].value_counts(normalize=True))
+        print("\n[VAL] Répartition des SOURCES dans:\n", df_val['source'].value_counts(normalize=False))
+        print("\n[VAL] Répartition des CHANGED dans:\n", df_val['changed'].value_counts(normalize=True))
+        print("\n[VAL] Répartition des CHANGED dans:\n", df_val['changed'].value_counts(normalize=False))
+
+        print("\n[TEST] Répartition des SOURCES dans:\n", df_test['source'].value_counts(normalize=True))
+        print("\n[TEST] Répartition des SOURCES dans:\n", df_test['source'].value_counts(normalize=False))
+        print("\n[TEST] Répartition des CHANGED dans:\n", df_test['changed'].value_counts(normalize=True))
+        print("\n[TEST] Répartition des CHANGED dans:\n", df_test['changed'].value_counts(normalize=False))
+
+        print("\n[TRAIN] Répartition des SOURCES dans:\n", df_train['source'].value_counts(normalize=True))
+        print("\n[TRAIN] Répartition des SOURCES dans:\n", df_train['source'].value_counts(normalize=False))
+        print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=True))
+        print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=False))
 
         # df_vision = df[(df['source'] == 'vision') & (df['changed'])].sample(frac=1, random_state=42) \
         #     .reset_index(drop=True)
