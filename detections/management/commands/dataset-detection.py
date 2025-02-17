@@ -1,3 +1,4 @@
+import math
 import os
 import pathlib
 import random
@@ -10,6 +11,7 @@ from django.db import connection
 from dotenv import load_dotenv
 
 from configuration.models import Parameter
+from detections.models import Capture
 from utils.array import ArrayHelper
 
 
@@ -89,8 +91,15 @@ class Command(BaseCommand):
         dataset_base_result_dir = os.getenv('DATASET_RESULT_DIR')
         active = os.getenv('DATASET_ACTIVE', False)
 
-        dataset_test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
-        dataset_val_percent = float(os.getenv('DATASET_VAL_PERCENT'))
+        test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
+        val_percent = float(os.getenv('DATASET_VAL_PERCENT'))
+        video_percent = float(os.getenv('DATASET_VIDEO_PERCENT'))
+        changed_percent = float(os.getenv('DATASET_CHANGED_PERCENT'))
+        dataset_min_count = float(os.getenv('DATASET_MIN_COUNT'))
+        train_percent = 1 - test_percent - val_percent
+
+        vision_percent = 1 - video_percent
+        unchanged_percent = 1 - changed_percent
 
         if not chunk_number or chunk_number == 0 or isnan(chunk_number):
             parameters = Parameter.objects.all()
@@ -102,12 +111,6 @@ class Command(BaseCommand):
         capture_statuses = ['archived', 'verified']
         capture_version = None
         family_type = 'all'
-        family_indexes = [0]
-
-        type_video_percent = 0.2
-        type_vision_percent = 1 - type_video_percent
-        dataset_min_count = 1000
-
         family_type_db = f'train_{family_type}'
 
         df = query_to_dataframe(
@@ -129,203 +132,136 @@ class Command(BaseCommand):
         df['label_path'] = './static/captures/' + df['status'] + '/labels/' + df['photo_file'].apply(
             replace_extension,
             new_ext=".txt")
-        df['type'] = ''
 
-        df = df.sample(frac=1, random_state=42)  # random_state pour la reproductibilité
+        df = df.sample(frac=1, random_state=42)
 
-        # Filtrer les lignes selon les critères
+        df_video = df[df['source'] == 'video']
         df_vision = df[df['source'] == 'vision']
-        df_changed_true = df[df['changed'] == True]
+        df_changed = df_vision[df_vision['changed']]
+        df_unchanged = df_vision[~df_vision['changed']]
 
-        # Calculer les proportions
-        n_vision = int(len(df) * 0.20)
-        n_changed_true = int(len(df) * 0.80)
+        video_count = df_video.shape[0]
+        vision_count = math.ceil(vision_percent * video_count / video_percent)
 
-        # Sélectionner les lignes
-        df_vision_sample = df_vision.sample(n=min(n_vision, len(df_vision)), random_state=1)
-        df_changed_true_sample = df_changed_true.sample(n=min(n_changed_true, len(df_changed_true)), random_state=1)
+        if video_count + vision_count > df.shape[0]:
+            print("/!\ Too many video items")
+            vision_count = df_vision.shape[0]
+            video_count = math.ceil(video_percent * vision_count / vision_percent)
 
-        # Concaténer les échantillons
-        df_sub = pd.concat([df_vision_sample, df_changed_true_sample])
+        if video_count + vision_count > dataset_min_count:
+            changed_count = min(df_changed.shape[0], math.ceil(vision_count * changed_percent))
+            unchanged_count = min(
+                math.ceil(unchanged_percent * changed_count / changed_percent),
+                vision_count - changed_count
+            )
 
-        # Calculer les tailles des échantillons
-        n_val = int(len(df_sub) * 0.20)
-        n_test = int(len(df_sub) * 0.10)
-        n_train = int(len(df_sub) * 0.70)
+            if video_count + vision_count > df.shape[0]:
+                print("/!\ Too many changed items")
+                unchanged_count = min(df_unchanged.shape[0], math.ceil(vision_count * unchanged_percent))
+                changed_count = min(
+                    math.ceil(changed_percent * unchanged_count / unchanged_percent),
+                    unchanged_count - unchanged_count
+                )
 
-        # Filtrer les lignes selon les critères pour df_val
-        df_val_video = df_sub[df_sub['source'] == 'video']
-        df_val_changed_true = df_sub[df_sub['changed'] == True]
+            print("[All] Video count : ", video_count, '/', df_video.shape[0])
+            print("[All] Vision count : ", vision_count, changed_count + unchanged_count, '/', df_vision.shape[0])
+            print("[All] Changed count : ", changed_count, '/', df_changed.shape[0])
+            print("[All] Unchanged count : ", unchanged_count, '/', df_unchanged.shape[0])
+            print("[All] Total : ", video_count + changed_count + unchanged_count, '/', df.shape[0])
 
-        # Sélectionner les lignes pour df_val
-        n_val_video = int(n_val * 0.20)
-        n_val_changed_true = int(n_val * 0.80)
+            video_val_count = math.ceil(video_count * val_percent)
+            vision_changed_val_count = math.ceil(changed_count * val_percent)
+            vision_unchanged_val_count = math.ceil(unchanged_count * val_percent)
 
-        df_val_video_sample = df_val_video.sample(n=min(n_val_video, len(df_val_video)), random_state=1)
-        df_val_changed_true_sample = df_val_changed_true.sample(n=min(n_val_changed_true, len(df_val_changed_true)),
-                                                                random_state=1)
+            video_test_count = math.ceil(video_count * test_percent)
+            vision_changed_test_count = math.ceil(changed_count * test_percent)
+            vision_unchanged_test_count = math.ceil(unchanged_count * test_percent)
 
-        df_val = pd.concat([df_val_video_sample, df_val_changed_true_sample])
+            video_train_count = math.ceil(video_count * train_percent)
+            vision_changed_train_count = math.ceil(changed_count * train_percent)
+            vision_unchanged_train_count = math.ceil(unchanged_count * train_percent)
 
-        # Filtrer les lignes selon les critères pour df_test
-        df_test_video = df_sub[df_sub['source'] == 'video']
-        df_test_changed_true = df_sub[df_sub['changed'] == True]
+            df_val = pd.concat([
+                df_video.iloc[:video_val_count],
+                df_changed.iloc[:vision_changed_val_count],
+                df_unchanged.iloc[:vision_unchanged_val_count],
+            ]).reset_index(drop=True)
+            df_val['type'] = 'val'
 
-        # Sélectionner les lignes pour df_test
-        n_test_video = int(n_test * 0.20)
-        n_test_changed_true = int(n_test * 0.80)
+            df_test = pd.concat([
+                df_video.iloc[video_val_count:video_val_count + video_test_count],
+                df_changed.iloc[vision_changed_val_count:vision_changed_val_count + vision_changed_test_count],
+                df_unchanged.iloc[vision_unchanged_val_count:vision_unchanged_val_count + vision_unchanged_test_count],
+            ]).reset_index(drop=True)
+            df_test['type'] = 'test'
 
-        df_test_video_sample = df_test_video.sample(n=min(n_test_video, len(df_test_video)), random_state=1)
-        df_test_changed_true_sample = df_test_changed_true.sample(n=min(n_test_changed_true, len(df_test_changed_true)),
-                                                                  random_state=1)
+            df_train = pd.concat([
+                df_video.iloc[
+                video_val_count + video_test_count:video_val_count + video_test_count + video_train_count],
+                df_changed.iloc[
+                vision_changed_val_count + vision_changed_test_count:vision_changed_val_count + vision_changed_test_count + vision_changed_train_count],
+                df_unchanged.iloc[
+                vision_unchanged_val_count + vision_unchanged_test_count:vision_unchanged_val_count + vision_unchanged_test_count + vision_unchanged_train_count],
+            ]).reset_index(drop=True)
+            df_train['type'] = 'train'
 
-        df_test = pd.concat([df_test_video_sample, df_test_changed_true_sample])
+            df_all = pd.concat([df_val, df_test, df_train])
 
-        # Filtrer les lignes selon les critères pour df_train
-        df_train_video = df_sub[df_sub['source'] == 'video']
-        df_train_changed_true = df_sub[df_sub['changed'] == True]
+            print("\n[ALL] Répartition des TYPES dans:\n", df_all['type'].value_counts(normalize=True))
+            print("\n[ALL] Répartition des TYPES dans:\n", df_all['type'].value_counts(normalize=False))
+            # print("\n[ALL] Répartition des TYPES pour VIDEO dans:\n",
+            #      df_all[df_all['source'] == 'video']['type'].value_counts(normalize=True))
+            # print("\n[ALL] Répartition des TYPES pour VIDEO dans:\n",
+            #      df_all[df_all['source'] == 'video']['type'].value_counts(normalize=False))
+            # print("\n[ALL] Répartition des TYPES pour CHANGED dans:\n",
+            #      df_all[df_all['changed']]['type'].value_counts(normalize=True))
+            # print("\n[ALL] Répartition des TYPES pour CHANGED dans:\n",
+            #      df_all[df_all['changed']]['type'].value_counts(normalize=False))
+            # print("\n[ALL] Répartition des SOURCES dans:\n", df_all['source'].value_counts(normalize=True))
+            # print("\n[ALL] Répartition des SOURCES dans:\n", df_all['source'].value_counts(normalize=False))
+            # print("\n[ALL] Répartition des CHANGED dans:\n", df_all['changed'].value_counts(normalize=True))
+            # print("\n[ALL] Répartition des CHANGED dans:\n", df_all['changed'].value_counts(normalize=False))
 
-        # Sélectionner les lignes pour df_train
-        n_train_video = int(n_train * 0.20)
-        n_train_changed_true = int(n_train * 0.80)
+            print("\n[VAL] Répartition des SOURCES dans:\n", df_val['source'].value_counts(normalize=True))
+            # print("\n[VAL] Répartition des SOURCES dans:\n", df_val['source'].value_counts(normalize=False))
+            print("\n[VAL] Répartition des CHANGED dans:\n", df_val['changed'].value_counts(normalize=True))
+            # print("\n[VAL] Répartition des CHANGED dans:\n", df_val['changed'].value_counts(normalize=False))
 
-        df_train_video_sample = df_train_video.sample(n=min(n_train_video, len(df_train_video)), random_state=1)
-        df_train_changed_true_sample = df_train_changed_true.sample(
-            n=min(n_train_changed_true, len(df_train_changed_true)), random_state=1)
+            print("\n[TEST] Répartition des SOURCES dans:\n", df_test['source'].value_counts(normalize=True))
+            # print("\n[TEST] Répartition des SOURCES dans:\n", df_test['source'].value_counts(normalize=False))
+            print("\n[TEST] Répartition des CHANGED dans:\n", df_test['changed'].value_counts(normalize=True))
+            # print("\n[TEST] Répartition des CHANGED dans:\n", df_test['changed'].value_counts(normalize=False))
 
-        df_train = pd.concat([df_train_video_sample, df_train_changed_true_sample])
+            print("\n[TRAIN] Répartition des SOURCES dans:\n", df_train['source'].value_counts(normalize=True))
+            # print("\n[TRAIN] Répartition des SOURCES dans:\n", df_train['source'].value_counts(normalize=False))
+            print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=True))
+            # print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=False))
 
-        df_val['type'] = 'val'
-        df_test['type'] = 'test'
-        df_train['type'] = 'train'
+            dataset_dir = f'{dataset_base_result_dir}{chunk_number}-{family_type}'
+            print(f"\n=> Save to {dataset_dir}\n")
 
-        df_all = pd.concat([df_train, df_val, df_test])
+            if active:
+                if not os.path.exists(dataset_dir):
+                    os.makedirs(dataset_dir)
 
-        # df_all = df  # pd.concat([df_train, df_val, df_test])
-        # df_vision = df_all[df_all['source'] == 'vision']
-        # df_video = df_all[df_all['source'] == 'video']
-        # df_changed = df_vision[df_vision['changed']]
-        # df_unchanged = df_vision[~df_vision['changed']]
+                shutil.copy("./static/captures/data.yaml",
+                            f"{dataset_dir}/data.yaml")
 
-        print("\n[ALL] Répartition des TYPES dans:\n", df_all['type'].value_counts(normalize=True))
-        print("\n[ALL] Répartition des TYPES dans:\n", df_all['type'].value_counts(normalize=False))
-        print("\n[ALL] Répartition des TYPES pour VIDEO dans:\n",
-              df_all[df_all['source'] == 'video']['type'].value_counts(normalize=True))
-        print("\n[ALL] Répartition des TYPES pour VIDEO dans:\n",
-              df_all[df_all['source'] == 'video']['type'].value_counts(normalize=False))
-        print("\n[ALL] Répartition des TYPES pour CHANGED dans:\n",
-              df_all[df_all['changed']]['type'].value_counts(normalize=True))
-        print("\n[ALL] Répartition des TYPES pour CHANGED dans:\n",
-              df_all[df_all['changed']]['type'].value_counts(normalize=False))
-        print("\n[ALL] Répartition des SOURCES dans:\n", df_all['source'].value_counts(normalize=True))
-        print("\n[ALL] Répartition des SOURCES dans:\n", df_all['source'].value_counts(normalize=False))
-        print("\n[ALL] Répartition des CHANGED dans:\n", df_all['changed'].value_counts(normalize=True))
-        print("\n[ALL] Répartition des CHANGED dans:\n", df_all['changed'].value_counts(normalize=False))
+                copy_to(df_val, f'{dataset_dir}/val')
+                copy_to(df_test, f'{dataset_dir}/test')
+                copy_to(df_train, f'{dataset_dir}/train')
 
-        print("\n[VAL] Répartition des SOURCES dans:\n", df_val['source'].value_counts(normalize=True))
-        print("\n[VAL] Répartition des SOURCES dans:\n", df_val['source'].value_counts(normalize=False))
-        print("\n[VAL] Répartition des CHANGED dans:\n", df_val['changed'].value_counts(normalize=True))
-        print("\n[VAL] Répartition des CHANGED dans:\n", df_val['changed'].value_counts(normalize=False))
+                capture_ids = df_vision['id'].to_list() + df_video['id'].to_list()
+                Capture.objects.filter(id__in=capture_ids) \
+                    .update(**{family_type_db: True})
 
-        print("\n[TEST] Répartition des SOURCES dans:\n", df_test['source'].value_counts(normalize=True))
-        print("\n[TEST] Répartition des SOURCES dans:\n", df_test['source'].value_counts(normalize=False))
-        print("\n[TEST] Répartition des CHANGED dans:\n", df_test['changed'].value_counts(normalize=True))
-        print("\n[TEST] Répartition des CHANGED dans:\n", df_test['changed'].value_counts(normalize=False))
-
-        print("\n[TRAIN] Répartition des SOURCES dans:\n", df_train['source'].value_counts(normalize=True))
-        print("\n[TRAIN] Répartition des SOURCES dans:\n", df_train['source'].value_counts(normalize=False))
-        print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=True))
-        print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=False))
-
-        # df_vision = df[(df['source'] == 'vision') & (df['changed'])].sample(frac=1, random_state=42) \
-        #     .reset_index(drop=True)
-        # df_video = df[df['source'] == 'video'] \
-        #     .sample(frac=1, random_state=42).reset_index(drop=True)
-        #
-        # if (df_vision.shape[0] > 0) & (df_video.shape[0] > 0):
-        #     if df['source'].value_counts(normalize=True).loc['video'] < type_video_percent:
-        #         df_vision = df_vision.sample(
-        #             n=int(df_video.shape[0] * (1 - type_video_percent) / type_video_percent),
-        #             random_state=42
-        #         )
-        #     else:
-        #         df_video = df_video.sample(
-        #             n=int(df_vision.shape[0] * (1 - type_vision_percent) / type_vision_percent),
-        #             random_state=42
-        #         )
-        #
-        #     if (df_video.shape[0] + df_vision.shape[0]) > dataset_min_count:
-        #         video_val_count = floor(df_video.shape[0] * dataset_val_percent)
-        #         vision_val_count = floor(df_vision.shape[0] * dataset_val_percent)
-        #         video_test_count = floor(df_video.shape[0] * dataset_test_percent)
-        #         vision_test_count = floor(df_vision.shape[0] * dataset_test_percent)
-        #
-        #         df_val = pd.concat([
-        #             df_vision.iloc[:vision_val_count],
-        #             df_video.iloc[:video_val_count],
-        #         ]).reset_index(drop=True)
-        #         df_val['type'] = 'val'
-        #
-        #         df_test = pd.concat([
-        #             df_vision.iloc[vision_val_count:vision_val_count + vision_test_count],
-        #             df_video.iloc[video_val_count:video_val_count + video_test_count],
-        #         ]).reset_index(drop=True)
-        #         df_test['type'] = 'test'
-        #
-        #         df_train = pd.concat([
-        #             df_vision.iloc[vision_val_count + vision_test_count:],
-        #             df_video.iloc[video_val_count + video_test_count:],
-        #         ]).reset_index(drop=True)
-        #         df_train['type'] = 'train'
-        #
-        #         dataset_dir = f'{dataset_base_result_dir}{chunk_number}-{family_type}'
-        #
-        #         if active:
-        #             if not os.path.exists(dataset_dir):
-        #                 os.makedirs(dataset_dir)
-        #
-        #             shutil.copy("./static/captures/data.yaml",
-        #                         f"{dataset_dir}/data.yaml")
-        #
-        #             copy_to(df_val, f'{dataset_dir}/val')
-        #             copy_to(df_test, f'{dataset_dir}/test')
-        #             copy_to(df_train, f'{dataset_dir}/train')
-        #
-        #             capture_ids = df_vision['id'].to_list() + df_video['id'].to_list()
-        #             Capture.objects.filter(id__in=capture_ids) \
-        #                 .update(**{family_type_db: True})
-        #
-        #         print('TRAIN : ')
-        #         print(df_train['source'].value_counts(normalize=True))
-        #         print(df_train['changed'].value_counts(normalize=True))
-        #         print('VAL : ')
-        #         print(df_val['source'].value_counts(normalize=True))
-        #         print(df_val['changed'].value_counts(normalize=True))
-        #         print('TEST : ')
-        #         print(df_test['source'].value_counts(normalize=True))
-        #         print(df_test['changed'].value_counts(normalize=True))
-        #         print('ALL : ')
-        #         print(pd.concat([df_train, df_val, df_test])['type'].value_counts(normalize=True))
-        #         print(pd.concat([df_train, df_val, df_test])['type'].value_counts(normalize=False))
-        #         print(pd.concat([df_train, df_val, df_test])['source'].value_counts(normalize=True))
-        #         print(pd.concat([df_train, df_val, df_test])['source'].value_counts(normalize=False))
-        #         print(pd.concat([df_train, df_val, df_test])['changed'].value_counts(normalize=True))
-        #         print(pd.concat([df_train, df_val, df_test])['changed'].value_counts(normalize=False))
-        #
-        #         self.stdout.write(
-        #             self.style.SUCCESS(
-        #                 (
-        #                     '[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished with {df_vision.shape[0] + df_video.shape[0]} items')
-        #         )
-        #     else:
-        #         print(df['source'].value_counts(normalize=False))
-        #         print(df['changed'].value_counts(normalize=False))
-        #         self.stdout.write(
-        #             self.style.ERROR(
-        #                 (
-        #                     '[DEMO]' if not active else '') + f'Not enough items: [vision] {df_vision.shape[0]} / [video] {df_video.shape[0]} ')
-        #         )
-        # else:
-        #     self.stdout.write(
-        #         self.style.ERROR(('[DEMO]' if not active else '') + 'No "video" items ')
-        #     )
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        (
+                            '[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished')
+                )
+        else:
+            self.stdout.write((
+                                  '[DEMO]' if not active else '')
+                              + f'Not enough items: [vision] {vision_count} / [video] {video_count} '
+                              )
