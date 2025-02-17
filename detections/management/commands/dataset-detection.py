@@ -79,17 +79,20 @@ def get_extension(path):
     return os.path.splitext(path)[1][1:]
 
 
-def repartir_echantillon(df, taille, proportions):
+def repartir_echantillon(df, taille_cible, proportions_internes):
     echantillon = []
-    for (source, changed), proportion in proportions.items():
+    for (source, changed), proportion in proportions_internes.items():
         df_filtre = df[(df['source'] == source) & (df['changed'] == changed)]
-        taille_groupe = len(df_filtre)  # Taille du groupe
-        taille_echantillon_groupe = int(taille * proportion)
+        taille_groupe = len(df_filtre)
+
+        # Calcul de la taille de l'échantillon pour ce groupe, en tenant compte des proportions globales
+        taille_echantillon_groupe = int(taille_cible * proportion)
+
+        # Ajustement si le groupe est trop petit
         if taille_echantillon_groupe > taille_groupe:
-            taille_echantillon_groupe = taille_groupe  # On prend tout le groupe si l'échantillon demandé est trop grand.
-            print(
-                f"Avertissement : taille de l'échantillon ajustée pour le groupe Source = {source}, Changed = {changed}")
-        if taille_echantillon_groupe > 0:  # Vérification pour éviter d'échantillonner un groupe vide.
+            taille_echantillon_groupe = taille_groupe
+
+        if taille_echantillon_groupe > 0:
             echantillon.append(df_filtre.sample(n=taille_echantillon_groupe, random_state=42))
 
     return pd.concat(echantillon)
