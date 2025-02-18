@@ -296,9 +296,9 @@ if __name__ == '__main__':
 
     if is_cached:
         try:
-            purge(f'{train_dataset_path}/train', '*.npy')
-            purge(f'{train_dataset_path}/val', '*.npy')
-            purge(f'{train_dataset_path}/test', '*.npy')
+            purge(f'{train_dataset_path}/train/images', '*.npy')
+            purge(f'{train_dataset_path}/val/images', '*.npy')
+            purge(f'{train_dataset_path}/test/images', '*.npy')
         except Exception as ex:
             print(ex)
 

@@ -3,3 +3,9 @@ Val count : 144
 Test count : 73
 
 [Train] Start at : 2025-02-18 18:50:45
+[Train] End at : 2025-02-18 21:29:29
+[Train] 2 hours and 38 minutes
+[Compile] Start at : 2025-02-18 21:31:08
+
+(en parallèle d'un autre entrainement)[Compile] End at : 2025-02-18 23:38:26
+[Compile] 2 hours and 7 minutes

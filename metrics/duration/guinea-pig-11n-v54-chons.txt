@@ -6,7 +6,6 @@ Val stitch count : 28
 Val sundae count : 28
 Test noisette count : 14
 Test stitch count : 14
-
 Test sundae count : 14
 
 [Train] Start at : 2025-02-18 18:50:45

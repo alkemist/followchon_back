@@ -1,6 +1,12 @@
-Train count : 
-Val count : 
-Test count : 
+Train noisette count : 102
+Train stitch count : 102
+Train sundae count : 102
+Val noisette count : 31
+Val stitch count : 31
+Val sundae count : 31
+Test noisette count : 16
+Test stitch count : 16
+Test sundae count : 16
 
 [Train] Start at : 2025-02-17 23:22:38
 [Train] End at : 2025-02-17 23:31:10
