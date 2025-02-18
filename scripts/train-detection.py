@@ -19,10 +19,10 @@ runs_dir = 'runs'
 models_dir = 'models'
 metrics_dir = 'metrics'
 
-train_previous_path = os.getenv('TRAIN_MODEL_PATH')
-train_dataset_path = os.getenv('TRAIN_DATASET_PATH')
+train_previous_path = os.getenv('TRAIN_DETECT_MODEL_PATH')
+train_dataset_path = os.getenv('TRAIN_DETECT_DATASET_PATH')
 train_dataset_yaml_path = f"{train_dataset_path}/data.yaml"
-train_dataset_base_name = os.getenv('TRAIN_DATASET_NAME')
+train_dataset_base_name = os.getenv('TRAIN_DETECT_DATASET_NAME')
 train_device = os.getenv('TRAIN_DEVICE')
 train_resume = os.getenv('TRAIN_RESUME')
 train_all = os.getenv('TRAIN_ALL')

@@ -194,5 +194,5 @@ class Command(BaseCommand):
                 )
         else:
             self.stdout.write(
-                ('[DEMO]' if not active else '') + f'Not enough items: {len(family_indexes) * count} '
+                ('[DEMO]' if not active else '') + f' Not enough items: {len(family_indexes) * count} '
             )

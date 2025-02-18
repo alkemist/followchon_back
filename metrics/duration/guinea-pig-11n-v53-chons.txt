@@ -1,8 +1,7 @@
-Train count : 0
-Val count : 0
-Test count : 0
+Train count : 
+Val count : 
+Test count : 
 
-[Train] Start at : 2025-02-17 23:09:48
 [Train] Start at : 2025-02-17 23:22:38
 [Train] End at : 2025-02-17 23:31:10
 [Train] 0 hours and 8 minutes

@@ -24,16 +24,11 @@ runs_dir = 'runs'
 models_dir = 'models'
 metrics_dir = 'metrics'
 
-train_previous_path = os.getenv('TRAIN_MODEL_PATH')
-train_dataset_path = os.getenv('TRAIN_DATASET_PATH')
-train_dataset_base_name = os.getenv('TRAIN_DATASET_NAME')
+train_previous_path = os.getenv('TRAIN_CLASSIFY_MODEL_PATH')
+train_dataset_path = os.getenv('TRAIN_CLASSIFY_DATASET_PATH')
+train_dataset_base_name = os.getenv('TRAIN_CLASSIFY_DATASET_NAME')
 train_device = os.getenv('TRAIN_DEVICE')
 train_resume = os.getenv('TRAIN_RESUME')
-train_all = os.getenv('TRAIN_ALL')
-train_chons = os.getenv('TRAIN_CHONS')
-hailo_sdk_version = os.getenv('TRAIN_SDK_VERSION')
-model_base_version = os.getenv('TRAIN_MODEL_BASE_VERSION')
-model_nms_version = os.getenv('TRAIN_MODEL_NMS_VERSION')
 train_calib_dir = os.getenv('TRAIN_CALIB_DIR')
 
 is_cached = True

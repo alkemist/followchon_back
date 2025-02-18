@@ -164,9 +164,10 @@ class Command(BaseCommand):
                 )
 
             print("[All] Video count : ", video_count, '/', df_video.shape[0])
-            print("[All] Vision count : ", vision_count, changed_count + unchanged_count, '/', df_vision.shape[0])
+            print("[All] Vision count : ", vision_count, '/', df_vision.shape[0])
             print("[All] Changed count : ", changed_count, '/', df_changed.shape[0])
             print("[All] Unchanged count : ", unchanged_count, '/', df_unchanged.shape[0])
+            print("[All] Vision (Un)changed count : ", changed_count + unchanged_count, '/', df_vision.shape[0])
             print("[All] Total : ", video_count + changed_count + unchanged_count, '/', df.shape[0])
 
             video_val_count = math.ceil(video_count * val_percent)
@@ -261,7 +262,9 @@ class Command(BaseCommand):
                             '[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished')
                 )
         else:
+            print("[All] Video count : ", video_count, '/', df_video.shape[0])
+            print("[All] Vision count : ", vision_count, '/', df_vision.shape[0])
             self.stdout.write((
                                   '[DEMO]' if not active else '')
-                              + f'Not enough items: [vision] {vision_count} / [video] {video_count} '
+                              + f' Not enough items '
                               )
