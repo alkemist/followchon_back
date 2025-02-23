@@ -43,7 +43,7 @@ def train(train_dataset_name):
         task='classify',
         data=train_dataset_path,
         epochs=50,
-        imgsz=480,
+        imgsz=416,
         name=train_dataset_name,
         verbose=True,
         save=True,
@@ -183,7 +183,7 @@ if __name__ == '__main__':
             file.write("Test noisette count : " + str(
                 len(list(Path(f"{train_dataset_path}/test/noisette").glob("*.*")))) + "\n")
             file.write("Test stitch count : " + str(
-                len(list(Path(f"{train_dataset_path}/test/stitch").glob("*.*")))) + "\n\n")
+                len(list(Path(f"{train_dataset_path}/test/stitch").glob("*.*")))) + "\n")
             file.write("Test sundae count : " + str(
                 len(list(Path(f"{train_dataset_path}/test/sundae").glob("*.*")))) + "\n\n")
 
