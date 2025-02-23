@@ -3,3 +3,9 @@ Val count : 193
 Test count : 97
 
 [Train] Start at : 2025-02-23 13:06:23
+[Train] Start at : 2025-02-23 15:43:11
+[Train] End at : 2025-02-23 16:20:41
+[Train] 0 hours and 37 minutes
+[Compile] Start at : 2025-02-23 16:22:37
+[Compile] End at : 2025-02-23 17:33:41
+[Compile] 1 hours and 11 minutes
