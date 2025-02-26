@@ -92,11 +92,13 @@ class Command(BaseCommand):
         chunk_number = int(os.getenv('DATASET_CHUNK_FIRST')) if os.getenv('DATASET_CHUNK_FIRST') else None
         dataset_base_result_dir = os.getenv('DATASET_RESULT_DIR')
         dataset_min_count = float(os.getenv('DATASET_MIN_COUNT'))
+        changed_percent = float(os.getenv('DATASET_CHANGED_PERCENT'))
         active = os.getenv('DATASET_ACTIVE', False)
 
         val_percent = float(os.getenv('DATASET_VAL_PERCENT'))
         test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
         train_percent = 1 - test_percent - val_percent
+        unchanged_percent = 1 - changed_percent
 
         if not chunk_number or chunk_number == 0 or isnan(chunk_number):
             parameters = Parameter.objects.all()
@@ -105,8 +107,8 @@ class Command(BaseCommand):
             )
             chunk_number = int(params_dict['vision_model_version_classify'].value) + 1
 
-        family_indexes = [1, 2, 6]
-        family_classes = ['noisette', 'stitch', 'sundae']
+        family_indexes = [1, 6]
+        family_classes = ['noisette', 'sundae']
         capture_statuses = ['archived', 'verified']
         capture_version = None
         family_type_db = 'train_chons'
@@ -115,6 +117,7 @@ class Command(BaseCommand):
             'SELECT c.id'
             + f' ,c.status'
             + f' ,c.photo_file'
+            + f' ,c.changed'
             + f' ,f."index"'
             + f' ,d.center_x'
             + f' ,d.center_y'
@@ -133,66 +136,113 @@ class Command(BaseCommand):
 
         df['image_path'] = './static/captures/' + df['status'] + '/images/' + df['photo_file']
 
+        df_changed = df[df['changed']]
+        df_unchanged = df[~df['changed']]
+
         df = df.sample(frac=1, random_state=42)
 
-        counts = []
+        counts_changed = []
+        counts_unchanged = []
 
         for index in family_indexes:
-            counts.append(df[df['index'] == index].shape[0])
+            counts_changed.append(df_changed[df_changed['index'] == index].shape[0])
+            counts_unchanged.append(df_unchanged[df_unchanged['index'] == index].shape[0])
 
-        count = min(counts)
-        print("Min count : ", count, '/', counts)
+        changed_min_count = min(counts_changed)
+        unchanged_min_count = min(counts_unchanged)
 
-        if len(family_indexes) * count > dataset_min_count:
-            val_count = math.ceil(count * val_percent)
-            test_count = math.ceil(count * test_percent)
-            train_count = math.ceil(count * train_percent)
+        print("Min count changed : ", changed_min_count, '/', counts_changed)
+        print("Min count unchanged : ", unchanged_min_count, '/', counts_unchanged)
 
-            for i, family_index in enumerate(family_indexes):
-                df_family = df[df['index'] == family_index] \
-                    .sample(n=count, random_state=42) \
-                    .reset_index(drop=True)
+        changed_count = changed_min_count
+        unchanged_count = math.ceil(unchanged_percent * changed_min_count / changed_percent)
 
-                family_cls = family_classes[i]
+        if unchanged_count > unchanged_min_count:
+            unchanged_count = unchanged_min_count
+            changed_count = math.ceil(changed_percent * unchanged_count / unchanged_percent),
 
-                dataset_dir = f'{dataset_base_result_dir}{chunk_number}-chons'
+        print("Count changed/unchanged : ", changed_count, '/', unchanged_count)
 
-                print(f"[{family_cls}] {df_family.shape[0]} items in {dataset_dir}")
+        val_changed_count = math.ceil(changed_count * val_percent)
+        val_unchanged_count = math.ceil(unchanged_count * val_percent)
+        test_changed_count = math.ceil(changed_count * test_percent)
+        test_unchanged_count = math.ceil(unchanged_count * test_percent)
+        train_changed_count = math.ceil(changed_count * train_percent)
+        train_unchanged_count = math.ceil(unchanged_count * train_percent)
 
-                if active:
-                    if not os.path.exists(dataset_dir):
-                        os.makedirs(dataset_dir)
+        for i, family_index in enumerate(family_indexes):
+            df_family = df[df['index'] == family_index] \
+                .sample(frac=1, random_state=42) \
+                .reset_index(drop=True)
 
-                    generate_dir(
-                        df_family.iloc[:val_count],
-                        dataset_dir,
-                        'val',
-                        family_cls
-                    )
+            df_family_changed = df_family[df_family['changed']]
+            df_family_unchanged = df_family[~df_family['changed']]
 
-                    generate_dir(
-                        df_family.iloc[val_count:val_count + test_count],
-                        dataset_dir,
-                        'test',
-                        family_cls
-                    )
+            family_cls = family_classes[i]
 
-                    generate_dir(
-                        df_family.iloc[val_count + test_count:val_count + test_count + train_count],
-                        dataset_dir,
-                        'train',
-                        family_cls
-                    )
+            dataset_dir = f'{dataset_base_result_dir}{chunk_number}-chons'
 
-                    Capture.objects.filter(id__in=df_family['id'].to_list()) \
-                        .update(**{family_type_db: True})
+            df_val = pd.concat([
+                df_family_changed.iloc[:val_changed_count],
+                df_family_unchanged.iloc[:val_unchanged_count],
+            ]).reset_index(drop=True)
+            df_val['type'] = 'val'
+
+            df_test = pd.concat([
+                df_family_changed.iloc[val_changed_count:val_changed_count + test_changed_count],
+                df_family_unchanged.iloc[val_unchanged_count:val_unchanged_count + test_unchanged_count],
+            ]).reset_index(drop=True)
+            df_test['type'] = 'test'
+
+            df_train = pd.concat([
+                df_family_changed.iloc[
+                val_changed_count + test_changed_count:val_changed_count + test_changed_count + train_changed_count],
+                df_family_unchanged.iloc[
+                val_unchanged_count + test_unchanged_count:val_unchanged_count + test_unchanged_count + train_unchanged_count],
+            ]).reset_index(drop=True)
+            df_train['type'] = 'train'
+
+            df_all = pd.concat([df_val, df_test, df_train])
+
+            print(f"\n[{family_cls}] {df_all.shape[0]} items in {dataset_dir}")
+
+            print("\nRépartition des TYPES dans:\n", df_all['type'].value_counts(normalize=True))
+            print("\nRépartition des TYPES dans:\n", df_all['type'].value_counts(normalize=False))
+
+            print("\n[VAL] Répartition des CHANGED dans:\n", df_val['changed'].value_counts(normalize=True))
+            print("\n[TEST] Répartition des CHANGED dans:\n", df_test['changed'].value_counts(normalize=True))
+            print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=True))
 
             if active:
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        ('[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished')
+                if not os.path.exists(dataset_dir):
+                    os.makedirs(dataset_dir)
+
+                generate_dir(
+                    df_val,
+                    dataset_dir,
+                    'val',
+                    family_cls
                 )
-        else:
+
+                generate_dir(
+                    df_test,
+                    dataset_dir,
+                    'test',
+                    family_cls
+                )
+
+                generate_dir(
+                    df_train,
+                    dataset_dir,
+                    'train',
+                    family_cls
+                )
+
+                Capture.objects.filter(id__in=df_all['id'].to_list()) \
+                    .update(**{family_type_db: True})
+
+        if active:
             self.stdout.write(
-                ('[DEMO]' if not active else '') + f' Not enough items: {len(family_indexes) * count} '
+                self.style.SUCCESS(
+                    ('[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished')
             )

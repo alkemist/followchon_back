@@ -155,7 +155,7 @@ class Command(BaseCommand):
                 vision_count - changed_count
             )
 
-            if video_count + vision_count > df.shape[0]:
+            if video_count + changed_count + unchanged_count > df.shape[0]:
                 print("/!\ Too many changed items")
                 unchanged_count = min(df_unchanged.shape[0], math.ceil(vision_count * unchanged_percent))
                 changed_count = min(
@@ -252,8 +252,7 @@ class Command(BaseCommand):
                 copy_to(df_test, f'{dataset_dir}/test')
                 copy_to(df_train, f'{dataset_dir}/train')
 
-                capture_ids = df_vision['id'].to_list() + df_video['id'].to_list()
-                Capture.objects.filter(id__in=capture_ids) \
+                Capture.objects.filter(id__in=df_all['id'].to_list()) \
                     .update(**{family_type_db: True})
 
                 self.stdout.write(
