@@ -1,0 +1,13 @@
+Train noisette count : 429
+Train stitch count : 0
+Train sundae count : 428
+Val noisette count : 123
+Val stitch count : 0
+Val sundae count : 123
+Test noisette count : 62
+Test stitch count : 0
+Test sundae count : 62
+
+[Train] Start at : 2025-02-27 19:07:50
+[Train] End at : 2025-02-27 19:19:50
+[Train] 0 hours and 12 minutes
