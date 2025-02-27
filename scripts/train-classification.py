@@ -170,20 +170,14 @@ if __name__ == '__main__':
         with open(file_stats, "w") as file:
             file.write("Train noisette count : " + str(
                 len(list(Path(f"{train_dataset_path}/train/noisette").glob("*.*")))) + "\n")
-            file.write("Train stitch count : " + str(
-                len(list(Path(f"{train_dataset_path}/train/stitch").glob("*.*")))) + "\n")
             file.write("Train sundae count : " + str(
                 len(list(Path(f"{train_dataset_path}/train/sundae").glob("*.*")))) + "\n")
             file.write(
                 "Val noisette count : " + str(len(list(Path(f"{train_dataset_path}/val/noisette").glob("*.*")))) + "\n")
             file.write(
-                "Val stitch count : " + str(len(list(Path(f"{train_dataset_path}/val/stitch").glob("*.*")))) + "\n")
-            file.write(
                 "Val sundae count : " + str(len(list(Path(f"{train_dataset_path}/val/sundae").glob("*.*")))) + "\n")
             file.write("Test noisette count : " + str(
                 len(list(Path(f"{train_dataset_path}/test/noisette").glob("*.*")))) + "\n")
-            file.write("Test stitch count : " + str(
-                len(list(Path(f"{train_dataset_path}/test/stitch").glob("*.*")))) + "\n")
             file.write("Test sundae count : " + str(
                 len(list(Path(f"{train_dataset_path}/test/sundae").glob("*.*")))) + "\n\n")
 
@@ -214,13 +208,10 @@ if __name__ == '__main__':
 
     if is_cached:
         try:
-            purge(f'{train_dataset_path}/train/stitch', '*.npy')
             purge(f'{train_dataset_path}/train/noisette', '*.npy')
             purge(f'{train_dataset_path}/train/sundae', '*.npy')
-            purge(f'{train_dataset_path}/val/stitch', '*.npy')
             purge(f'{train_dataset_path}/val/noisette', '*.npy')
             purge(f'{train_dataset_path}/val/sundae', '*.npy')
-            purge(f'{train_dataset_path}/test/stitch', '*.npy')
             purge(f'{train_dataset_path}/test/noisette', '*.npy')
             purge(f'{train_dataset_path}/test/sundae', '*.npy')
         except Exception as ex:
