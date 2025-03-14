@@ -107,7 +107,7 @@ class Command(BaseCommand):
             )
             chunk_number = int(params_dict['vision_model_version_classify'].value) + 1
 
-        family_indexes = [1, 6]
+        family_indexes = [1, 5]
         family_classes = ['noisette', 'sundae']
         capture_statuses = ['archived', 'verified']
         capture_version = None
