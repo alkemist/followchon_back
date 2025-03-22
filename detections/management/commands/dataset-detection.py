@@ -141,7 +141,10 @@ class Command(BaseCommand):
         df_unchanged = df_vision[~df_vision['changed']]
 
         video_count = df_video.shape[0]
-        vision_count = math.ceil(vision_percent * video_count / video_percent)
+        vision_count = df_vision.shape[0]
+
+        if video_percent > 0:
+            vision_count = math.ceil(vision_percent * video_count / video_percent)
 
         if video_count + vision_count > df.shape[0]:
             print("/!\ Too many video items")
