@@ -8,9 +8,9 @@ from rest_framework.response import Response
 
 from api.models import UpdateViewSet, CustomLimitOffsetPagination
 from detections.management.commands.vision_models.source import Source
-from detections.models import Capture
+from detections.models import Capture, Detection
 from detections.serializers.serializers import CaptureHydratedSerializer, CaptureDateSerializer, \
-    CaptureStatisticsDaySerializer
+    CaptureStatisticsDaySerializer, DetectionSerializer
 
 
 class CaptureViewSet(UpdateViewSet):
@@ -146,3 +146,15 @@ class CaptureViewSet(UpdateViewSet):
             capture.save()
 
         return Response(CaptureHydratedSerializer(capture).data)
+
+
+class DetectionViewSet(UpdateViewSet):
+    queryset = Detection.objects.all()
+    serializer_class = DetectionSerializer
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    pagination_class = CustomLimitOffsetPagination
+    http_method_names = []
+
+    def get_queryset(self):
+        queryset = Detection.objects.all()
+        return queryset

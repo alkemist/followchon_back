@@ -32,3 +32,12 @@ class DetectionFamilySerializer(serializers.ModelSerializer):
         model = Detection
         fields = ['id', 'zone', 'score', 'zone_id', 'trigger', 'date', 'status', 'photo_path',
                   'capture_id', ]
+
+
+class DetectionByDayFamilySerializer(serializers.ModelSerializer):
+    date_only = serializers.DateField()
+    count = serializers.IntegerField()
+
+    class Meta:
+        model = Detection
+        fields = ['date_only', 'count']

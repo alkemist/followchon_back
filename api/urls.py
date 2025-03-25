@@ -11,6 +11,7 @@ router.register(r'families', views_configuration.FamilyViewSet)
 router.register(r'zones', views_configuration.ZoneViewSet)
 router.register(r'parameters', views_configuration.ParameterViewSet)
 router.register(r'captures', views_detections.CaptureViewSet)
+router.register(r'detections', views_detections.DetectionViewSet)
 
 app_name = "api"
 urlpatterns = [

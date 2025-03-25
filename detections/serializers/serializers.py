@@ -109,5 +109,5 @@ class CaptureStatisticsDaySerializer(serializers.ModelSerializer):
     date_only = serializers.DateField(format="%Y-%m-%d")
 
     class Meta:
-        model = Capture
+        model = Detection
         fields = ['date_only', 'version', 'capture_count', 'capture_changed_count', 'capture_changed_percent']
