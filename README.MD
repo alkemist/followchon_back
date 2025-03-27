@@ -56,11 +56,15 @@ Install PyTorch : `pip install torch torchvision torchaudio --index-url https://
 `sudo dpkg --purge hailo-tappas-core`  
 `sudo dpkg --purge hailofw`  
 
-### Build
+### Build depuis les sources git
 
 Hailort : `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config release`  
+
 Tappas : `./install.sh`  
-Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`  
+
+Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`
+https://hailo.ai/developer-zone/documentation/hailort-v4-20-0/?sp_referrer=install/install.html#installing-pcie-driver-only  
+
 Python : `venv/bin/pip install ~/Downloads/hailort-4.19.0-cp311-cp311-linux_aarch64.whl`  
 
 ### Scripts
