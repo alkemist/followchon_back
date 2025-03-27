@@ -69,7 +69,8 @@ Hailort : `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build -
 Tappas : `./install.sh --skip-hailort`  
 
 Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`  
-https://hailo.ai/developer-zone/documentation/hailort-v4-20-0/?sp_referrer=install/install.html#installing-pcie-driver-only  
+Ou depuis les sources :  
+https://hailo.ai/developer-zone/documentation/hailort-v4-20-0/?sp_referrer=drivers%2Fpcie_linux.html  
 
 Python : `venv/bin/pip install ~/Downloads/hailort-4.19.0-cp311-cp311-linux_aarch64.whl`  
 
