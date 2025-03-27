@@ -1,0 +1,10 @@
+Train noisette count : 575
+Train sundae count : 568
+Val noisette count : 166
+Val sundae count : 163
+Test noisette count : 85
+Test sundae count : 82
+
+[Train] Start at : 2025-03-27 10:00:44
+[Train] End at : 2025-03-27 10:18:09
+[Train] 0 hours and 17 minutes
