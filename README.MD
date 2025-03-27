@@ -16,7 +16,7 @@ Install package version : `pip install --force-reinstall -v "onnx==1.14.0"`
 
 Generate base site : `django-admin startproject mysite`  
 Generate sub site : `python manage.py startapp detections`  
-Start site : `python manage.py runserver`
+Start site : `python manage.py runserver`  
 
 Update schema : `.venv/bin/python manage.py makemigrations && .venv/bin/python manage.py migrate`
 
@@ -52,32 +52,32 @@ Install PyTorch : `pip install torch torchvision torchaudio --index-url https://
 
 `sudo dpkg --purge hailort-pcie-driver`  
 `sudo dpkg --purge hailo-all`  
-`sudo dpkg --purge hailort`
-`sudo dpkg --purge hailo-tappas-core`
-`sudo dpkg --purge hailofw`
+`sudo dpkg --purge hailort`  
+`sudo dpkg --purge hailo-tappas-core`  
+`sudo dpkg --purge hailofw`  
 
 ### Build
 
-Hailort : `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config release`
-Tappas : `./install.sh`
-Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`
-Python : `venv/bin/pip install ~/Downloads/hailort-4.19.0-cp311-cp311-linux_aarch64.whl`
+Hailort : `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config release`  
+Tappas : `./install.sh`  
+Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`  
+Python : `venv/bin/pip install ~/Downloads/hailort-4.19.0-cp311-cp311-linux_aarch64.whl`  
 
 ### Scripts
 
-Train : `C:\Users\Salon\.virtualenvs\followchon_py11\Scripts\python.exe scripts\train.py`
+Train : `C:\Users\Salon\.virtualenvs\followchon_py11\Scripts\python.exe scripts\train.py`  
 
 ### Tools
 
-Show usage : `hailortcli monitor`
+Show usage : `hailortcli monitor`  
 Visualize model : https://netron.app/
 
 ### Notes
 
 #### Jupyter
 
-`nano /home/jaden/.jupyter/jupyter_notebook_config.py`
-`venv/bin/python manage.py shell_plus --lab`
+`nano /home/jaden/.jupyter/jupyter_notebook_config.py`  
+`venv/bin/python manage.py shell_plus --lab`  
 
 # Links
 
