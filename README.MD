@@ -48,6 +48,10 @@ Install PyTorch : `pip install torch torchvision torchaudio --index-url https://
 
 ## From sources
 
+## Check version
+
+`modinfo hailo_pci`  
+
 ### Uninstall
 
 `sudo dpkg --purge hailort-pcie-driver`  
@@ -56,11 +60,13 @@ Install PyTorch : `pip install torch torchvision torchaudio --index-url https://
 `sudo dpkg --purge hailo-tappas-core`  
 `sudo dpkg --purge hailofw`  
 
+`sudo modprobe -r hailo_pci`  
+
 ### Build depuis les sources git
 
 Hailort : `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config release`  
 
-Tappas : `./install.sh`  
+Tappas : `./install.sh --skip-hailort`  
 
 Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`  
 https://hailo.ai/developer-zone/documentation/hailort-v4-20-0/?sp_referrer=install/install.html#installing-pcie-driver-only  
