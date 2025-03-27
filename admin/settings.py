@@ -98,7 +98,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'sqlite3.db',
         'OPTIONS': {
-            "timeout": 20,
+            "timeout": 60,
+            "transaction_mode": "IMMEDIATE",
         },
     },
 }
