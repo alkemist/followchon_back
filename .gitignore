@@ -11,6 +11,7 @@ sqlite3_backup.db
 
 static/CACHE
 static/captures
+!static/captures/data.yaml
 static/admin
 static/django_extensions
 static/rest_framework

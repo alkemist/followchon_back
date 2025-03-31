@@ -96,6 +96,7 @@ class Command(BaseCommand):
         video_percent = float(os.getenv('DATASET_VIDEO_PERCENT'))
         changed_percent = float(os.getenv('DATASET_CHANGED_PERCENT'))
         dataset_min_count = float(os.getenv('DATASET_MIN_COUNT'))
+        dataset_first = os.getenv('DATASET_FIRST', False)
         train_percent = 1 - test_percent - val_percent
 
         vision_percent = 1 - video_percent
@@ -121,8 +122,8 @@ class Command(BaseCommand):
             + f' ,c.date'
             + f' ,c.changed'
             + f' FROM detections_capture c'
-            + f' WHERE {family_type_db} = False'
-            + f' AND c.status IN ("' + '","'.join(capture_statuses) + '")'
+            + f' WHERE c.status IN ("' + '","'.join(capture_statuses) + '")'
+            + (f' AND {family_type_db} = False' if not dataset_first else '')
             + (f' AND c.version_detect = {capture_version}' if capture_version else '')
         )
 
