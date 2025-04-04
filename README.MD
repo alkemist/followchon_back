@@ -16,7 +16,7 @@ Install package version : `pip install --force-reinstall -v "onnx==1.14.0"`
 
 Generate base site : `django-admin startproject mysite`  
 Generate sub site : `python manage.py startapp detections`  
-Start site : `python manage.py runserver`  
+Start site : `python manage.py runserver`
 
 Update schema : `.venv/bin/python manage.py makemigrations && .venv/bin/python manage.py migrate`
 
@@ -50,7 +50,7 @@ Install PyTorch : `pip install torch torchvision torchaudio --index-url https://
 
 ## Check version
 
-`modinfo hailo_pci`  
+`modinfo hailo_pci`
 
 ### Uninstall
 
@@ -58,29 +58,30 @@ Install PyTorch : `pip install torch torchvision torchaudio --index-url https://
 `sudo dpkg --purge hailo-all`  
 `sudo dpkg --purge hailort`  
 `sudo dpkg --purge hailo-tappas-core`  
-`sudo dpkg --purge hailofw`  
+`sudo dpkg --purge hailofw`
 
-`sudo modprobe -r hailo_pci`  
+`sudo modprobe -r hailo_pci`
 
 ### Build depuis les sources git
 
-Hailort : `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config release`  
+Hailort : `cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config release`
 
-Tappas : `./install.sh --skip-hailort`  
+Tappas : `./install.sh --skip-hailort`
 
 Driver : `dpkg -i hailort-pcie-driver_4.19.0_all.deb`  
 Ou depuis les sources :  
-https://hailo.ai/developer-zone/documentation/hailort-v4-20-0/?sp_referrer=drivers%2Fpcie_linux.html  
+https://hailo.ai/developer-zone/documentation/hailort-v4-20-0/?sp_referrer=drivers%2Fpcie_linux.html
 
-Python : `venv/bin/pip install ~/Downloads/hailort-4.19.0-cp311-cp311-linux_aarch64.whl`  
+Python : `venv/bin/pip install ~/Downloads/hailort-4.19.0-cp311-cp311-linux_aarch64.whl`
 
 ### Scripts
 
-Train : `C:\Users\Salon\.virtualenvs\followchon_py11\Scripts\python.exe scripts\train.py`  
+Train : `C:\Users\Salon\.virtualenvs\followchon_py11\Scripts\python.exe scripts\train.py`
 
 ### Tools
 
 Show usage : `hailortcli monitor`  
+Check HEF : `hailortcli parse-hef`  
 Visualize model : https://netron.app/
 
 ### Notes
@@ -88,7 +89,7 @@ Visualize model : https://netron.app/
 #### Jupyter
 
 `nano /home/jaden/.jupyter/jupyter_notebook_config.py`  
-`venv/bin/python manage.py shell_plus --lab`  
+`venv/bin/python manage.py shell_plus --lab`
 
 # Links
 
