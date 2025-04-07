@@ -1,0 +1,10 @@
+Train count : 881
+Val count : 252
+Test count : 127
+
+[Train] Start at : 2025-04-07 02:06:33
+[Train] End at : 2025-04-07 02:56:43
+[Train] 0 hours and 50 minutes
+[Compile] Start at : 2025-04-07 02:58:39
+[Compile] End at : 2025-04-07 04:21:19
+[Compile] 1 hours and 22 minutes
