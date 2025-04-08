@@ -13,7 +13,8 @@ from configuration.serializers.family_detections import FamilyDetectionsSerializ
 from configuration.serializers.serializers import ZoneSerializer, ParameterSerializer
 from detections.management.commands.vision_models.source import Source
 from detections.models import Detection
-from detections.serializers.detection_family import DetectionByDayFamilySerializer
+from detections.serializers.detection_family import DetectionCountByDayFamilySerializer, \
+    DetectionDistanceByDayFamilySerializer
 
 
 class ParameterViewSet(ReadOnlyViewSet):
@@ -71,7 +72,7 @@ class FamilyViewSet(ReadOnlyViewSet):
     @action(detail=True)
     def detections_by_day(self, request, pk=None, *args, **kwargs):
         family = self.get_object()
-        detections_by_day = (
+        detections_count_by_day = (
             family.detections.all()
             .annotate(date_only=TruncDate('capture__date'))
             .values('date_only').distinct()
@@ -79,7 +80,74 @@ class FamilyViewSet(ReadOnlyViewSet):
             .order_by('date_only')
         )
 
-        return Response(DetectionByDayFamilySerializer(detections_by_day, many=True, read_only=True).data)
+        return Response(DetectionCountByDayFamilySerializer(detections_count_by_day, many=True, read_only=True).data)
+
+    @action(detail=True)
+    def distances_by_day(self, request, pk=None, *args, **kwargs):
+        family = self.get_object()
+
+        # detections_distance_by_day = (
+        #    family.detections.all()
+        #    .order_by('capture__date')
+        #    .annotate(
+        #        center_x_prev=Window(
+        #            expression=Lag('center_x'), order_by='capture__date', output_field=FloatField()
+        #        ),
+        #        center_y_prev=Window(
+        #            expression=Lag('center_y'), order_by='capture__date', output_field=FloatField()
+        #        ),
+        #    )
+        #    .annotate(
+        #        delta_x=Abs(F('center_x') - F('center_x_prev')),
+        #        delta_y=Abs(F('center_y') - F('center_y_prev')),
+        #    )
+        #    .annotate(
+        #        distance=Sqrt(F('delta_x') ** 2 + F('delta_y') ** 2, output_field=FloatField())
+        #    )
+        #    # .annotate(
+        #    #    date_only=TruncDate('capture__date'),
+        #    # )
+        #    .values('capture__date').distinct()
+        #    .annotate(total=Sum('distance'))
+        #    # .order_by('date_only')
+        # )
+
+        detections_distance_by_day = Detection.objects.raw(f'''
+            SELECT 
+                date_only AS id, 
+                SUM(distance) AS "total"
+                FROM (
+                    SELECT 
+                        date_only,
+                        SQRT(POW(delta_x, 2) + POW(delta_y, 2)) AS "distance"
+                      FROM (
+                               SELECT 
+                                    date_only,
+                                    ABS(center_x - center_x_prev) AS delta_x,
+                                    ABS(center_y - center_y_prev) AS delta_y
+                                 FROM (
+                                      SELECT 
+                                             date(detections_capture."date") AS "date_only",
+                                             detections_detection."center_x",
+                                             detections_detection."center_y",
+                                             LAG(detections_detection."center_x", 1) OVER (ORDER BY detections_capture."date") AS center_x_prev,
+                                             LAG(detections_detection."center_y", 1) OVER (ORDER BY detections_capture."date") AS center_y_prev
+                                        FROM detections_detection
+                                             INNER JOIN detections_capture 
+                                             ON (detections_detection."capture_id" = detections_capture."id") 
+                                        WHERE detections_capture."source" = "{Source.VISION}"
+                                            AND "detections_capture"."date" >= "2025-02-17 00:00:00" 
+                                            AND "detections_detection"."family_id" = {family.id}
+                                  )
+                                  AS prev
+                           )
+                           AS delta
+                ) AS distance
+                GROUP BY date_only
+        ''')
+
+        return Response(
+            DetectionDistanceByDayFamilySerializer(detections_distance_by_day, many=True, read_only=True).data)
 
 
 class ZoneViewSet(UpdateViewSet):

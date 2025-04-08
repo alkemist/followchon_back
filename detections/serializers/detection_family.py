@@ -34,10 +34,19 @@ class DetectionFamilySerializer(serializers.ModelSerializer):
                   'capture_id', ]
 
 
-class DetectionByDayFamilySerializer(serializers.ModelSerializer):
+class DetectionCountByDayFamilySerializer(serializers.ModelSerializer):
     date_only = serializers.DateField()
     count = serializers.IntegerField()
 
     class Meta:
         model = Detection
         fields = ['date_only', 'count']
+
+
+class DetectionDistanceByDayFamilySerializer(serializers.ModelSerializer):
+    id = serializers.DateField()
+    total = serializers.FloatField()
+
+    class Meta:
+        model = Detection
+        fields = ['id', 'total']
