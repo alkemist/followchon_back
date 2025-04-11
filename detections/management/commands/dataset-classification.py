@@ -52,7 +52,7 @@ def crop_and_save(image_path, output_path, center_x_norm, center_y_norm, width_n
     # Découper l'image
     crop_box = (left, top, right, bottom)
 
-    if right - top > 10 and bottom - top > 10:
+    if right - left > 10 and bottom - top > 10:
         cropped_image = image.crop(crop_box)
 
         # Sauvegarder l'image découpée
@@ -93,7 +93,10 @@ class Command(BaseCommand):
         dataset_base_result_dir = os.getenv('DATASET_RESULT_DIR')
         dataset_min_count = float(os.getenv('DATASET_MIN_COUNT'))
         changed_percent = float(os.getenv('DATASET_CHANGED_PERCENT'))
-        active = os.getenv('DATASET_ACTIVE', False)
+        active = os.getenv('DATASET_CLASSIFICATION_ACTIVE', False)
+        dataset_first = os.getenv('DATASET_CLASSIFICATION_FIRST', False)
+        min_width = float(os.getenv('DETECTION_MIN_WIDTH_NORM', 0.02))
+        min_height = float(os.getenv('DETECTION_MIN_HEIGHT_NORM', 0.04))
 
         val_percent = float(os.getenv('DATASET_VAL_PERCENT'))
         test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
@@ -127,7 +130,8 @@ class Command(BaseCommand):
             + f' LEFT JOIN detections_capture c ON d.capture_id = c.id'
             + f' LEFT JOIN configuration_family f ON d.family_id = f.id'
             + f' WHERE c.status IN ("' + '","'.join(capture_statuses) + '")'
-            + f' AND {family_type_db} = False'
+            + f' AND width >= {min_width} AND height >= {min_height}'
+            + (f' AND {family_type_db} = False' if not dataset_first else '')
             + f' AND ('
             + f' ' + ' OR '.join([f"f.'index' = {i}" for i in family_indexes])
             + f' )'
@@ -237,6 +241,9 @@ class Command(BaseCommand):
                     'train',
                     family_cls
                 )
+
+                if dataset_first:
+                    Capture.objects.update(**{family_type_db: False})
 
                 Capture.objects.filter(id__in=df_all['id'].to_list()) \
                     .update(**{family_type_db: True})

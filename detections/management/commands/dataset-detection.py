@@ -27,7 +27,29 @@ def extract(items, count):
     return extracts
 
 
-def copy_to(df, dist_dir):
+def filter_yolo_file(input_file_path, output_file_path, min_width, min_height):
+    filtered_lines = []
+
+    with open(input_file_path, 'r') as input_file:
+        for line in input_file:
+            elements = line.split()
+            if len(elements) == 5:
+                try:
+                    cls = float(elements[0])
+                    width = float(elements[3])
+                    height = float(elements[4])
+                    if cls == 0 and width >= min_width and height >= min_height:
+                        filtered_lines.append(line)
+                except ValueError:
+                    print(f"Invalid line values: {line}")
+            else:
+                print(f"Invalid line format: {line}")
+
+    with open(output_file_path, 'w') as output_file:
+        output_file.writelines(filtered_lines)
+
+
+def copy_to(df, dist_dir, min_width, min_height):
     if not os.path.exists(dist_dir):
         os.makedirs(dist_dir)
     if not os.path.exists(f"{dist_dir}/images"):
@@ -40,9 +62,12 @@ def copy_to(df, dist_dir):
             str(df.loc[index, 'image_path']),
             f"{dist_dir}/images/" + df.loc[index, 'filename'] + "." + df.loc[index, 'ext']
         )
-        shutil.copy(
+
+        filter_yolo_file(
             str(df.loc[index, 'label_path']),
-            f"{dist_dir}/labels/" + df.loc[index, 'filename'] + f".txt"
+            f"{dist_dir}/labels/" + df.loc[index, 'filename'] + f".txt",
+            min_width,
+            min_height,
         )
 
 
@@ -89,14 +114,16 @@ class Command(BaseCommand):
 
         chunk_number = int(os.getenv('DATASET_CHUNK_FIRST')) if os.getenv('DATASET_CHUNK_FIRST') else None
         dataset_base_result_dir = os.getenv('DATASET_RESULT_DIR')
-        active = os.getenv('DATASET_ACTIVE', False)
+        active = os.getenv('DATASET_DETECTION_ACTIVE', False)
 
+        min_width = float(os.getenv('DETECTION_MIN_WIDTH_NORM', 0.02))
+        min_height = float(os.getenv('DETECTION_MIN_HEIGHT_NORM', 0.04))
         test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
         val_percent = float(os.getenv('DATASET_VAL_PERCENT'))
         video_percent = float(os.getenv('DATASET_VIDEO_PERCENT'))
         changed_percent = float(os.getenv('DATASET_CHANGED_PERCENT'))
         dataset_min_count = float(os.getenv('DATASET_MIN_COUNT'))
-        dataset_first = os.getenv('DATASET_FIRST', False)
+        dataset_first = os.getenv('DATASET_DETECTION_FIRST', False)
         train_percent = 1 - test_percent - val_percent
 
         vision_percent = 1 - video_percent
@@ -252,9 +279,12 @@ class Command(BaseCommand):
                 shutil.copy("./static/captures/data.yaml",
                             f"{dataset_dir}/data.yaml")
 
-                copy_to(df_val, f'{dataset_dir}/val')
-                copy_to(df_test, f'{dataset_dir}/test')
-                copy_to(df_train, f'{dataset_dir}/train')
+                copy_to(df_val, f'{dataset_dir}/val', min_width, min_height)
+                copy_to(df_test, f'{dataset_dir}/test', min_width, min_height)
+                copy_to(df_train, f'{dataset_dir}/train', min_width, min_height)
+
+                if dataset_first:
+                    Capture.objects.update(**{family_type_db: False})
 
                 Capture.objects.filter(id__in=df_all['id'].to_list()) \
                     .update(**{family_type_db: True})

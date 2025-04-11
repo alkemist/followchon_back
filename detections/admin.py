@@ -16,7 +16,8 @@ class DetectionInline(admin.TabularInline):
 class CaptureAdmin(admin.ModelAdmin):
     fieldsets = [
         ('Identification',
-         {'fields': ['date', 'photo_file', 'image_tag', 'status'], 'classes': []}),
+         {'fields': ['date', 'photo_file', 'image_tag', 'status', 'version_detect', 'version_classify', 'changed',
+                     'front_url', ], 'classes': []}),
     ]
     list_display = ['id', 'date', 'status', 'changed', 'version_detect', 'version_classify', 'image_tag', 'front_url']
     list_display_links = ['date']
