@@ -21,6 +21,8 @@ hailo_sdk_version = os.getenv('TRAIN_SDK_VERSION')
 model_base_version = os.getenv('TRAIN_MODEL_BASE_VERSION')
 model_nms_version = os.getenv('TRAIN_MODEL_NMS_VERSION')
 train_calib_dir = os.getenv('TRAIN_CALIB_DIR')
+tune_iterations = int(os.getenv('TUNE_ITERATIONS', 5))
+tune_epochs = int(os.getenv('TUNE_EPOCHS', 5))
 
 os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:64"
 os.environ["TORCH_USE_CUDA_DSA"] = "1"
@@ -62,7 +64,6 @@ def train(
         data_path = os.path.abspath(train_dataset_data_path)
 
         train_params = {
-            'data': data_path,
             'task': task,
             'imgsz': imgsz,
             'verbose': True,
@@ -77,14 +78,31 @@ def train(
         model = YOLO(train_previous_path)
 
         if os.getenv('TRAIN_STEP_TUNE'):
+            data_tune_path = data_path
+
+            if task == 'detect':
+                data_tune_path = data_path.replace('.yaml', '-tune.yaml')
+
+                with open(data_path, 'r') as file_train_yaml:
+                    file_yaml_content = file_train_yaml.read()
+
+                    with open(data_tune_path, 'w') as file_tune_yaml:
+                        file_tune_yaml.write(
+                            file_yaml_content \
+                                .replace('test: test/images', '')
+                                .replace('val/images', 'test/images')  # val : 0.1 (test)
+                                .replace('train/images', 'val/images')  # train : 0.2 (val)
+                        )
+
             tune_train_name = f"{train_name}-tune"
 
             tune_start = log_start(train_name, 'Tune')
             model.tune(
                 **train_params,
+                data=data_tune_path,
                 name=tune_train_name,
-                epochs=10,
-                iterations=5,
+                epochs=tune_epochs,
+                iterations=tune_iterations,
                 use_ray=False,
                 val=False,
                 plots=False,
@@ -100,6 +118,7 @@ def train(
         train_start = log_start(train_name, 'Train')
         model.train(
             **train_params,
+            data=data_path,
             name=train_name,
             epochs=50,
             resume=train_resume,
