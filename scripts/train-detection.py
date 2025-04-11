@@ -44,8 +44,26 @@ end_node_names = (
 )
 
 
-def train(train_dataset_name, classes):
+def tune():
     model = YOLO(train_previous_path)
+
+    best_result = model.tune(
+        data={
+            'data': train_dataset_yaml_path,
+            'epochs': 10,  # Nombre d'époques pour chaque essai
+            'imgsz': 1024,  # Taille de l'image
+            'save': False,  # Ne pas enregistrer les modèles pendant le tuning
+            'val': False,  # Ne pas faire de validation pendant le tuning
+        },
+        use_ray=True
+    )
+
+    return best_result.best['model']
+
+
+def train(tuned_model, train_dataset_name, classes):
+    model = YOLO(tuned_model)
+
     model.train(
         task="detect",
         data=train_dataset_yaml_path,
@@ -78,14 +96,14 @@ def move_best(model_train_best, model_pt):
     print(f'Model yolo saved in {model_pt}')
 
 
-def train_full(train_classes, model_pt):
+def train_full(model_tuned, train_classes, model_pt):
     train_name = f"{train_dataset_base_name}"
     model_run_dir = f"{runs_dir}/{train_name}"
     model_train_best = f"{model_run_dir}/weights/best.pt"
 
     print(f"Start train at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    train(train_name, train_classes)
+    train(model_tuned, train_name, train_classes)
 
     print(f"End train at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
@@ -237,7 +255,6 @@ if __name__ == '__main__':
     print(f"ONNX version={__version__!r}, opset={onnx_opset_version()}, ir_version={IR_VERSION}")
     print(f"Start at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    train_start = datetime.now()
     train_end = None
     compile_start = None
     compile_end = None
@@ -253,8 +270,8 @@ if __name__ == '__main__':
     model_hef = f"{models_dir}/{train_name}.hef"
     file_stats = f"{metrics_dir}/duration/{train_name}.txt"
 
-    if not os.path.exists(file_stats):
-        with open(file_stats, "w") as file:
+    with open(file_stats, "w") as file:
+        if not os.path.exists(file_stats):
             file.write("Train count : " + str(
                 len(list(Path(f"{train_dataset_path}/train/labels").glob("*.txt")))) + "\n")
             file.write(
@@ -262,31 +279,37 @@ if __name__ == '__main__':
             file.write("Test count : " + str(
                 len(list(Path(f"{train_dataset_path}/test/labels").glob("*.txt")))) + "\n\n")
 
-    if not os.path.exists(model_pt):
-        with open(file_stats, "a") as file:
+        if not os.path.exists(model_pt):
+            tune_start = datetime.now()
+            file.write("[Tune] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+
+            training = True
+            model_tuned = tune()
+
+            file.write("[Tune] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
+            file.write(f"[Tune] {calc_time_h_m(tune_start)}\n")
+
+            train_start = datetime.now()
             file.write("[Train] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
 
-        training = True
-        train_full(train_classes, model_pt)
+            train_full(model_tuned, train_classes, model_pt)
 
-        with open(file_stats, "a") as file:
             file.write("[Train] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
             file.write(f"[Train] {calc_time_h_m(train_start)}\n")
 
-    export(model_pt, model_onnx)
+        export(model_pt, model_onnx)
 
-    if os.getenv('TRAIN_STEP_PARSE') and not os.path.exists(model_har):
-        parse(model_onnx, model_har, classes_count)
+        if os.getenv('TRAIN_STEP_PARSE') and not os.path.exists(model_har):
+            parse(model_onnx, model_har, classes_count)
 
-    if os.getenv('TRAIN_STEP_COMPILE') and not os.path.exists(model_hef):
-        compile_start = datetime.now()
-        with open(file_stats, "a") as file:
+        if os.getenv('TRAIN_STEP_COMPILE') and not os.path.exists(model_hef):
+            compile_start = datetime.now()
+
             file.write("[Compile] Start at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
 
-        training = True
-        build(model_har, model_hef, classes_count)
+            training = True
+            build(model_har, model_hef, classes_count)
 
-        with open(file_stats, "a") as file:
             file.write("[Compile] End at : " + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + "\n")
             file.write(f"[Compile] {calc_time_h_m(compile_start)}\n")
 
