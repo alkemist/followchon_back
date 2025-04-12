@@ -60,61 +60,61 @@ def train(
     model_train_best = f"{model_run_dir}/weights/best.pt"
     best_hyperparameters_path = f'{models_dir}/{task}_best_hyperparameters.yaml'
 
+    data_path = os.path.abspath(train_dataset_data_path)
+
+    train_params = {
+        'task': task,
+        'imgsz': imgsz,
+        'verbose': True,
+        'cache': 'disk' if is_cached else None,
+        'project': runs_dir,
+        'exist_ok': True,
+        'device': train_device,
+        'workers': 8,
+        'classes': classes,
+    }
+
+    model = YOLO(train_previous_path)
+
+    if os.getenv('TRAIN_STEP_TUNE'):
+        data_tune_path = data_path
+
+        if task == 'detect':
+            data_tune_path = data_path.replace('.yaml', '-tune.yaml')
+
+            with open(data_path, 'r') as file_train_yaml:
+                file_yaml_content = file_train_yaml.read()
+
+                with open(data_tune_path, 'w') as file_tune_yaml:
+                    file_tune_yaml.write(
+                        file_yaml_content \
+                            .replace('test: test/images', '')
+                            .replace('val/images', 'test/images')  # val : 0.1 (test)
+                            .replace('train/images', 'val/images')  # train : 0.2 (val)
+                    )
+
+        tune_train_name = f"{train_name}-tune"
+
+        tune_start = log_start(train_name, 'Tune')
+        model.tune(
+            **train_params,
+            data=data_tune_path,
+            name=tune_train_name,
+            epochs=tune_epochs,
+            iterations=tune_iterations,
+            use_ray=False,
+            val=False,
+            plots=False,
+            save=False,
+        )
+        log_end(train_name, 'Tune', tune_start)
+
+        shutil.move(
+            f'{runs_dir}/{tune_train_name}/best_hyperparameters.yaml',
+            best_hyperparameters_path
+        )
+
     if os.getenv('TRAIN_STEP_TRAIN') and not os.path.exists(model_pt):
-        data_path = os.path.abspath(train_dataset_data_path)
-
-        train_params = {
-            'task': task,
-            'imgsz': imgsz,
-            'verbose': True,
-            'cache': 'disk' if is_cached else None,
-            'project': runs_dir,
-            'exist_ok': True,
-            'device': train_device,
-            'workers': 8,
-            'classes': classes,
-        }
-
-        model = YOLO(train_previous_path)
-
-        if os.getenv('TRAIN_STEP_TUNE'):
-            data_tune_path = data_path
-
-            if task == 'detect':
-                data_tune_path = data_path.replace('.yaml', '-tune.yaml')
-
-                with open(data_path, 'r') as file_train_yaml:
-                    file_yaml_content = file_train_yaml.read()
-
-                    with open(data_tune_path, 'w') as file_tune_yaml:
-                        file_tune_yaml.write(
-                            file_yaml_content \
-                                .replace('test: test/images', '')
-                                .replace('val/images', 'test/images')  # val : 0.1 (test)
-                                .replace('train/images', 'val/images')  # train : 0.2 (val)
-                        )
-
-            tune_train_name = f"{train_name}-tune"
-
-            tune_start = log_start(train_name, 'Tune')
-            model.tune(
-                **train_params,
-                data=data_tune_path,
-                name=tune_train_name,
-                epochs=tune_epochs,
-                iterations=tune_iterations,
-                use_ray=False,
-                val=False,
-                plots=False,
-                save=False,
-            )
-            log_end(train_name, 'Tune', tune_start)
-
-            shutil.move(
-                f'{runs_dir}/{tune_train_name}/best_hyperparameters.yaml',
-                best_hyperparameters_path
-            )
-
         train_start = log_start(train_name, 'Train')
         model.train(
             **train_params,
