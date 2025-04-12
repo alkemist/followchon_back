@@ -14,6 +14,7 @@ if __name__ == '__main__':
     train_classes = [0]
     classes_count = 6
     is_ok = False
+    task = 'detect'
 
     log_version()
     log_files_counts(train_name, train_dataset_path,
@@ -21,7 +22,7 @@ if __name__ == '__main__':
                      ['labels'], "*.txt")
 
     is_ok = train(
-        'detect',
+        task,
         1024,
         train_previous_path,
         f"{train_dataset_path}/data.yaml",
@@ -45,7 +46,8 @@ if __name__ == '__main__':
 
     model_pt = f"{models_dir}/{train_name}.pt"
     model_hef = f"{models_dir}/{train_name}.pt"
-    commit_files(train_name, [model_pt, model_hef, f'{metrics_dir}/*'])
+    best_hyperparameters_path = f'{models_dir}/{task}_best_hyperparameters.yaml'
+    commit_files(train_name, [model_pt, model_hef, best_hyperparameters_path, f'{metrics_dir}/*'])
 
     purge_cache(train_dataset_path, ['train', 'val', 'test'], ['images'])
 

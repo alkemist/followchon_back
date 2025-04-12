@@ -11,13 +11,15 @@ train_dataset_path = os.getenv('TRAIN_CLASSIFY_DATASET_PATH')
 train_name = os.getenv('TRAIN_CLASSIFY_DATASET_NAME')
 
 if __name__ == '__main__':
+    task = 'classify'
+
     log_version()
     log_files_counts(train_name, train_dataset_path,
                      ['train', 'val', 'test'],
                      ['noisette', 'sundae'], "*.*")
 
     is_ok = train(
-        'classify',
+        task,
         416,
         train_previous_path,
         train_dataset_path,
@@ -30,7 +32,8 @@ if __name__ == '__main__':
     )
 
     model_pt = f"{models_dir}/{train_name}.pt"
-    commit_files(train_name, [model_pt, f'{metrics_dir}/*'])
+    best_hyperparameters_path = f'{models_dir}/{task}_best_hyperparameters.yaml'
+    commit_files(train_name, [model_pt, best_hyperparameters_path, f'{metrics_dir}/*'])
 
     purge_cache(train_dataset_path, ['train', 'val', 'test'], ['noisette', 'sundae'])
 
