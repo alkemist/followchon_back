@@ -99,7 +99,6 @@ DATABASES = {
         'NAME': BASE_DIR / 'sqlite3.db',
         'OPTIONS': {
             "timeout": 60,
-            "transaction_mode": "IMMEDIATE",
         },
     },
 }
