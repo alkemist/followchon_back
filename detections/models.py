@@ -14,7 +14,8 @@ from django.utils.translation import gettext_lazy as _
 from dotenv import load_dotenv
 
 from configuration.models import Family, Zone
-from detections.management.commands.vision_models.annotation import Annotation
+from detections.management.commands.models.enums.agent_source import Agent_Source
+from detections.management.commands.models.signal import Signal
 from detections.management.commands.vision_models.source import Source
 from utils.image import ImageHelper
 from utils.yolo import YoloHelper
@@ -55,10 +56,10 @@ class Capture(models.Model):
     def detections_ids(self):
         return self.detections
 
-    def write(self, frame: cv2.typing.MatLike, date: datetime, annotations: list[Annotation],
+    def write(self, frame: cv2.typing.MatLike, date: datetime, annotations: list[Signal],
               version_detect: int,
               version_classify: int,
-              source: Source):
+              source: Agent_Source):
         self.status = Capture.Statuses.DRAFT
         self.date = date
         self.photo_file = f"{self.date.strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg"
@@ -84,10 +85,9 @@ class Capture(models.Model):
             detection.width = annotation.norm_width
             detection.height = annotation.norm_height
             detection.score = annotation.score
+            detection.family = annotation.family
             detection.zone = annotation.zone
             detection.trigger = annotation.trigger
-
-            detection.family = annotation.family
 
             detection.save()
 
