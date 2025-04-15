@@ -1,0 +1,30 @@
+# 5/5 iterations complete ✅ (38043.19s)
+# Results saved to runs\guinea-pig-11n-v70-all-tune2
+# Best fitness=0.85661 observed at iteration 2
+# Best fitness metrics are {'metrics/precision(B)': 0.9219, 'metrics/recall(B)': 0.90465, 'metrics/mAP50(B)': 0.96966, 'metrics/mAP50-95(B)': 0.84404, 'val/box_loss': 0.55693, 'val/cls_loss': 0.35257, 'val/dfl_loss': 0.96923, 'fitness': 0.85661}
+# Best fitness model is runs\train8
+# Best fitness hyperparameters are printed below.
+
+lr0: 0.00721
+lrf: 0.01
+momentum: 0.937
+weight_decay: 0.00072
+warmup_epochs: 3.0
+warmup_momentum: 0.67744
+box: 7.5
+cls: 0.40744
+dfl: 1.67642
+hsv_h: 0.01381
+hsv_s: 0.66379
+hsv_v: 0.4
+degrees: 0.0
+translate: 0.12048
+scale: 0.39517
+shear: 0.0
+perspective: 0.0
+flipud: 0.0
+fliplr: 0.4467
+bgr: 0.0
+mosaic: 0.97091
+mixup: 0.0
+copy_paste: 0.0

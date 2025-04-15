@@ -23,7 +23,7 @@ if __name__ == '__main__':
 
     is_ok = train(
         task,
-        1024,
+        800,
         train_previous_path,
         f"{train_dataset_path}/data.yaml",
         train_name,
