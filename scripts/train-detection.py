@@ -39,7 +39,7 @@ if __name__ == '__main__':
         train_classes
     )
 
-    export(train_name)
+    export(train_name, task)
 
     parse(train_name, classes_count)
     is_ok = build(train_name, train_dataset_path, classes_count) or is_ok

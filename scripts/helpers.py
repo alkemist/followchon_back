@@ -74,7 +74,7 @@ def train(
         'classes': classes,
     }
 
-    model = YOLO(train_previous_path)
+    model = YOLO(train_previous_path, task=task)
 
     if os.getenv('TRAIN_STEP_TUNE'):
         data_tune_path = data_path
@@ -106,6 +106,7 @@ def train(
             val=False,
             plots=False,
             save=False,
+            cfg=best_hyperparameters_path if os.path.exists(best_hyperparameters_path) else None,
         )
         log_end(train_name, 'Tune', tune_start)
 
@@ -252,11 +253,11 @@ def commit_files(train_name, files):
             print(ex)
 
 
-def export(train_name):
+def export(train_name, task):
     model_pt = f"{models_dir}/{train_name}.pt"
     model_onnx = f"{models_dir}/{train_name}.onnx"
 
-    model = YOLO(model_pt)
+    model = YOLO(model_pt, task=task)
     model.export(format="onnx")
 
     print(f'-- Model onnx saved in {model_onnx}')
