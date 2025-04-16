@@ -1,0 +1,15 @@
+Train Noisette count : 2584
+Val Noisette count : 740
+Test Noisette count : 185
+
+Train Sundae count : 2582
+Val Sundae count : 740
+Test Sundae count : 185
+
+
+[Tune] Start at : 2025-04-16 22:23:52
+[Tune] End at : 2025-04-16 22:41:48
+[Tune] 0 hours and 17 minutes
+[Train] Start at : 2025-04-16 22:41:48
+[Train] End at : 2025-04-16 23:04:49
+[Train] 0 hours and 23 minutes

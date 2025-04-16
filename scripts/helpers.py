@@ -64,6 +64,7 @@ def train(
 
     train_params = {
         'task': task,
+        'mode': 'train',
         'imgsz': imgsz,
         'verbose': True,
         'cache': 'disk' if is_cached else None,
@@ -98,6 +99,7 @@ def train(
         tune_start = log_start(train_name, 'Tune')
         model.tune(
             **train_params,
+            model=train_previous_path,
             data=data_tune_path,
             name=tune_train_name,
             epochs=tune_epochs,
@@ -106,7 +108,6 @@ def train(
             val=False,
             plots=False,
             save=False,
-            cfg=best_hyperparameters_path if os.path.exists(best_hyperparameters_path) else None,
         )
         log_end(train_name, 'Tune', tune_start)
 
