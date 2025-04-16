@@ -12,10 +12,10 @@ class Neuron():
         self.model = None
         self.score_min = score_min
 
-    def log(self, action: str, infos: str = ''):
-        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.NEURON, action=action, infos=infos)
+    def log(self, event: str, infos: str = ''):
+        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.NEURON, event=event, infos=infos, level=level)
 
-    def check(self, origin: str):
+    def check(self, reason: str):
         raise Exception('Check not implemented')
 
     def process(self, frame: cv2.typing.MatLike):

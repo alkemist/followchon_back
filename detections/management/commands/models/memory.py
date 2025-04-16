@@ -1,15 +1,21 @@
+import math
 import os
+import statistics
 import time
 
+import psutil
 from pubsub import pub
 
 from configuration.models import Zone, Family
 from detections.management.commands.models.enums.agent_source import Agent_Source
+from detections.management.commands.models.enums.architecture import Architecture
 from detections.management.commands.models.enums.event_source import Event_Source
 from detections.management.commands.models.enums.event_type import Event_Type
+from detections.management.commands.models.enums.log_level import Log_Level
 from detections.management.commands.models.tools import get_param, exec_command
 from detections.models import Detection
 from utils.array import ArrayHelper
+from utils.date import DateHelper
 from utils.file import FileHelper
 
 
@@ -17,6 +23,7 @@ from utils.file import FileHelper
 class Memory():
     def __init__(
             self,
+            architecture: Architecture,
             source: Agent_Source,
     ):
         self.send_log('init')
@@ -29,13 +36,22 @@ class Memory():
         self.records_directory = f"./records/{source}"
         self.record_exts = 'jpg|png' if source == Agent_Source.PHOTO else 'mkv|mp4'
 
-        self.hour = None
+        self.date = None
+        self.eye_start = None
         self.size = 0
         self.record_time = 60
         self.record_time_delay = 50
         self.last_record_seconds = time.time()
+        self.frame_count = 0
         self.frame_saved_count = 0
         self.memory_recording = False
+        self.perception = None
+        self.vcgm = None
+        self.temperature = 0
+
+        if architecture == Architecture.HAILO:
+            from vcgencmd import Vcgencmd
+            self.vcgm = Vcgencmd()
 
         self.score_min = float(get_param('vision_score_min', 0.7))
         self.move_tolerance_margin_norm = float(get_param('vision_detection_move_margin_norm', 0.06))
@@ -48,7 +64,10 @@ class Memory():
         self.pause_capture_seconds = 0
         self.records_max = 0
         self.brain_enabled = False
-        self.perception = None
+
+        self.temperatures: dict[str, float] = {}
+        self.durations = []
+        self.counts = []
 
         self.classify_families = Family.objects.filter(is_listed=True, is_unique=True)
         self.classify_families_dict = ArrayHelper.object_list_to_dict(
@@ -90,11 +109,11 @@ class Memory():
             self.last_detections = {}
             self.zones = []
 
-    def send_log(self, action: str, infos: str = ''):
-        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.MEMORY, action=action, infos=infos)
+    def send_log(self, event: str, infos: str = '', level: Log_Level = None):
+        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.MEMORY, event=event, infos=infos, level=level)
 
-    def check(self, origin):
-        self.send_log('check', origin)
+    def check(self, reason):
+        self.send_log('check', reason)
 
         self.hour_min = int(get_param('vision_hour_min', 7))
         self.hour_max = int(get_param('vision_hour_max', 20))
@@ -105,7 +124,7 @@ class Memory():
         self.brain_enabled = get_param('vision_enabled', False)
 
         if not self.brain_enabled:
-            self.disable('check')
+            self.terminate('check')
 
     def get_memories(self):
         return FileHelper.list_files(self.records_directory, r'.*\.(' + self.record_exts + ')$')
@@ -131,15 +150,44 @@ class Memory():
         return self.size == 0
 
     def is_awake(self):
-        return (self.hour_max > self.hour_min and self.hour_min <= self.hour < self.hour_max) \
-            or (self.hour_max < self.hour_min and (self.hour >= self.hour_max or self.hour < self.hour_min))
+        return (self.hour_max > self.hour_min and self.hour_min <= self.date.hour < self.hour_max) \
+            or (self.hour_max < self.hour_min and (self.date.hour >= self.hour_max or self.date.hour < self.hour_min))
 
     def is_lost(self):
         capture_time_elapsed = round(time.time() - self.last_record_seconds)
         return capture_time_elapsed >= self.record_time + self.record_time_delay
 
-    def record(self):
-        self.send_log('record')
+    def add_temperature(self, force: bool = False):
+        if self.vcgm is not None:
+            minute = math.floor(self.date.minute / 10)
+
+            key = f"{self.date.hour}:{minute}"
+
+            if force or key not in self.temperatures:
+                temperature = self.vcgm.measure_temp()
+                self.temperatures[key] = round(temperature, 1)
+
+                if temperature > self.temp_alert:
+                    self.log_warning_temperature()
+
+    def add_statistics(self):
+        self.durations.append(
+            round(
+                time.time() - self.eye_start
+            )
+        )
+
+        self.counts.append(
+            self.frame_saved_count
+        )
+
+    def record(self, reason: str = ''):
+        self.send_log(record, reason)
+
+        if self.memory_recording:
+            self.log_restart_recording()
+        else:
+            self.log_start()
 
         exec_command((f"ffmpeg -hide_banner -y -loglevel error -rtsp_transport tcp -use_wallclock_as_timestamps "
                       f"1 -i {self.stream_path} -vcodec copy -acodec copy -f segment -reset_timestamps 1 "
@@ -148,13 +196,140 @@ class Memory():
 
         self.memory_recording = True
 
-    def disable(self, origin: str):
-        self.send_log('disable', origin)
+    def terminate(self, reason: str):
+        self.send_log('terminate', reason)
         self.brain_enabled = False
 
-    def stop(self):
-        self.send_log('stop')
+    def stop(self, reason: str = ''):
+        self.log_stop_recording(reason)
 
         exec_command("pkill ffmpeg")
 
         self.memory_recording = False
+
+    def log_hour(self):
+        self.send_log(
+            'Temperature',
+            f"records={self.size}/{self.records_max} " +
+            f"frame_seconds={self.frame_seconds}s " +
+            f"pause_capture={self.pause_capture_seconds}s " +
+            f"temp_ave={round(statistics.fmean(self.temperatures.values()), 2)}° " +
+            f"temp_max={max(self.temperatures.values())}° ",
+            Log_Level.LOCAL
+        )
+
+    def log_popcorn(self, capture_date):
+        self.send_log(
+            'Popcorn',
+            f"count={self.frame_saved_count}/{self.popcorn_frame_count} "
+            f"time={capture_date.strftime('%H:%M')} "
+            , Log_Level.EVENT
+        )
+
+    def log_warning_temperature(self):
+        self.send_log(
+            'Temperature',
+            f"records={self.size}/{self.records_max} " +
+            f"frame_seconds={self.frame_seconds}s " +
+            f"pause_capture={self.pause_capture_seconds}s " +
+            f"temp_ave={round(statistics.fmean(self.temperatures.values()), 2)}° " +
+            f"temp_max={max(self.temperatures.values())}° ",
+            Log_Level.HOT
+        )
+
+    def log_start(self):
+        self.send_log(
+            'Started',
+            "",
+            Log_Level.INFO
+        )
+
+    def log_start_recording(self):
+        self.send_log(
+            'Start recording',
+            "",
+            Log_Level.INFO
+        )
+
+    def log_stop_recording(self, reason: str = ''):
+        infos = ''
+
+        if reason:
+            infos = (
+                    f"records={self.size}/{self.records_max} " +
+                    f"frame_seconds={self.frame_seconds}s " +
+                    f"pause_capture={self.pause_capture_seconds}s "
+            )
+
+        self.send_log(
+            'Stop recording',
+            infos,
+            Log_Level.WARNING if reason else Log_Level.INFO
+        )
+
+    def log_restart_recording(self):
+        self.send_log(
+            'Restart recording',
+            "",
+            Log_Level.WARNING
+        )
+
+    def log_end(self):
+        infos = (
+                f"frame_seconds={self.frame_seconds}s " +
+                f"pause_capture={self.pause_capture_seconds}s "
+        )
+
+        disk = os.getenv('WATCH_DISK')
+        if disk:
+            disk_info = psutil.disk_usage(disk)
+            infos = infos + f"disk_usage={disk_info.percent}% "
+
+        self.send_log(
+            'Stopped',
+            infos,
+            Log_Level.INFO
+        )
+
+    def log_statistics(self):
+        if len(self.temperatures.values()) > 0:
+            self.send_log(
+                'Processing',
+                f"temp_min={min(self.temperatures.values())}° " + \
+                f"temp_max={max(self.temperatures.values())}° " + \
+                f"temp_ave={round(statistics.fmean(self.temperatures.values()), 2)}° ",
+                Log_Level.STATISTIC
+            )
+
+        if len(self.counts) > 0:
+            self.send_log(
+                'Analyses',
+                f"fpm_min={min(self.counts)} " + \
+                f"fpm_max={max(self.counts)} " \
+                f"fpm_ave={statistics.fmean(self.counts)} ",
+                Log_Level.STATISTIC
+            )
+
+        if len(self.durations) > 0:
+            self.send_log(
+                'Temperature',
+                f"time_min={DateHelper.secondsToMMSS(min(self.durations))} " + \
+                f"time_max={DateHelper.secondsToMMSS(max(self.durations))} " \
+                f"time_ave={DateHelper.secondsToMMSS(statistics.fmean(self.durations))} ",
+                Log_Level.STATISTIC
+            )
+
+    def check_disk_free(self):
+        disk = os.getenv('WATCH_DISK')
+
+        if disk:
+            disk_info = psutil.disk_usage(disk)
+
+            if disk_info.percent >= 80:
+                self.send_log(
+                    'Disk',
+                    f"disk_used={FileHelper.convert_size(disk_info.used)} "
+                    f"disk_free={FileHelper.convert_size(disk_info.free)} "
+                    f"disk_usage={disk_info.percent}% "
+                    , Log_Level.WARNING
+                )

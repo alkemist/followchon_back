@@ -5,8 +5,8 @@ from django.db import models
 from django.utils import timezone
 from django.utils.safestring import mark_safe
 
-from detections.management.commands.vision_models.levels import Levels
-from detections.management.commands.vision_models.source import Source
+from detections.management.commands.models.enums.agent_source import Agent_Source
+from detections.management.commands.models.enums.log_level import Log_Level
 
 
 class Family(models.Model):
@@ -100,15 +100,15 @@ class Parameter(models.Model):
 
 class Log(models.Model):
     date = models.DateTimeField(default=timezone.now)
-    source = models.CharField(null=True, max_length=200, choices=Source.choices, default=Source.VISION)
-    level = models.CharField(null=True, max_length=200, choices=Levels.choices, default=Levels.INFO)
+    source = models.CharField(null=True, max_length=200, choices=Agent_Source.choices, default=Agent_Source.VISION)
+    level = models.CharField(null=True, max_length=200, choices=Log_Level.choices, default=Log_Level.INFO)
     event = models.CharField(max_length=200, default='', null=True)
     info = models.CharField(max_length=200, default='', null=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def create(self, source: str, level: Levels, event: str, info: str):
+    def create(self, source: str, level: Log_Level, event: str, info: str):
         self.source = source
         self.level = level
         self.event = event
@@ -120,17 +120,17 @@ class Log(models.Model):
         color = '#fff'
 
         match self.level:
-            case Levels.EVENT:
+            case Log_Level.EVENT:
                 color = '#0ea5e9'
-            case Levels.STATISTIC:
+            case Log_Level.STATISTIC:
                 color = '#22c55e'
-            case Levels.WARNING:
+            case Log_Level.WARNING:
                 color = '#f97316'
-            case Levels.HOT:
+            case Log_Level.HOT:
                 color = '#ef4444'
-            case Levels.FAIL:
+            case Log_Level.FAIL:
                 color = '#a855f7'
-            case Levels.ERROR:
+            case Log_Level.ERROR:
                 color = '#a855f7'
 
         return mark_safe(f'<b style="color:{color}">{self.level}</b>')

@@ -12,6 +12,7 @@ from pubsub import pub
 from detections.management.commands.models.enums.agent_source import Agent_Source
 from detections.management.commands.models.enums.event_source import Event_Source
 from detections.management.commands.models.enums.event_type import Event_Type
+from detections.management.commands.models.enums.log_level import Log_Level
 from detections.management.commands.models.memory import Memory
 from utils.image import ImageHelper
 
@@ -25,8 +26,8 @@ class Eye:
 
         self.last_frame_seconds = 0
 
-    def send_log(self, action: str, infos: str = ''):
-        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.EYE, action=action, infos=infos)
+    def send_log(self, event: str, infos: str = '', level: Log_Level = None):
+        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.EYE, event=event, infos=infos, level=level)
 
     def watch(self):
         vision_date = datetime.now()
@@ -38,10 +39,12 @@ class Eye:
 
             self.send_log('open', path)
 
+            self.memory.frame_count = 0
             self.memory.frame_saved_count = 0
 
             if self.memory.source == Agent_Source.VISION:
                 self.memory.last_record_seconds = time.time()
+                self.memory.eye_start = time.time()
 
                 file_date = Path(path).stem
                 date_values = re.split('[-_]', file_date)
@@ -54,6 +57,8 @@ class Eye:
                     int(date_values[5]),
                     random.randint(0, 500)
                 )
+            else:
+                self.memory.last_detections = {}
 
             cap = cv2.VideoCapture(path)
             frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
@@ -66,6 +71,8 @@ class Eye:
 
                 if ret and frame is not None and frame.size > 0:
                     if frame_seconds_elapsed > self.memory.frame_seconds:
+                        self.memory.frame_count = self.memory.frame_count + 1
+                        
                         frame = ImageHelper.resize_with_ratio(frame, self.memory.capture_width, None)
 
                         pub.sendMessage(
@@ -83,7 +90,15 @@ class Eye:
                     cv2.imshow('Perception', self.memory.perception.frame_with_detections)
 
                 if self.memory.show_stream and cv2.waitKey(1) == ord('q'):
-                    self.memory.disable('cv2')
+                    self.memory.terminate('cv2')
+
+            if self.memory.source == Agent_Source.VISION:
+                self.memory.add_statistics()
+
+                if self.memory.frame_saved_count > self.memory.popcorn_frame_count:
+                    self.memory.log_popcorn(vision_date)  # capture_date
+
+            self.memory.add_temperature(True)
 
         elif self.memory.source == Agent_Source.PHOTO:
             path = self.memory.get_last_memory()

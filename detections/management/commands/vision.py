@@ -4,11 +4,9 @@ from django.core.management.base import BaseCommand
 from dotenv import load_dotenv
 from loguru import logger
 
-from detections.management.commands.vision_models.archi import Archi
-from detections.management.commands.vision_models.levels import Levels
-from detections.management.commands.vision_models.source import Source
-from detections.management.commands.vision_models.streamer import Streamer
-from detections.management.commands.vision_models.supervisor import Supervisor
+from detections.management.commands.models.agent import Agent
+from detections.management.commands.models.enums.agent_source import Agent_Source
+from detections.management.commands.models.enums.architecture import Architecture
 
 
 class Command(BaseCommand):
@@ -23,50 +21,40 @@ class Command(BaseCommand):
         parser.add_argument(
             "--video",
             action="store_true",
-            help="Sources videos",
+            help="Source video",
         )
         parser.add_argument(
             "--photo",
             action="store_true",
-            help="Sources videos",
+            help="Source photo",
         )
 
     def handle(self, *args, **options):
         load_dotenv()
+        error = None
+        agent = None
 
         if options["hailo"]:
-            from vcgencmd import Vcgencmd
-
-            model_name = 'hailo'
-            archi = Archi.HAILO
-            log_temp = Vcgencmd()
+            archi = Architecture.HAILO
         else:
-            model_name = 'yolo'
-            archi = Archi.NATIF
-            log_temp = None
+            archi = Architecture.NATIF
 
         if options["video"]:
-            source = Source.VIDEO
+            source = Agent_Source.VIDEO
         elif options["photo"]:
-            source = Source.PHOTO
+            source = Agent_Source.PHOTO
         else:
-            source = Source.VISION
-
-        logger.add(f"{os.getenv('LOG_DIRECTORY')}{source}_{model_name}.log",
-                   format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-                   rotation="1 day", retention=7)
-
-        supervisor = Supervisor(log_temp, source, archi)
-        error = None
-        streamer = None
+            source = Agent_Source.VISION
 
         try:
-            streamer = Streamer(supervisor)
+            logger.add(f"{os.getenv('LOG_DIRECTORY')}{source}_{archi}.log",
+                       format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+                       rotation="1 day", retention=7)
 
-            if options["photo"]:
-                streamer.read()
-            else:
-                streamer.start()
+            agent = Agent(archi, source)
+            agent.start()
+            agent.end()
+
 
         except Exception as ex:
             error = ex
@@ -80,19 +68,13 @@ class Command(BaseCommand):
                     'home/jaden/Projects/followchon_back/', '')
                 line = str(tb.tb_lineno)
                 trace = f" in file {file} on line {line}"
+                print(trace)
 
                 tb = tb.tb_next
-
-            if streamer is not None:
-                streamer.release()
-
-            supervisor.log(
-                type(error).__name__,
-                f"{str(error)}{trace}",
-                Levels.FAIL
-            )
 
         finally:
             # if error is OperationalError:
             if type(error).__name__ == 'OperationalError':
+                if agent is not None:
+                    agent.end()
                 self.handle(*args, **options)

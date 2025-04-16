@@ -7,6 +7,7 @@ from ultralytics import YOLO
 
 from detections.management.commands.models.enums.event_source import Event_Source
 from detections.management.commands.models.enums.event_type import Event_Type
+from detections.management.commands.models.enums.log_level import Log_Level
 from detections.management.commands.models.neurons.neuron import Neuron
 from detections.management.commands.models.signal import Signal
 from detections.management.commands.models.tools import get_param
@@ -17,11 +18,11 @@ class Neuron_Natif_Detect(Neuron):
     def __init__(self, score_min: float):
         super().__init__('pt', score_min)
 
-    def send_log(self, action: str, infos: str = ''):
-        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.DETECT, action=action, infos=infos)
+    def send_log(self, event: str, infos: str = '', level: Log_Level = None):
+        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.DETECT, event=event, infos=infos, level=level)
 
-    def check(self, origin: str):
-        self.send_log('check', origin)
+    def check(self, reason: str):
+        self.send_log('check', reason)
 
         model_version = get_param('vision_model_version_detect')
 

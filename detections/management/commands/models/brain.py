@@ -8,6 +8,7 @@ from detections.management.commands.models.enums.agent_source import Agent_Sourc
 from detections.management.commands.models.enums.architecture import Architecture
 from detections.management.commands.models.enums.event_source import Event_Source
 from detections.management.commands.models.enums.event_type import Event_Type
+from detections.management.commands.models.enums.log_level import Log_Level
 from detections.management.commands.models.memory import Memory
 from detections.management.commands.models.neurons.neuron_natif_classify import Neuron_Natif_Classify
 from detections.management.commands.models.neurons.neuron_natif_detect import Neuron_Natif_Detect
@@ -37,15 +38,15 @@ class Brain:
 
         self.perception = None
 
-    def send_log(self, action: str, infos: str = ''):
-        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.BRAIN, action=action, infos=infos)
+    def send_log(self, event: str, infos: str = '', level: Log_Level = None):
+        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.BRAIN, event=event, infos=infos, level=level)
 
-    def check(self, origin: str):
-        self.send_log('check', origin)
+    def check(self, reason: str):
+        self.send_log('check', reason)
 
-        self.memory.check(origin)
-        self.neuron_classify.check(origin)
-        self.neuron_detect.check(origin)
+        self.memory.check(reason)
+        self.neuron_classify.check(reason)
+        self.neuron_detect.check(reason)
 
     def process_neurons(self, frame: cv2.typing.MatLike, vision_date: datetime):
         # self.send_log('process')

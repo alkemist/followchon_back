@@ -41,12 +41,6 @@
     name: 'Vision : Image par nombre de secondes'
     value: '0.08'
 - model: configuration.parameter
-  pk: 9
-  fields:
-    slug: vision_pause_records_minutes
-    name: 'Vision : Pause quand il a tout traité'
-    value: '2'
-- model: configuration.parameter
   pk: 10
   fields:
     slug: vision_records_max

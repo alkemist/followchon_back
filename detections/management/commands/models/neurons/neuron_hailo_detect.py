@@ -9,6 +9,7 @@ from pubsub import pub
 
 from detections.management.commands.models.enums.event_source import Event_Source
 from detections.management.commands.models.enums.event_type import Event_Type
+from detections.management.commands.models.enums.log_level import Log_Level
 from detections.management.commands.models.neurons.hailo_inference_async import HailoAsyncInference
 from detections.management.commands.models.neurons.neuron import Neuron
 from detections.management.commands.models.signal import Signal
@@ -23,17 +24,17 @@ class Neuron_Hailo_Detect(Neuron):
         self.height = None
         self.width = None
 
-    def send_log(self, action: str, infos: str = ''):
-        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.DETECT, action=action, infos=infos)
+    def send_log(self, event: str, infos: str = '', level: Log_Level = None):
+        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.DETECT, event=event, infos=infos, level=level)
 
-    def check(self, origin: str):
+    def check(self, reason: str):
 
         model_version = get_param('vision_model_version_detect')
 
         if self.model is None or self.current_model_version is None or self.current_model_version != model_version:
             self.current_model_version = model_version
 
-            self.send_log('load', f"version {self.current_model_version} / {origin}")
+            self.send_log('load', f"version {self.current_model_version} / {reason}")
 
             model_path = (f"{os.getenv('MODEL_DIR')}/"
                           f"{os.getenv('MODEL_DETECT_PREFIX')}{self.current_model_version}-all.{self.model_ext}")

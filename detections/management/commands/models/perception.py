@@ -8,6 +8,7 @@ from pubsub import pub
 from detections.management.commands.models.enums.agent_source import Agent_Source
 from detections.management.commands.models.enums.event_source import Event_Source
 from detections.management.commands.models.enums.event_type import Event_Type
+from detections.management.commands.models.enums.log_level import Log_Level
 from detections.management.commands.models.memory import Memory
 from detections.management.commands.models.signal import Signal
 from detections.models import Capture, Detection
@@ -40,6 +41,9 @@ class Perception:
             vision_date.second,
             vision_date.microsecond + self.memory.frame_saved_count,
         )
+
+    def send_log(self, event: str, infos: str = '', level: Log_Level = None):
+        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.PERCEPTION, event=event, infos=infos, level=level)
 
     def process(self, signals: list[Signal]):
         # self.send_log('process', f'frame_count : {self.memory.frame_count}')
@@ -96,6 +100,3 @@ class Perception:
 
             self.trigger_time = time.time()
             self.memory.frame_saved_count = self.memory.frame_saved_count + 1
-
-    def send_log(self, action: str, infos: str = ''):
-        pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.PERCEPTION, action=action, infos=infos)
