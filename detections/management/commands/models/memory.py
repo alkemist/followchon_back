@@ -121,7 +121,7 @@ class Memory():
         self.pause_capture_seconds = float(get_param('vision_pause_capture_seconds', 0.1))
         self.records_max = int(get_param('vision_records_max', 20))
 
-        self.brain_enabled = get_param('vision_enabled', False)
+        self.brain_enabled = int(get_param('vision_enabled', 0)) == 1
 
         if not self.brain_enabled:
             self.terminate('check')
@@ -182,18 +182,19 @@ class Memory():
         )
 
     def record(self, reason: str = ''):
-        self.send_log(record, reason)
+        self.send_log('record', reason)
 
         if self.memory_recording:
             self.log_restart_recording()
         else:
-            self.log_start()
+            self.log_start_recording()
 
         exec_command((f"ffmpeg -hide_banner -y -loglevel error -rtsp_transport tcp -use_wallclock_as_timestamps "
                       f"1 -i {self.stream_path} -vcodec copy -acodec copy -f segment -reset_timestamps 1 "
                       f"-segment_time {self.record_time} -segment_format mkv -segment_atclocktime 1 -strftime 1 "
                       f"{self.records_directory}/%Y-%m-%d_%H-%M-%S.mkv"))
 
+        self.last_record_seconds = time.time()
         self.memory_recording = True
 
     def terminate(self, reason: str):
@@ -208,15 +209,13 @@ class Memory():
         self.memory_recording = False
 
     def log_hour(self):
-        self.send_log(
-            'Temperature',
-            f"records={self.size}/{self.records_max} " +
-            f"frame_seconds={self.frame_seconds}s " +
-            f"pause_capture={self.pause_capture_seconds}s " +
-            f"temp_ave={round(statistics.fmean(self.temperatures.values()), 2)}° " +
-            f"temp_max={max(self.temperatures.values())}° ",
-            Log_Level.LOCAL
-        )
+        infos = (f"records={self.size}/{self.records_max} " +
+                 f"frame_seconds={self.frame_seconds}s " +
+                 f"pause_capture={self.pause_capture_seconds}s ")
+
+        self.send_log('Hour', infos, Log_Level.LOCAL)
+
+        self.log_statistics(is_hour=True)
 
     def log_popcorn(self, capture_date):
         self.send_log(
@@ -238,9 +237,11 @@ class Memory():
         )
 
     def log_start(self):
+        self.size = len(self.get_memories())
+
         self.send_log(
             'Started',
-            "",
+            f"records={self.size}/{self.records_max} ",
             Log_Level.INFO
         )
 
@@ -270,12 +271,15 @@ class Memory():
     def log_restart_recording(self):
         self.send_log(
             'Restart recording',
-            "",
+            f"records={self.size}/{self.records_max} ",
             Log_Level.WARNING
         )
 
     def log_end(self):
+        self.size = len(self.get_memories())
+
         infos = (
+                f"records={self.size}/{self.records_max} "
                 f"frame_seconds={self.frame_seconds}s " +
                 f"pause_capture={self.pause_capture_seconds}s "
         )
@@ -291,32 +295,32 @@ class Memory():
             Log_Level.INFO
         )
 
-    def log_statistics(self):
-        if len(self.temperatures.values()) > 0:
-            self.send_log(
-                'Processing',
-                f"temp_min={min(self.temperatures.values())}° " + \
-                f"temp_max={max(self.temperatures.values())}° " + \
-                f"temp_ave={round(statistics.fmean(self.temperatures.values()), 2)}° ",
-                Log_Level.STATISTIC
-            )
-
+    def log_statistics(self, is_hour=True):
         if len(self.counts) > 0:
             self.send_log(
                 'Analyses',
                 f"fpm_min={min(self.counts)} " + \
                 f"fpm_max={max(self.counts)} " \
                 f"fpm_ave={statistics.fmean(self.counts)} ",
-                Log_Level.STATISTIC
+                Log_Level.LOCAL if is_hour else Log_Level.STATISTIC
             )
 
         if len(self.durations) > 0:
             self.send_log(
-                'Temperature',
+                'Processing',
                 f"time_min={DateHelper.secondsToMMSS(min(self.durations))} " + \
                 f"time_max={DateHelper.secondsToMMSS(max(self.durations))} " \
                 f"time_ave={DateHelper.secondsToMMSS(statistics.fmean(self.durations))} ",
-                Log_Level.STATISTIC
+                Log_Level.LOCAL if is_hour else Log_Level.STATISTIC
+            )
+
+        if len(self.temperatures.values()) > 0:
+            self.send_log(
+                'Temperature',
+                f"temp_min={min(self.temperatures.values())}° " + \
+                f"temp_max={max(self.temperatures.values())}° " + \
+                f"temp_ave={round(statistics.fmean(self.temperatures.values()), 2)}° ",
+                Log_Level.LOCAL if is_hour else Log_Level.STATISTIC
             )
 
     def check_disk_free(self):

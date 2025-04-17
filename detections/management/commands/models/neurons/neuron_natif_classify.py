@@ -20,12 +20,14 @@ class Neuron_Natif_Classify(Neuron):
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.CLASSIFY, event=event, infos=infos, level=level)
 
     def check(self, reason: str):
-        self.send_log('check', reason)
-
+        # self.send_log('check', reason)
         model_version = get_param('vision_model_version_classify')
 
         if self.current_model_version is None or self.current_model_version != model_version:
             self.current_model_version = model_version
+
+            self.send_log('load', f"version {self.current_model_version} / {reason}", Log_Level.LOCAL)
+
             model_path = (f"{os.getenv('MODEL_DIR')}/"
                           f"{os.getenv('MODEL_CLASSIFY_PREFIX')}{self.current_model_version}-chons.{self.model_ext}")
 

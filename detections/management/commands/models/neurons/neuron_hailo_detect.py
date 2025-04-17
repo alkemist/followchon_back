@@ -28,13 +28,13 @@ class Neuron_Hailo_Detect(Neuron):
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.DETECT, event=event, infos=infos, level=level)
 
     def check(self, reason: str):
-
+        # self.send_log('check', reason)
         model_version = get_param('vision_model_version_detect')
 
         if self.model is None or self.current_model_version is None or self.current_model_version != model_version:
             self.current_model_version = model_version
 
-            self.send_log('load', f"version {self.current_model_version} / {reason}")
+            self.send_log('load', f"version {self.current_model_version} / {reason}", Log_Level.LOCAL)
 
             model_path = (f"{os.getenv('MODEL_DIR')}/"
                           f"{os.getenv('MODEL_DETECT_PREFIX')}{self.current_model_version}-all.{self.model_ext}")

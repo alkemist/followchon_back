@@ -35,7 +35,6 @@ class Eye:
 
         if self.memory.source == Agent_Source.VISION or self.memory.source == Agent_Source.VIDEO:
             path = self.memory.get_last_memory()
-            self.memory.check('watch')
 
             self.send_log('open', path)
 
@@ -70,9 +69,10 @@ class Eye:
                 ret, frame = cap.read()
 
                 if ret and frame is not None and frame.size > 0:
-                    if frame_seconds_elapsed > self.memory.frame_seconds:
+
+                    if frame_seconds_elapsed > self.memory.frame_seconds or self.memory.source != Agent_Source.VISION:
                         self.memory.frame_count = self.memory.frame_count + 1
-                        
+
                         frame = ImageHelper.resize_with_ratio(frame, self.memory.capture_width, None)
 
                         pub.sendMessage(
@@ -81,8 +81,10 @@ class Eye:
                             vision_date=vision_date,
                         )
 
-                    if self.memory.source == Agent_Source.VISION and self.memory.pause_capture_seconds:
-                        sleep(self.memory.pause_capture_seconds)
+                        self.last_frame_seconds = time.time()
+
+                        if self.memory.pause_capture_seconds > 0:
+                            sleep(self.memory.pause_capture_seconds)
 
                 if (self.memory.show_stream
                         and self.memory.perception is not None
@@ -92,11 +94,14 @@ class Eye:
                 if self.memory.show_stream and cv2.waitKey(1) == ord('q'):
                     self.memory.terminate('cv2')
 
-            if self.memory.source == Agent_Source.VISION:
+            if self.memory.source == Agent_Source.VISION or self.memory.source == Agent_Source.VIDEO:
+                self.memory.check('watch')
+
+            if self.memory.source == Agent_Source.VISION and self.memory.brain_enabled:
                 self.memory.add_statistics()
 
                 if self.memory.frame_saved_count > self.memory.popcorn_frame_count:
-                    self.memory.log_popcorn(vision_date)  # capture_date
+                    self.memory.log_popcorn(vision_date)
 
             self.memory.add_temperature(True)
 

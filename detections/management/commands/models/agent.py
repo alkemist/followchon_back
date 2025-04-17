@@ -22,7 +22,7 @@ class Agent:
 
         pub.subscribe(self.process_log, Event_Type.AGENT_LOG)
 
-        self.send_log('init', f'{architecture} / {source}')
+        self.send_log('Init', f'{architecture} / {source}', Log_Level.LOCAL)
 
         self.memory = Memory(
             architecture,
@@ -59,10 +59,9 @@ class Agent:
             print(message)
 
     def start(self):
-        self.memory.log_start()
-
         self.brain.start()
         self.brain.check('start')
+        self.memory.log_start()
 
         while self.memory.brain_enabled:
             now = datetime.now()
@@ -95,13 +94,15 @@ class Agent:
                 self.memory.terminate('finish')
 
     def end(self):
-        self.memory.log_end()
+        self.brain.stop()
+
+        if self.source == Agent_Source.VISION and self.memory.memory_recording:
+            self.memory.stop()
 
         if self.architecture == Architecture.HAILO:
             self.memory.check_disk_free()
 
-        if self.source == Agent_Source.VISION:
-            self.memory.log_statistics()
+        self.memory.log_end()
 
-        self.memory.stop()
-        self.brain.stop()
+        if self.source == Agent_Source.VISION:
+            self.memory.log_statistics(is_hour=False)

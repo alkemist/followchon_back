@@ -60,13 +60,14 @@ class Brain:
         )
 
         detect_signals = self.neuron_detect.process(frame)
-        signals = detect_signals
+        signals = detect_signals.copy()
 
         if self.memory.source == Agent_Source.VISION:
             detect_safes = list()
             detect_unsafes = list()
 
             for detect_result in detect_signals:
+
                 image_result = frame[
                                detect_result.ortho_tl_y:detect_result.ortho_br_y,
                                detect_result.ortho_tl_x:detect_result.ortho_br_x
