@@ -45,7 +45,7 @@ if __name__ == '__main__':
     is_ok = build(train_name, train_dataset_path, classes_count) or is_ok
 
     model_pt = f"{models_dir}/{train_name}.pt"
-    model_hef = f"{models_dir}/{train_name}.pt"
+    model_hef = f"{models_dir}/{train_name}.hef"
     best_hyperparameters_path = f'{models_dir}/{task}_best_hyperparameters.yaml'
     commit_files(train_name, [model_pt, model_hef, best_hyperparameters_path, f'{metrics_dir}/*'])
 
