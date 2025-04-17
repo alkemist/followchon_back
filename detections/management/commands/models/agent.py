@@ -66,7 +66,7 @@ class Agent:
         while self.memory.brain_enabled:
             now = datetime.now()
 
-            if self.memory.date is not None and self.memory.date.hour != now.hour:
+            if self.memory.date is not None and self.memory.date.hour != now.hour and self.memory.is_awake():
                 self.memory.log_hour()
 
             self.memory.date = now

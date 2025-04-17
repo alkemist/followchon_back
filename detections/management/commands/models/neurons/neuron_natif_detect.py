@@ -22,7 +22,6 @@ class Neuron_Natif_Detect(Neuron):
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.DETECT, event=event, infos=infos, level=level)
 
     def check(self, reason: str):
-        # self.send_log('check', reason)
         model_version = get_param('vision_model_version_detect')
 
         if self.current_model_version is None or self.current_model_version != model_version:
@@ -36,8 +35,6 @@ class Neuron_Natif_Detect(Neuron):
             self.model = YOLO(model_path, task='detect')
 
     def process(self, frame: cv2.typing.MatLike):
-        # self.send_log('process')
-
         if self.model is None:
             self.check('process')
 
@@ -68,7 +65,5 @@ class Neuron_Natif_Detect(Neuron):
                     )
 
                     yolo_results.append(yolo_result)
-
-        # self.send_log('process end', f"count : {len(yolo_results)}")
 
         return yolo_results

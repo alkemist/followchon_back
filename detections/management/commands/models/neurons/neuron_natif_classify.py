@@ -20,7 +20,6 @@ class Neuron_Natif_Classify(Neuron):
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.CLASSIFY, event=event, infos=infos, level=level)
 
     def check(self, reason: str):
-        # self.send_log('check', reason)
         model_version = get_param('vision_model_version_classify')
 
         if self.current_model_version is None or self.current_model_version != model_version:
@@ -34,8 +33,6 @@ class Neuron_Natif_Classify(Neuron):
             self.model = YOLO(model_path, task='classify')
 
     def process(self, frame: cv2.typing.MatLike):
-        # self.send_log('process')
-
         if frame.size == 0 or frame.shape[0] == 0 or frame.shape[1] == 0:
             return list()
 

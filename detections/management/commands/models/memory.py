@@ -25,8 +25,6 @@ class Memory():
             architecture: Architecture,
             source: Agent_Source,
     ):
-        self.send_log('init', Log_Level.LOCAL)
-
         self.source = source
         self.stream_path = os.getenv('LIVE_STREAM_PATH')
         self.show_stream = os.getenv('SHOW_STREAM') == 1
@@ -112,8 +110,6 @@ class Memory():
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.MEMORY, event=event, infos=infos, level=level)
 
     def check(self, reason):
-        self.send_log('check', reason)
-
         self.hour_min = int(get_param('vision_hour_min', 7))
         self.hour_max = int(get_param('vision_hour_max', 20))
         self.frame_seconds = float(get_param('vision_frame_seconds', 0.1))

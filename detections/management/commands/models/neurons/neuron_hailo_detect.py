@@ -28,7 +28,6 @@ class Neuron_Hailo_Detect(Neuron):
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.DETECT, event=event, infos=infos, level=level)
 
     def check(self, reason: str):
-        # self.send_log('check', reason)
         model_version = get_param('vision_model_version_detect')
 
         if self.model is None or self.current_model_version is None or self.current_model_version != model_version:
@@ -79,8 +78,6 @@ class Neuron_Hailo_Detect(Neuron):
         )
 
     def process(self, frame: cv2.typing.MatLike):
-        # self.send_log('process')
-
         image_pil = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image_pil = Image.fromarray(image_pil)
 

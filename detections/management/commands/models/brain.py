@@ -42,15 +42,11 @@ class Brain:
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.BRAIN, event=event, infos=infos, level=level)
 
     def check(self, reason: str):
-        self.send_log('check', reason, Log_Level.LOCAL)
-
         self.memory.check(reason)
         self.neuron_classify.check(reason)
         self.neuron_detect.check(reason)
 
     def process_neurons(self, frame: cv2.typing.MatLike, vision_date: datetime):
-        # self.send_log('process')
-
         self.memory.perception = Perception(
             self.memory,
             self.neuron_detect.current_model_version,

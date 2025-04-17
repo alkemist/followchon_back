@@ -46,8 +46,6 @@ class Perception:
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.PERCEPTION, event=event, infos=infos, level=level)
 
     def process(self, signals: list[Signal]):
-        # self.send_log('process', f'frame_count : {self.memory.frame_count}, signal count : {len(signals)}')
-
         self.is_triggered = self.memory.source != Agent_Source.VISION
 
         for signal in signals:

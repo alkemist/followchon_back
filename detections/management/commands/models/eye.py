@@ -134,7 +134,6 @@ class Eye:
                 cv2.imshow('Perception', self.memory.perception.frame_with_detections)
 
         if self.memory.brain_enabled and path is not None and os.path.isfile(path):
-            # self.send_log('close', path)
             os.remove(path)
 
         if self.memory.show_stream:
