@@ -76,7 +76,8 @@ class CaptureViewSet(UpdateViewSet):
         captures = (
             Capture.objects.all()
             .filter(source=Source.VISION)
-            .filter(date__gte=datetime(2024, 9, 4))
+            # .filter(date__gte=datetime(2024, 9, 4))
+            .filter(date__gte=datetime(2025, 2, 17))
             .annotate(
                 date_only=TruncDate('date'),
             )
