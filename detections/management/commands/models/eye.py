@@ -36,8 +36,6 @@ class Eye:
         if self.memory.source == Agent_Source.VISION or self.memory.source == Agent_Source.VIDEO:
             path = self.memory.get_last_memory()
 
-            self.send_log('open', path)
-
             self.memory.frame_count = 0
             self.memory.frame_saved_count = 0
 
@@ -60,8 +58,24 @@ class Eye:
                 self.memory.last_detections = {}
 
             cap = cv2.VideoCapture(path)
-            frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-            fps = cap.get(cv2.CAP_PROP_FPS)
+            frames = 0
+            duration = 0
+
+            try:
+                frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+                fps = cap.get(cv2.CAP_PROP_FPS)
+                
+                duration = round(frames / fps, 1)
+            except Exception as ex:
+                fps = 0
+
+            log = os.path.basename(path)
+
+            if fps > 0 and frames > 0 and duration > 0:
+                log = f"{log} / frames: {frames} / fps: {fps} / duration: {duration}"
+
+            self.send_log('open', log)
+
             ret = True
 
             while ret and cap.isOpened() and self.memory.brain_enabled:
@@ -94,11 +108,9 @@ class Eye:
                 if self.memory.show_stream and cv2.waitKey(1) == ord('q'):
                     self.memory.terminate('cv2')
 
-            if self.memory.source == Agent_Source.VISION or self.memory.source == Agent_Source.VIDEO:
+            if self.memory.brain_enabled:
                 self.memory.check('watch')
-
-            if self.memory.source == Agent_Source.VISION and self.memory.brain_enabled:
-                self.memory.add_statistics()
+                self.memory.add_statistics(frames, duration)
 
                 if self.memory.frame_saved_count > self.memory.popcorn_frame_count:
                     self.memory.log_popcorn(vision_date)

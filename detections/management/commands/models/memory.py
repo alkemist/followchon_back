@@ -15,7 +15,6 @@ from detections.management.commands.models.enums.log_level import Log_Level
 from detections.management.commands.models.tools import get_param, exec_command
 from detections.models import Detection
 from utils.array import ArrayHelper
-from utils.date import DateHelper
 from utils.file import FileHelper
 
 
@@ -67,7 +66,7 @@ class Memory():
 
         self.temperatures: dict[str, float] = {}
         self.durations = []
-        self.counts = []
+        self.fpm_counts = []
 
         self.classify_families = Family.objects.filter(is_listed=True, is_unique=True)
         self.classify_families_dict = ArrayHelper.object_list_to_dict(
@@ -170,16 +169,19 @@ class Memory():
                 if temperature > self.temp_alert:
                     self.log_warning_temperature()
 
-    def add_statistics(self):
-        self.durations.append(
-            round(
-                time.time() - self.eye_start
+    def add_statistics(self, frames: float, duration: float):
+        if duration > 0:
+            self.durations.append(
+                round(
+                    (time.time() - self.eye_start) / duration,
+                    2
+                )
             )
-        )
 
-        self.counts.append(
-            self.frame_saved_count
-        )
+        if frames > 0:
+            self.fpm_counts.append(
+                round(self.frame_count / frames, 2)
+            )
 
     def record(self, reason: str = ''):
         self.send_log('record', reason)
@@ -296,21 +298,21 @@ class Memory():
         )
 
     def log_statistics(self, is_hour=True):
-        if len(self.counts) > 0:
+        if len(self.fpm_counts) > 0:
             self.send_log(
                 'Analyses',
-                f"fpm_min={min(self.counts)} " + \
-                f"fpm_max={max(self.counts)} " \
-                f"fpm_ave={statistics.fmean(self.counts)} ",
+                f"fpm_min={min(self.fpm_counts)} " + \
+                f"fpm_max={max(self.fpm_counts)} " \
+                f"fpm_ave={round(statistics.fmean(self.fpm_counts), 0)} ",
                 Log_Level.LOCAL if is_hour else Log_Level.STATISTIC
             )
 
         if len(self.durations) > 0:
             self.send_log(
                 'Processing',
-                f"time_min={DateHelper.secondsToMMSS(min(self.durations))} " + \
-                f"time_max={DateHelper.secondsToMMSS(max(self.durations))} " \
-                f"time_ave={DateHelper.secondsToMMSS(statistics.fmean(self.durations))} ",
+                f"duration_min={min(self.durations)} " + \
+                f"duration_max={max(self.durations)} " \
+                f"duration_ave={statistics.fmean(self.durations)} ",
                 Log_Level.LOCAL if is_hour else Log_Level.STATISTIC
             )
 
