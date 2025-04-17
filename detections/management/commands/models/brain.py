@@ -116,8 +116,8 @@ class Brain:
         self.neuron_detect.release()
         time.sleep(time_minutes * 60)
         self.memory.last_record_seconds = time.time()
-
-        self.neuron_detect.check('sleep')
+        self.send_log('end sleep', Log_Level.LOCAL)
+        self.check('sleep')
 
     def stop(self):
         self.send_log('stop', '', Log_Level.LOCAL)

@@ -299,7 +299,7 @@ class Memory():
                 'Analyses',
                 f"fpm_min={min(self.fpm_counts)} " + \
                 f"fpm_max={max(self.fpm_counts)} " \
-                f"fpm_ave={round(statistics.fmean(self.fpm_counts), 0)} ",
+                f"fpm_ave={round(statistics.fmean(self.fpm_counts), 2)} ",
                 Log_Level.LOCAL if is_hour else Log_Level.STATISTIC
             )
 
@@ -308,7 +308,7 @@ class Memory():
                 'Processing',
                 f"duration_min={min(self.durations)} " + \
                 f"duration_max={max(self.durations)} " \
-                f"duration_ave={statistics.fmean(self.durations)} ",
+                f"duration_ave={round(statistics.fmean(self.durations), 2)} ",
                 Log_Level.LOCAL if is_hour else Log_Level.STATISTIC
             )
 

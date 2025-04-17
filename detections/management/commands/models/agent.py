@@ -63,6 +63,8 @@ class Agent:
         self.brain.check('start')
         self.memory.log_start()
 
+        self.memory.size = len(self.memory.get_memories())
+
         while self.memory.brain_enabled:
             now = datetime.now()
 
@@ -70,7 +72,6 @@ class Agent:
                 self.memory.log_hour()
 
             self.memory.date = now
-            self.memory.size = len(self.memory.get_memories())
             self.memory.add_temperature()
 
             if self.source == Agent_Source.VISION:
@@ -87,8 +88,11 @@ class Agent:
                     elif not self.memory.is_awake():
                         self.memory.stop()
 
-            if not self.memory.is_low() and not self.memory.is_empty():
+            if not self.memory.is_low() or not self.memory.is_awake() and not self.memory.memory_recording \
+                    or self.source != Agent_Source.VISION:
                 self.eye.watch()
+
+            self.memory.size = len(self.memory.get_memories())
 
             if self.memory.is_empty() and (not self.memory.is_awake() or self.source != Agent_Source.VISION):
                 self.memory.terminate('finish')
