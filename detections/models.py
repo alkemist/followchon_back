@@ -16,7 +16,6 @@ from dotenv import load_dotenv
 from configuration.models import Family, Zone
 from detections.management.commands.models.enums.agent_source import Agent_Source
 from detections.management.commands.models.signal import Signal
-from detections.management.commands.vision_models.source import Source
 from utils.image import ImageHelper
 from utils.yolo import YoloHelper
 
@@ -39,7 +38,7 @@ class Capture(models.Model):
     labels_dir = 'labels'
 
     status = models.CharField(null=True, max_length=200, choices=Statuses.choices, default=Statuses.DRAFT)
-    source = models.CharField(null=True, max_length=200, choices=Source.choices, default=Source.VISION)
+    source = models.CharField(null=True, max_length=200, choices=Agent_Source.choices, default=Agent_Source.VISION)
 
     photo_file = models.CharField(null=True, max_length=200)
 

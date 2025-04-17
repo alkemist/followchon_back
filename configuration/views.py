@@ -11,7 +11,7 @@ from configuration.models import Family, Zone, Parameter
 from configuration.serializers.family import FamilySerializer
 from configuration.serializers.family_detections import FamilyDetectionsSerializer
 from configuration.serializers.serializers import ZoneSerializer, ParameterSerializer
-from detections.management.commands.vision_models.source import Source
+from detections.management.commands.models.enums.agent_source import Agent_Source
 from detections.models import Detection
 from detections.serializers.detection_family import DetectionCountByDayFamilySerializer, \
     DetectionDistanceByDayFamilySerializer
@@ -56,7 +56,7 @@ class FamilyViewSet(ReadOnlyViewSet):
                 queryset = Family.objects.prefetch_related(
                     Prefetch(
                         'detections',
-                        queryset=Detection.objects.filter(capture__source=Source.VISION)
+                        queryset=Detection.objects.filter(capture__source=Agent_Source.VISION)
                         .filter(capture__date__gte=datetime(2025, 2, 17))
                     )
                 )
@@ -135,7 +135,7 @@ class FamilyViewSet(ReadOnlyViewSet):
                                         FROM detections_detection
                                              INNER JOIN detections_capture 
                                              ON (detections_detection."capture_id" = detections_capture."id") 
-                                        WHERE detections_capture."source" = "{Source.VISION}"
+                                        WHERE detections_capture."source" = "{Agent_Source.VISION}"
                                             AND "detections_capture"."date" >= "2025-02-17 00:00:00" 
                                             AND "detections_detection"."family_id" = {family.id}
                                   )

@@ -7,7 +7,7 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from api.models import UpdateViewSet, CustomLimitOffsetPagination
-from detections.management.commands.vision_models.source import Source
+from detections.management.commands.models.enums.agent_source import Agent_Source
 from detections.models import Capture, Detection
 from detections.serializers.serializers import CaptureHydratedSerializer, CaptureDateSerializer, \
     CaptureStatisticsDaySerializer, DetectionSerializer
@@ -38,7 +38,7 @@ class CaptureViewSet(UpdateViewSet):
                 else:
                     queryset = queryset.filter(~Q(id=capture_id))
 
-            if source is not None and source in Sources:
+            if source is not None and source in Agent_Source:
                 queryset = queryset.filter(source=source)
 
             if status is not None and status:
