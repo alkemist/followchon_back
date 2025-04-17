@@ -82,10 +82,10 @@ def train(
 
         if task == 'detect':
             data_tune_path = data_path.replace('.yaml', '-tune.yaml')
-
+        
             with open(data_path, 'r') as file_train_yaml:
-                file_yaml_content = file_train_yaml.read()
-
+                file_yaml_content = file_train_yaml.read()       
+        
                 with open(data_tune_path, 'w') as file_tune_yaml:
                     file_tune_yaml.write(
                         file_yaml_content \
