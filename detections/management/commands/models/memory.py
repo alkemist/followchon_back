@@ -25,11 +25,11 @@ class Memory():
             architecture: Architecture,
             source: Agent_Source,
     ):
-        self.send_log('init')
+        self.send_log('init', Log_Level.LOCAL)
 
         self.source = source
         self.stream_path = os.getenv('LIVE_STREAM_PATH')
-        self.show_stream = os.getenv('SHOW_STREAM') == 'True'
+        self.show_stream = os.getenv('SHOW_STREAM') == 1
         self.capture_width = int(os.getenv('CAPTURE_WIDTH'))
 
         self.records_directory = f"./records/{source}"
@@ -200,7 +200,7 @@ class Memory():
         self.memory_recording = True
 
     def terminate(self, reason: str):
-        self.send_log('terminate', reason)
+        self.send_log('terminate', reason, Log_Level.LOCAL)
         self.brain_enabled = False
 
     def stop(self, reason: str = ''):

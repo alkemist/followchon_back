@@ -96,7 +96,7 @@ class Neuron_Hailo_Detect(Neuron):
         raw_detections_queue = self.model.run(np.array(processed_image))
 
         if len(raw_detections_queue) > 10:
-            self.send_log("process", f"Queue size too long : {len(raw_detections_queue)}")
+            self.send_log("process", f"Queue size too long : {len(raw_detections_queue)}", Log_Level.LOCAL)
 
         if self.model and len(raw_detections_queue) > 0:
             raw_detections = self.model.remove_last_output_results()
@@ -131,7 +131,7 @@ class Neuron_Hailo_Detect(Neuron):
                                 yolo_results.append(yolo_result)
         else:
             # No traitement
-            self.send_log("process", "Queue empty")
+            self.send_log("process", "Queue empty", Log_Level.LOCAL)
 
         return yolo_results
 

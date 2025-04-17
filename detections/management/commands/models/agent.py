@@ -74,7 +74,7 @@ class Agent:
             self.memory.add_temperature()
 
             if self.source == Agent_Source.VISION:
-                if not self.memory.is_awake() and self.memory.is_low():
+                if not self.memory.is_awake() and self.memory.is_empty():
                     self.brain.sleep(60)
                 if self.memory.is_low() and self.memory.is_awake():
                     if not self.memory.memory_recording:

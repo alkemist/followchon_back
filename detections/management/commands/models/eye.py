@@ -38,11 +38,10 @@ class Eye:
 
             self.memory.frame_count = 0
             self.memory.frame_saved_count = 0
+            self.memory.last_record_seconds = time.time()
+            self.memory.eye_start = time.time()
 
             if self.memory.source == Agent_Source.VISION:
-                self.memory.last_record_seconds = time.time()
-                self.memory.eye_start = time.time()
-
                 file_date = Path(path).stem
                 date_values = re.split('[-_]', file_date)
                 vision_date = datetime(
@@ -64,7 +63,7 @@ class Eye:
             try:
                 frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
                 fps = cap.get(cv2.CAP_PROP_FPS)
-                
+
                 duration = round(frames / fps, 1)
             except Exception as ex:
                 fps = 0
@@ -84,7 +83,7 @@ class Eye:
 
                 if ret and frame is not None and frame.size > 0:
 
-                    if frame_seconds_elapsed > self.memory.frame_seconds or self.memory.source != Agent_Source.VISION:
+                    if frame_seconds_elapsed > self.memory.frame_seconds:
                         self.memory.frame_count = self.memory.frame_count + 1
 
                         frame = ImageHelper.resize_with_ratio(frame, self.memory.capture_width, None)

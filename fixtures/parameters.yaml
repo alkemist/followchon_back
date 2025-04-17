@@ -71,12 +71,6 @@
     name: 'Vision : Marge normalisé pour detection de déplacement'
     value: '0.06'
 - model: configuration.parameter
-  pk: 19
-  fields:
-    slug: vision_stats_hourly
-    name: 'Vision : Envoie les stats par heure si 1'
-    value: '0'
-- model: configuration.parameter
   pk: 20
   fields:
     slug: vision_popcorn_frame_count

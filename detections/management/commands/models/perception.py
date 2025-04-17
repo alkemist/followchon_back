@@ -90,9 +90,9 @@ class Perception:
                 self.frame_with_detections = signal.trace(self.frame_with_detections)
 
             else:
-                self.send_log('process', f'unknown family with index "{signal.cls}"')
+                self.send_log('process', f'unknown family with index "{signal.cls}"', Log_Level.LOCAL)
 
-        if self.is_triggered:
+        if self.is_triggered and len(signals) > 0:
             if os.getenv('ENABLE_SAVE'):
                 Capture().write(self.frame, self.capture_date, signals,
                                 self.model_version_detect, self.model_version_classify,

@@ -22,7 +22,7 @@ class Brain:
             archi: Architecture,
             memory: Memory
     ):
-        self.send_log('init')
+        self.send_log('init', '', Log_Level.LOCAL)
 
         pub.subscribe(self.process_neurons, Event_Type.BRAIN_PROCESS)
 
@@ -42,7 +42,7 @@ class Brain:
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.BRAIN, event=event, infos=infos, level=level)
 
     def check(self, reason: str):
-        self.send_log('check', reason)
+        self.send_log('check', reason, Log_Level.LOCAL)
 
         self.memory.check(reason)
         self.neuron_classify.check(reason)
@@ -104,7 +104,7 @@ class Brain:
         self.memory.perception.process(signals)
 
     def start(self):
-        self.send_log('start')
+        self.send_log('start', '', Log_Level.LOCAL)
 
         self.neuron_classify = Neuron_Natif_Classify(self.memory.score_min)
 
@@ -115,7 +115,7 @@ class Brain:
             self.neuron_detect = Neuron_Natif_Detect(self.memory.score_min)
 
     def sleep(self, time_minutes):
-        self.send_log('sleep')
+        self.send_log('sleep', Log_Level.LOCAL)
 
         self.neuron_detect.release()
         time.sleep(time_minutes * 60)
@@ -124,7 +124,7 @@ class Brain:
         self.neuron_detect.check('sleep')
 
     def stop(self):
-        self.send_log('stop')
+        self.send_log('stop', '', Log_Level.LOCAL)
 
         self.neuron_classify.release()
         self.neuron_detect.release()
