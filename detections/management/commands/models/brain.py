@@ -59,8 +59,8 @@ class Brain:
         signals = detect_signals.copy()
 
         if self.memory.source == Agent_Source.VISION:
-            detect_safes = list()
-            detect_unsafes = list()
+            detect_safes_cls = list()
+            detect_unsafes_by_family = {}
 
             for detect_result in detect_signals:
 
@@ -70,30 +70,28 @@ class Brain:
                                ]
                 classify_signals = self.neuron_classify.process(image_result)
 
-                if len(classify_signals) > 0:
-                    for [slug, score] in classify_signals:
-                        if slug in self.memory.classify_families_dict:
-                            family = self.memory.classify_families_dict[slug]
-                            classify_yolo_result = detect_result.clone(family.index, score)
+                for [slug, score] in classify_signals:
+                    if slug in self.memory.classify_families_dict:
+                        family = self.memory.classify_families_dict[slug]
+                        classify_yolo_result = detect_result.clone(family.index, score)
 
-                            if not family.is_unique or len(classify_signals) == 1:
-                                detect_safes.append(classify_yolo_result.cls)
-                                signals.append(classify_yolo_result)
-                            else:
-                                if family.index not in detect_unsafes:
-                                    detect_unsafes[family.index] = []
-
-                                detect_unsafes.append(classify_yolo_result)
+                        if not family.is_unique:
+                            detect_safes_cls.append(family.index)
+                            signals.append(classify_yolo_result)
                         else:
-                            self.send_log('process_neurons', f'unknown family with slug "{slug}"')
+                            if family.index not in detect_unsafes_by_family:
+                                detect_unsafes_by_family[family.index] = []
 
-            if len(detect_safes) < len(self.memory.classify_families):
+                            detect_unsafes_by_family[family.index].append(classify_yolo_result)
+                    else:
+                        self.send_log('process_neurons', f'unknown family with slug "{slug}"')
+
+            for cls, detect_unsafes in detect_unsafes_by_family.items():
                 detect_unsafes = sorted(detect_unsafes, key=lambda result: result.score, reverse=True)
 
-                for detect_unsafe in detect_unsafes:
-                    if detect_unsafe.cls not in detect_safes:
-                        signals.append(detect_unsafe)
-                        detect_safes.append(detect_unsafe.cls)
+                if cls not in detect_safes_cls:
+                    detect_safes_cls.append(cls)
+                    signals.append(detect_unsafes[0])
 
         signals = sorted(signals, key=lambda signal: signal.cls)
 
