@@ -68,7 +68,7 @@ class Agent:
         while self.memory.brain_enabled:
             now = datetime.now()
 
-            if self.memory.date is not None and self.memory.date.hour != now.hour and self.memory.is_awake():
+            if self.memory.date.hour != now.hour and self.memory.is_awake() and self.source == Agent_Source.VISION:
                 self.memory.log_hour()
 
             self.memory.date = now
@@ -108,5 +108,4 @@ class Agent:
 
         self.memory.log_end()
 
-        if self.source == Agent_Source.VISION:
-            self.memory.log_statistics(is_hour=False)
+        self.memory.log_statistics(is_hour=False)

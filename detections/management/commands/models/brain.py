@@ -43,8 +43,10 @@ class Brain:
 
     def check(self, reason: str):
         self.memory.check(reason)
-        self.neuron_classify.check(reason)
-        self.neuron_detect.check(reason)
+
+        if self.memory.is_awake() or self.memory.source != Agent_Source.VISION:
+            self.neuron_classify.check(reason)
+            self.neuron_detect.check(reason)
 
     def process_neurons(self, frame: cv2.typing.MatLike, vision_date: datetime):
         self.memory.perception = Perception(
@@ -109,12 +111,13 @@ class Brain:
             self.neuron_detect = Neuron_Natif_Detect(self.memory.score_min)
 
     def sleep(self, time_minutes):
-        self.send_log('sleep', Log_Level.LOCAL)
+        self.send_log('sleep', '', Log_Level.LOCAL)
 
         self.neuron_detect.release()
         time.sleep(time_minutes * 60)
         self.memory.last_record_seconds = time.time()
-        self.send_log('end sleep', Log_Level.LOCAL)
+
+        self.send_log('end sleep', '', Log_Level.LOCAL)
         self.check('sleep')
 
     def stop(self):

@@ -14,6 +14,7 @@ from detections.management.commands.models.enums.event_source import Event_Sourc
 from detections.management.commands.models.enums.event_type import Event_Type
 from detections.management.commands.models.enums.log_level import Log_Level
 from detections.management.commands.models.memory import Memory
+from utils.date import DateHelper
 from utils.image import ImageHelper
 
 
@@ -61,7 +62,7 @@ class Eye:
             duration = 0
 
             try:
-                frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+                frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 fps = cap.get(cv2.CAP_PROP_FPS)
 
                 duration = round(frames / fps, 1)
@@ -71,15 +72,17 @@ class Eye:
             log = os.path.basename(path)
 
             if fps > 0 and frames > 0 and duration > 0:
-                log = f"{log} / frames: {frames} / fps: {fps} / duration: {duration}"
+                log = f"{log} / frames: {frames} / fps: {round(fps, 2)} / duration: {DateHelper.secondsToMMSS(duration)}"
 
             self.send_log('open', log)
 
             ret = True
+            frames = 0
 
             while ret and cap.isOpened() and self.memory.brain_enabled:
                 frame_seconds_elapsed = time.time() - self.last_frame_seconds
                 ret, frame = cap.read()
+                frames = frames + 1
 
                 if ret and frame is not None and frame.size > 0:
 
@@ -111,7 +114,7 @@ class Eye:
                 self.memory.check('watch')
                 self.memory.add_statistics(frames, duration)
 
-                if self.memory.frame_saved_count > self.memory.popcorn_frame_count:
+                if self.memory.frame_saved_count > self.memory.popcorn_frame_count and self.memory.source == Agent_Source.VISION:
                     self.memory.log_popcorn(vision_date)
 
             self.memory.add_temperature(True)

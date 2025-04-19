@@ -46,11 +46,11 @@ class Command(BaseCommand):
         else:
             source = Agent_Source.VISION
 
-        try:
-            logger.add(f"{os.getenv('LOG_DIRECTORY')}{source}_{archi}.log",
-                       format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
-                       rotation="1 day", retention=7)
+        logger.add(f"{os.getenv('LOG_DIRECTORY')}{source}_{archi}.log",
+                   format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {message}",
+                   rotation="00:00", retention="1 month")
 
+        try:
             agent = Agent(archi, source)
             agent.start()
             agent.end()

@@ -2,6 +2,7 @@ import math
 import os
 import statistics
 import time
+from datetime import datetime
 
 import psutil
 from pubsub import pub
@@ -33,7 +34,7 @@ class Memory():
         self.records_directory = f"./records/{source}"
         self.record_exts = 'jpg|png' if source == Agent_Source.PHOTO else 'mkv|mp4'
 
-        self.date = None
+        self.date = datetime.now()
         self.eye_start = None
         self.size = 0
         self.record_time = 60
