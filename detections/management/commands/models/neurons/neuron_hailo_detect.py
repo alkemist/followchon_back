@@ -28,7 +28,7 @@ class Neuron_Hailo_Detect(Neuron):
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.DETECT, event=event, infos=infos, level=level)
 
     def check(self, reason: str):
-        model_version = get_param('vision_model_version_detect')
+        model_version = int(get_param('vision_model_version_detect'))
 
         if self.model is None or self.current_model_version is None or self.current_model_version != model_version:
             self.current_model_version = model_version

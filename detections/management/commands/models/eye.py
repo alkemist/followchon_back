@@ -111,7 +111,6 @@ class Eye:
                     self.memory.terminate('cv2')
 
             if self.memory.brain_enabled:
-                self.memory.check('watch')
                 self.memory.add_statistics(frames, duration)
 
                 if self.memory.frame_saved_count > self.memory.popcorn_frame_count and self.memory.source == Agent_Source.VISION:

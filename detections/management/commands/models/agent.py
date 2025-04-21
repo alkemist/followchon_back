@@ -92,6 +92,9 @@ class Agent:
                     or self.source != Agent_Source.VISION:
                 self.eye.watch()
 
+                if self.memory.brain_enabled and self.source != Agent_Source.PHOTO:
+                    self.brain.check('watch')
+
             self.memory.size = len(self.memory.get_memories())
 
             if self.memory.is_empty() and (not self.memory.is_awake() or self.source != Agent_Source.VISION):
