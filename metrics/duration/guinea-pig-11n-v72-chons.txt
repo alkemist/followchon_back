@@ -1,0 +1,10 @@
+Train Noisette count : 600
+Val Noisette count : 172
+Test Noisette count : 87
+
+Train Sundae count : 598
+Val Sundae count : 172
+Test Sundae count : 87
+
+
+[Tune] Start at : 2025-04-20 23:31:09

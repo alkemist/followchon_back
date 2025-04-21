@@ -1,0 +1,17 @@
+Train  count : 844
+Val  count : 242
+Test  count : 122
+
+
+[Tune] Start at : 2025-04-20 23:50:45
+[Tune] End at : 2025-04-21 01:01:16
+[Tune] 1 hours and 10 minutes
+[Train] Start at : 2025-04-21 01:01:16
+[Train] End at : 2025-04-21 02:41:57
+[Train] 1 hours and 40 minutes
+[Parse] Start at : 2025-04-21 02:42:05
+[Parse] End at : 2025-04-21 02:44:00
+[Parse] 0 hours and 1 minutes
+[Compile] Start at : 2025-04-21 02:44:01
+[Compile] End at : 2025-04-21 04:10:09
+[Compile] 1 hours and 26 minutes
