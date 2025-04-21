@@ -13,8 +13,8 @@ from detections.management.commands.models.tools import get_param
 
 class Neuron_Natif_Classify(Neuron):
 
-    def __init__(self, score_min: float):
-        super().__init__('pt', score_min)
+    def __init__(self):
+        super().__init__('pt')
 
     def send_log(self, event: str, infos: str = '', level: Log_Level = None):
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.CLASSIFY, event=event, infos=infos, level=level)

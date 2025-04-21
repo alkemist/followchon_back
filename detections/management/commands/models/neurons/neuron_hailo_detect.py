@@ -18,8 +18,8 @@ from detections.management.commands.models.tools import get_param
 
 class Neuron_Hailo_Detect(Neuron):
 
-    def __init__(self, score_min: float):
-        super().__init__('hef', score_min)
+    def __init__(self):
+        super().__init__('hef')
 
         self.height = None
         self.width = None
@@ -44,6 +44,8 @@ class Neuron_Hailo_Detect(Neuron):
 
             self.model = HailoAsyncInference(vdevice, model_path)
             self.height, self.width, _ = self.model.get_input_shape()
+
+            self.send_log('loaded', f"version {self.current_model_version} / {reason}", Log_Level.LOCAL)
 
     def preprocess(self, image: PIL.Image.Image):
         """

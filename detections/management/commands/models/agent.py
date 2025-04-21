@@ -29,13 +29,14 @@ class Agent:
             source,
         )
 
-        self.eye = Eye(
-            self.memory
-        )
-
         self.brain = Brain(
             architecture,
             self.memory
+        )
+
+        self.eye = Eye(
+            self.memory,
+            self.brain
         )
 
     def send_log(self, event: str, infos: str = '', level: Log_Level = None):
@@ -63,7 +64,7 @@ class Agent:
         self.brain.check('start')
         self.memory.log_start()
 
-        self.memory.size = len(self.memory.get_memories())
+        self.memory.queue = len(self.memory.get_memories())
 
         while self.memory.brain_enabled:
             now = datetime.now()
@@ -78,24 +79,26 @@ class Agent:
                 if not self.memory.is_awake() and self.memory.is_empty():
                     self.brain.sleep(60)
                 if self.memory.is_low() and self.memory.is_awake():
-                    if not self.memory.memory_recording:
+                    if not self.memory.recording:
                         self.memory.record('start')
                     elif self.memory.is_lost():
                         self.memory.record('lost')
-                if self.memory.memory_recording:
+                if self.memory.recording:
                     if self.memory.is_full():
                         self.memory.stop('full')
                     elif not self.memory.is_awake():
                         self.memory.stop()
 
-            if not self.memory.is_low() or not self.memory.is_awake() and not self.memory.memory_recording \
+            if not self.memory.is_low() or not self.memory.is_awake() and not self.memory.recording \
                     or self.source != Agent_Source.VISION:
                 self.eye.watch()
 
                 if self.memory.brain_enabled and self.source != Agent_Source.PHOTO:
                     self.brain.check('watch')
 
-            self.memory.size = len(self.memory.get_memories())
+                self.memory.queues.append(len(self.memory.get_memories()))
+
+            self.memory.queue = len(self.memory.get_memories())
 
             if self.memory.is_empty() and (not self.memory.is_awake() or self.source != Agent_Source.VISION):
                 self.memory.terminate('finish')
@@ -103,7 +106,7 @@ class Agent:
     def end(self):
         self.brain.stop()
 
-        if self.source == Agent_Source.VISION and self.memory.memory_recording:
+        if self.source == Agent_Source.VISION and self.memory.recording:
             self.memory.stop()
 
         if self.architecture == Architecture.HAILO:

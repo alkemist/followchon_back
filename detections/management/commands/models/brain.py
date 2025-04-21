@@ -13,6 +13,7 @@ from detections.management.commands.models.memory import Memory
 from detections.management.commands.models.neurons.neuron_natif_classify import Neuron_Natif_Classify
 from detections.management.commands.models.neurons.neuron_natif_detect import Neuron_Natif_Detect
 from detections.management.commands.models.perception import Perception
+from utils.image import ImageHelper
 
 
 # Il s'occupe de traiter les images
@@ -23,8 +24,6 @@ class Brain:
             memory: Memory
     ):
         self.send_log('init', '', Log_Level.LOCAL)
-
-        pub.subscribe(self.process_neurons, Event_Type.BRAIN_PROCESS)
 
         self.archi = archi
         self.memory = memory
@@ -44,17 +43,20 @@ class Brain:
     def check(self, reason: str):
         self.memory.check(reason)
 
-        if self.memory.is_awake() or self.memory.source != Agent_Source.VISION:
-            self.neuron_classify.check(reason)
+        if self.memory.is_started() or self.memory.source != Agent_Source.VISION:
             self.neuron_detect.check(reason)
+            self.neuron_classify.check(reason)
 
-    def process_neurons(self, frame: cv2.typing.MatLike, vision_date: datetime):
+    def process_neurons(self, frame: cv2.typing.MatLike, vision_date: datetime, frame_count: int = 0):
+        frame = ImageHelper.resize_with_ratio(frame, self.memory.capture_width, None)
+
         self.memory.perception = Perception(
             self.memory,
             self.neuron_detect.current_model_version,
             self.neuron_classify.current_model_version,
             frame,
             vision_date,
+            frame_count,
         )
 
         detect_signals = self.neuron_detect.process(frame)
@@ -63,6 +65,7 @@ class Brain:
         if self.memory.source == Agent_Source.VISION:
             detect_safes_cls = list()
             detect_unsafes_by_family = {}
+            self.memory.perception.detections_count = len(detect_signals)
 
             for detect_result in detect_signals:
 
@@ -95,20 +98,21 @@ class Brain:
                     detect_safes_cls.append(cls)
                     signals.append(detect_unsafes[0])
 
-        signals = sorted(signals, key=lambda signal: signal.cls)
+        if len(signals) > 0:
+            signals = sorted(signals, key=lambda signal: signal.cls)
 
-        self.memory.perception.process(signals)
+            self.memory.perception.process(signals)
 
     def start(self):
         self.send_log('start', '', Log_Level.LOCAL)
 
-        self.neuron_classify = Neuron_Natif_Classify(self.memory.score_min)
+        self.neuron_classify = Neuron_Natif_Classify()
 
         if self.archi == Architecture.HAILO:
             from detections.management.commands.models.neurons.neuron_hailo_detect import Neuron_Hailo_Detect
-            self.neuron_detect = Neuron_Hailo_Detect(self.memory.score_min)
+            self.neuron_detect = Neuron_Hailo_Detect()
         else:
-            self.neuron_detect = Neuron_Natif_Detect(self.memory.score_min)
+            self.neuron_detect = Neuron_Natif_Detect()
 
     def sleep(self, time_minutes):
         self.send_log('sleep', '', Log_Level.LOCAL)

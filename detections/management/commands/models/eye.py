@@ -9,23 +9,23 @@ from time import sleep
 import cv2
 from pubsub import pub
 
+from detections.management.commands.models.brain import Brain
 from detections.management.commands.models.enums.agent_source import Agent_Source
 from detections.management.commands.models.enums.event_source import Event_Source
 from detections.management.commands.models.enums.event_type import Event_Type
 from detections.management.commands.models.enums.log_level import Log_Level
 from detections.management.commands.models.memory import Memory
 from utils.date import DateHelper
-from utils.image import ImageHelper
 
 
 class Eye:
     def __init__(
             self,
             memory: Memory,
+            brain: Brain,
     ):
         self.memory = memory
-
-        self.last_frame_seconds = 0
+        self.brain = brain
 
     def send_log(self, event: str, infos: str = '', level: Log_Level = None):
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.EYE, event=event, infos=infos, level=level)
@@ -37,8 +37,9 @@ class Eye:
         if self.memory.source == Agent_Source.VISION or self.memory.source == Agent_Source.VIDEO:
             path = self.memory.get_last_memory()
 
-            self.memory.frame_count = 0
-            self.memory.frame_saved_count = 0
+            if path is None:
+                return
+
             self.memory.last_record_seconds = time.time()
             self.memory.eye_start = time.time()
 
@@ -58,49 +59,58 @@ class Eye:
                 self.memory.last_detections = {}
 
             cap = cv2.VideoCapture(path)
-            frames = 0
+            frames_total = 0
             duration = 0
 
             try:
-                frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+                frames_total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
                 fps = cap.get(cv2.CAP_PROP_FPS)
 
-                duration = round(frames / fps, 1)
+                duration = round(frames_total / fps, 1)
             except Exception as ex:
                 fps = 0
 
             log = os.path.basename(path)
 
-            if fps > 0 and frames > 0 and duration > 0:
-                log = f"{log} / frames: {frames} / fps: {round(fps, 2)} / duration: {DateHelper.secondsToMMSS(duration)}"
+            if fps > 0 and frames_total > 0 and duration > 0:
+                log = f"{log} / frames: {frames_total} / fps: {round(fps, 2)} / duration: {DateHelper.secondsToMMSS(duration)}"
 
-            self.send_log('open', log)
+            self.send_log('open', f"{log}")
 
             ret = True
-            frames = 0
+            frames_total = 0
+            frames_detected = 0
+            frames_classified = 0
+            frames_saved = 0
+            frame_to_ignore = 0
 
             while ret and cap.isOpened() and self.memory.brain_enabled:
-                frame_seconds_elapsed = time.time() - self.last_frame_seconds
                 ret, frame = cap.read()
-                frames = frames + 1
 
                 if ret and frame is not None and frame.size > 0:
+                    frames_total = frames_total + 1
 
-                    if frame_seconds_elapsed > self.memory.frame_seconds:
-                        self.memory.frame_count = self.memory.frame_count + 1
+                    if frame_to_ignore <= 0:
+                        frames_detected = frames_detected + 1
 
-                        frame = ImageHelper.resize_with_ratio(frame, self.memory.capture_width, None)
-
-                        pub.sendMessage(
-                            Event_Type.BRAIN_PROCESS,
+                        self.brain.process_neurons(
                             frame=frame,
                             vision_date=vision_date,
+                            frame_count=frames_saved,
                         )
 
-                        self.last_frame_seconds = time.time()
+                        if not self.memory.perception.is_empty:
+                            frames_classified = frames_classified + 1
+                            frame_to_ignore = self.memory.frames_classified_step * self.memory.perception.detections_count
+
+                        if self.memory.perception.is_saved:
+                            frames_saved = frames_saved + 1
+                            frame_to_ignore = self.memory.frames_saved_step
 
                         if self.memory.pause_capture_seconds > 0:
                             sleep(self.memory.pause_capture_seconds)
+                    else:
+                        frame_to_ignore = frame_to_ignore - 1
 
                 if (self.memory.show_stream
                         and self.memory.perception is not None
@@ -111,10 +121,25 @@ class Eye:
                     self.memory.terminate('cv2')
 
             if self.memory.brain_enabled:
-                self.memory.add_statistics(frames, duration)
+                if duration > 0 and frames_total > 0:
+                    duration_percent = int(round(
+                        (time.time() - self.memory.eye_start) / duration,
+                        2
+                    ) * 100)
 
-                if self.memory.frame_saved_count > self.memory.popcorn_frame_count and self.memory.source == Agent_Source.VISION:
-                    self.memory.log_popcorn(vision_date)
+                    frames_detected_percent = int(round(frames_detected / frames_total, 2) * 100)
+                    frames_classified_percent = int(round(frames_classified / frames_total, 2) * 100)
+                    frames_saved_percent = int(round(frames_saved / frames_total, 2) * 100)
+
+                    self.memory.durations.append(duration_percent)
+                    self.memory.fpm_counts.append(frames_detected_percent)
+
+                    self.send_log('close',
+                                  f"duration: {duration_percent} / detected: {frames_detected_percent} / classified: {frames_classified_percent} / saved: {frames_saved_percent}" +
+                                  f" with classify step: {self.memory.frames_classified_step} / save step: {self.memory.frames_saved_step} / pause: {self.memory.pause_capture_seconds}\n")
+
+                if frames_saved > self.memory.popcorn_frame_count and self.memory.source == Agent_Source.VISION:
+                    self.memory.log_popcorn(vision_date, frames_saved)
 
             self.memory.add_temperature(True)
 
@@ -124,10 +149,9 @@ class Eye:
 
             frame = cv2.imread(path)
 
-            pub.sendMessage(
-                Event_Type.BRAIN_PROCESS,
+            self.brain.process_neurons(
                 frame=frame,
-                vision_date=vision_date,
+                vision_date=vision_date
             )
 
             if (self.memory.show_stream

@@ -15,8 +15,8 @@ from detections.management.commands.models.tools import get_param
 
 class Neuron_Natif_Detect(Neuron):
 
-    def __init__(self, score_min: float):
-        super().__init__('pt', score_min)
+    def __init__(self):
+        super().__init__('pt')
 
     def send_log(self, event: str, infos: str = '', level: Log_Level = None):
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.DETECT, event=event, infos=infos, level=level)

@@ -58,7 +58,6 @@ class Command(BaseCommand):
 
         except Exception as ex:
             error = ex
-            trace = ""
 
             print(error)
 
@@ -67,8 +66,7 @@ class Command(BaseCommand):
                 file = tb.tb_frame.f_code.co_filename.replace(
                     'home/jaden/Projects/followchon_back/', '')
                 line = str(tb.tb_lineno)
-                trace = f" in file {file} on line {line}"
-                print(trace)
+                print(f" in file {file} on line {line}")
 
                 tb = tb.tb_next
 

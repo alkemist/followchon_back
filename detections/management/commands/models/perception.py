@@ -1,5 +1,4 @@
 import os
-import time
 from datetime import datetime
 
 import cv2
@@ -22,15 +21,18 @@ class Perception:
             model_version_classify,
             frame: cv2.typing.MatLike,
             vision_date: datetime,
+            frame_count: int,
     ):
         self.memory = memory
         self.frame = frame
         self.frame_with_detections = frame.copy()
         self.model_version_detect = model_version_detect
         self.model_version_classify = model_version_classify
+        self.detections_count = 0
 
         self.is_triggered = False
-        self.trigger_time = 0
+        self.is_saved = False
+        self.is_empty = True
 
         self.capture_date = datetime(
             vision_date.year,
@@ -39,7 +41,7 @@ class Perception:
             vision_date.hour,
             vision_date.minute,
             vision_date.second,
-            vision_date.microsecond + self.memory.frame_saved_count,
+            vision_date.microsecond + frame_count,
         )
 
     def send_log(self, event: str, infos: str = '', level: Log_Level = None):
@@ -47,6 +49,7 @@ class Perception:
 
     def process(self, signals: list[Signal]):
         self.is_triggered = self.memory.source != Agent_Source.VISION
+        self.is_empty = False
 
         for signal in signals:
             if signal.cls in self.memory.families_dict:
@@ -90,11 +93,10 @@ class Perception:
             else:
                 self.send_log('process', f'unknown family with index "{signal.cls}"', Log_Level.LOCAL)
 
-        if self.is_triggered and len(signals) > 0:
+        if self.is_triggered and not self.is_empty:
             if os.getenv('ENABLE_SAVE'):
                 Capture().write(self.frame, self.capture_date, signals,
                                 self.model_version_detect, self.model_version_classify,
                                 self.memory.source)
 
-            self.trigger_time = time.time()
-            self.memory.frame_saved_count = self.memory.frame_saved_count + 1
+            self.is_saved = True
