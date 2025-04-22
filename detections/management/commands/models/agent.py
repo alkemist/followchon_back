@@ -100,7 +100,7 @@ class Agent:
 
             self.memory.queue = len(self.memory.get_memories())
 
-            if self.memory.is_empty() and (not self.memory.is_awake() or self.source != Agent_Source.VISION):
+            if self.memory.is_empty() and (self.memory.is_ended() or self.source != Agent_Source.VISION):
                 self.memory.terminate('finish')
 
     def end(self):

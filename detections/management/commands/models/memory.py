@@ -56,6 +56,7 @@ class Memory():
 
         self.hour_min = 0
         self.hour_max = 0
+        self.frames_detected_step = 0
         self.frames_classified_step = 0
         self.frames_saved_step = 0
         self.pause_capture_seconds = 0
@@ -113,6 +114,7 @@ class Memory():
     def check(self, reason):
         self.hour_min = int(get_param('vision_hour_min', 7))
         self.hour_max = int(get_param('vision_hour_max', 20))
+        self.frames_detected_step = float(get_param('vision_frames_detected_step', 1))
         self.frames_classified_step = float(get_param('vision_frames_classified_step', 2))
         self.frames_saved_step = int(get_param('vision_frames_saved_step', 10))
         self.pause_capture_seconds = float(get_param('vision_pause_capture_seconds', 0.1))
@@ -148,7 +150,11 @@ class Memory():
 
     def is_started(self):
         return (self.hour_max > self.hour_min and self.hour_min <= self.date.hour) \
-            or (self.hour_max < self.hour_min and (self.date.hour < self.hour_min))
+            or (self.hour_max < self.hour_min and self.date.hour < self.hour_min)
+
+    def is_ended(self):
+        return (self.hour_min < self.hour_max <= self.date.hour) \
+            or (self.hour_min > self.hour_max > self.date.hour)
 
     def is_awake(self):
         return (self.hour_max > self.hour_min and self.hour_min <= self.date.hour < self.hour_max) \

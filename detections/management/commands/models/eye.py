@@ -98,6 +98,8 @@ class Eye:
                             vision_date=vision_date,
                             frame_count=frames_saved,
                         )
+                        
+                        frame_to_ignore = self.memory.frames_detected_step
 
                         if not self.memory.perception.is_empty:
                             frames_classified = frames_classified + 1
