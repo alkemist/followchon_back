@@ -81,6 +81,7 @@ class Agent:
                 if self.memory.is_low() and self.memory.is_awake():
                     if not self.memory.recording:
                         self.memory.record('start')
+                        self.brain.check('start')
                     elif self.memory.is_lost():
                         self.memory.record('lost')
                 if self.memory.recording:

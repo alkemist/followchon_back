@@ -30,6 +30,9 @@ class Neuron_Hailo_Detect(Neuron):
     def check(self, reason: str):
         model_version = int(get_param('vision_model_version_detect'))
 
+        # print('check 4',
+        #      f'db model version: {model_version} / model none: {self.model is None} / current model version: {self.current_model_version}')
+
         if self.model is None or self.current_model_version is None or self.current_model_version != model_version:
             self.current_model_version = model_version
 
@@ -83,14 +86,14 @@ class Neuron_Hailo_Detect(Neuron):
         image_pil = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         image_pil = Image.fromarray(image_pil)
 
+        if self.model is None:
+            self.check('process')
+
         (padding, padded_size, processed_image) = self.preprocess(image_pil.copy())
 
         (height_resized, width_resized) = processed_image.size
 
         yolo_results = list()
-
-        if self.model is None:
-            self.check('process')
 
         raw_detections_queue = self.model.run(np.array(processed_image))
 

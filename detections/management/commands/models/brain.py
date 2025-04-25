@@ -41,9 +41,17 @@ class Brain:
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.BRAIN, event=event, infos=infos, level=level)
 
     def check(self, reason: str):
+        # if reason == 'start':
+        #    print("check 1")
+
         self.memory.check(reason)
 
+        # if reason == 'start':
+        #    print("check 2")
+
         if self.memory.is_started() or self.memory.source != Agent_Source.VISION:
+            # if reason == 'start':
+            #    print("check 3")
             self.neuron_detect.check(reason)
             self.neuron_classify.check(reason)
 
