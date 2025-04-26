@@ -97,6 +97,11 @@ class Agent:
                 if self.memory.brain_enabled and self.source != Agent_Source.PHOTO:
                     self.brain.check('watch')
 
+                    temperature = self.memory.add_temperature(True)
+                    if temperature > self.memory.temp_alert:
+                        self.memory.log_warning_temperature()
+                        self.brain.sleep(10)
+
                 self.memory.queues.append(len(self.memory.get_memories()))
 
             self.memory.queue = len(self.memory.get_memories())

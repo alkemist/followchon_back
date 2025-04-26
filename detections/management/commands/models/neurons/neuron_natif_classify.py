@@ -23,6 +23,9 @@ class Neuron_Natif_Classify(Neuron):
         model_version = int(get_param('vision_model_version_classify'))
 
         if self.current_model_version is None or self.current_model_version != model_version:
+            if self.model is not None:
+                self.release()
+                
             self.current_model_version = model_version
 
             self.send_log('load', f"version {self.current_model_version} / {reason}", Log_Level.LOCAL)

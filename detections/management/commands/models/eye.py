@@ -98,7 +98,7 @@ class Eye:
                             vision_date=vision_date,
                             frame_count=frames_saved,
                         )
-                        
+
                         frame_to_ignore = self.memory.frames_detected_step
 
                         if not self.memory.perception.is_empty:
@@ -142,8 +142,6 @@ class Eye:
 
                 if frames_saved > self.memory.popcorn_frame_count and self.memory.source == Agent_Source.VISION:
                     self.memory.log_popcorn(vision_date, frames_saved)
-
-            self.memory.add_temperature(True)
 
         elif self.memory.source == Agent_Source.PHOTO:
             path = self.memory.get_last_memory()

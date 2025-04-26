@@ -165,6 +165,8 @@ class Memory():
         return capture_time_elapsed >= self.record_time + self.record_time_delay
 
     def add_temperature(self, force: bool = False):
+        temperature = None
+
         if self.vcgm is not None:
             minute = math.floor(self.date.minute / 10)
 
@@ -174,8 +176,7 @@ class Memory():
                 temperature = self.vcgm.measure_temp()
                 self.temperatures[key] = round(temperature, 1)
 
-                if temperature > self.temp_alert:
-                    self.log_warning_temperature()
+        return temperature
 
     def record(self, reason: str = ''):
         self.send_log('record', reason)
