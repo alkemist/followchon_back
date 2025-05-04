@@ -63,6 +63,7 @@ class Brain:
         signals = detect_signals.copy()
 
         if self.memory.source == Agent_Source.VISION:
+
             detect_safes_cls = list()
             detect_unsafes_by_family = {}
             self.memory.perception.detections_count = len(detect_signals)
@@ -90,6 +91,13 @@ class Brain:
                             detect_unsafes_by_family[family.index].append(classify_yolo_result)
                     else:
                         self.send_log('process_neurons', f'unknown family with slug "{slug}"')
+
+            # @TODO Prendre en compte les detections autres que guinea-pigs
+            if len(detect_safes_cls) > len(self.memory.classify_families_dict.keys()):
+                self.memory.perception.errors = self.memory.perception.errors + 1
+
+            if len(detect_safes_cls) != len(detect_unsafes_by_family.keys()):
+                self.memory.perception.errors = self.memory.perception.errors + 1
 
             for cls, detect_unsafes in detect_unsafes_by_family.items():
                 detect_unsafes = sorted(detect_unsafes, key=lambda result: result.score, reverse=True)

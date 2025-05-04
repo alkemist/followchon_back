@@ -12,7 +12,7 @@ from configuration.serializers.family import FamilySerializer
 from configuration.serializers.family_detections import FamilyDetectionsSerializer
 from configuration.serializers.serializers import ZoneSerializer, ParameterSerializer
 from detections.management.commands.models.enums.agent_source import Agent_Source
-from detections.models import Detection
+from detections.models import Detection, Capture
 from detections.serializers.detection_family import DetectionCountByDayFamilySerializer, \
     DetectionDistanceByDayFamilySerializer
 
@@ -45,6 +45,8 @@ class FamilyViewSet(ReadOnlyViewSet):
                     Prefetch(
                         'detections',
                         queryset=Detection.objects.filter(
+                            capture__source=Agent_Source.VISION,
+                            capture__status__ne=Capture.Statuses.DELETED,
                             capture__date__range=[
                                 date.replace(hour=0, minute=0, second=0),
                                 date.replace(hour=23, minute=59, second=59)
@@ -56,7 +58,8 @@ class FamilyViewSet(ReadOnlyViewSet):
                 queryset = Family.objects.prefetch_related(
                     Prefetch(
                         'detections',
-                        queryset=Detection.objects.filter(capture__source=Agent_Source.VISION)
+                        queryset=Detection.objects.filter(capture__source=Agent_Source.VISION,
+                                                          capture__status__ne=Capture.Statuses.DELETED)
                         .filter(capture__date__gte=datetime(2025, 2, 17))
                     )
                 )
@@ -136,6 +139,7 @@ class FamilyViewSet(ReadOnlyViewSet):
                                              INNER JOIN detections_capture 
                                              ON (detections_detection."capture_id" = detections_capture."id") 
                                         WHERE detections_capture."source" = "{Agent_Source.VISION}"
+                                            AND detections_capture."status" != "{Capture.Statuses.DELETED}"
                                             AND "detections_capture"."date" >= "2025-02-17 00:00:00" 
                                             AND "detections_detection"."family_id" = {family.id}
                                   )

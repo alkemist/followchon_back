@@ -29,6 +29,7 @@ class Perception:
         self.model_version_detect = model_version_detect
         self.model_version_classify = model_version_classify
         self.detections_count = 0
+        self.errors = 0
 
         self.is_triggered = False
         self.is_saved = False
@@ -91,12 +92,13 @@ class Perception:
                 self.frame_with_detections = signal.trace(self.frame_with_detections)
 
             else:
+                self.errors = self.errors + 1
                 self.send_log('process', f'unknown family with index "{signal.cls}"', Log_Level.LOCAL)
 
         if self.is_triggered and not self.is_empty:
             if os.getenv('ENABLE_SAVE'):
                 Capture().write(self.frame, self.capture_date, signals,
                                 self.model_version_detect, self.model_version_classify,
-                                self.memory.source)
+                                self.memory.source, self.errors)
 
             self.is_saved = True

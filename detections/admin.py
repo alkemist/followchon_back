@@ -16,19 +16,22 @@ class DetectionInline(admin.TabularInline):
 class CaptureAdmin(admin.ModelAdmin):
     fieldsets = [
         ('Identification',
-         {'fields': ['date', 'photo_file', 'image_tag', 'status', 'version_detect', 'version_classify', 'changed',
+         {'fields': ['date', 'photo_file', 'image_tag', 'status', 'errors', 'version_detect', 'version_classify',
+                     'changed',
                      'front_url',
                      ], 'classes': []}),
     ]
-    list_display = ['id', 'date', 'status', 'changed', 'version_detect', 'version_classify', 'image_tag', 'front_url']
+    list_display = ['id', 'date', 'status', 'changed', 'errors', 'version_detect', 'version_classify', 'image_tag',
+                    'front_url']
     list_display_links = ['date']
-    readonly_fields = ['image_tag', 'status', 'source', 'front_url']
+    readonly_fields = ['image_tag', 'status', 'errors', 'source', 'front_url']
     list_editable = []
     search_fields = ['id', 'date', 'photo_file']
     ordering = ['-date']
     list_filter = ['date', 'status', 'changed', 'version_detect', 'version_classify', 'train_all', 'train_chons',
-                   'source']
-    actions = ['resize', 'mark_as_draft', 'mark_as_verified', 'mark_as_archived', 'mark_as_deleted', 'migrate']
+                   'source', 'errors']
+    actions = ['resize', 'mark_as_draft', 'mark_as_verified', 'mark_as_archived', 'mark_as_waiting', 'mark_as_deleted',
+               'migrate']
     inlines = [
         DetectionInline,
     ]
@@ -54,8 +57,8 @@ class CaptureAdmin(admin.ModelAdmin):
 
     @admin.action(description="Migrate")
     def migrate(self, request, queryset):
-        # for item in queryset.iterator():
-        #     item.inverse()
+        for item in queryset.iterator():
+            item.calc_errors()
 
         updated = len(queryset)
 
@@ -118,6 +121,24 @@ class CaptureAdmin(admin.ModelAdmin):
             ngettext(
                 "%d capture was successfully marked as archived.",
                 "%d captures were successfully marked as archived.",
+                updated,
+            )
+            % updated,
+            messages.SUCCESS,
+        )
+
+    @admin.action(description="Mark selected captures as waiting")
+    def mark_as_waiting(self, request, queryset):
+        for item in queryset.iterator():
+            item.mark_as(Capture.Statuses.WAITING, True)
+
+        updated = queryset.update(status=Capture.Statuses.WAITING)
+
+        self.message_user(
+            request,
+            ngettext(
+                "%d capture was successfully marked as waiting.",
+                "%d captures were successfully marked as waiting.",
                 updated,
             )
             % updated,

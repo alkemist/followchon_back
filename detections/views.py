@@ -42,7 +42,7 @@ class CaptureViewSet(UpdateViewSet):
                 queryset = queryset.filter(source=source)
 
             if status is not None and status:
-                if status == Capture.STATUS_EDITABLE:
+                if status == Capture.STATUS_EDITABLE or status == Capture.STATUS_ERROR:
                     queryset = queryset.filter(Q(status=Capture.Statuses.DRAFT) | Q(status=Capture.Statuses.VERIFIED))
                 elif status == Capture.STATUS_ALL:
                     queryset = queryset.filter(Q(status=Capture.Statuses.DRAFT) | Q(status=Capture.Statuses.VERIFIED)
@@ -52,13 +52,16 @@ class CaptureViewSet(UpdateViewSet):
             else:
                 queryset = queryset.filter(status=Capture.Statuses.DRAFT)
 
-            if sort_field is not None and sort_field and sort_value is not None:
-                if sort_value == 'desc':
-                    sort_field = '-' + sort_field
-
-                queryset = queryset.order_by(sort_field)
+            if status == Capture.STATUS_ERROR:
+                queryset = queryset.filter(errors__gt=0).order_by('-errors')
             else:
-                queryset = queryset.order_by('-date')
+                if sort_field is not None and sort_field and sort_value is not None:
+                    if sort_value == 'desc':
+                        sort_field = '-' + sort_field
+
+                    queryset = queryset.order_by(sort_field)
+                else:
+                    queryset = queryset.order_by('-date')
 
         return queryset
 
@@ -75,7 +78,7 @@ class CaptureViewSet(UpdateViewSet):
     def statistics_by_day(self, request, *args, **kwargs):
         captures = (
             Capture.objects.all()
-            .filter(source=Agent_Source.VISION)
+            .filter(source=Agent_Source.VISION, status__ne=Capture.Statuses.DELETED)
             # .filter(date__gte=datetime(2024, 9, 4))
             .filter(date__gte=datetime(2025, 2, 17))
             .annotate(

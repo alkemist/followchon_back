@@ -27,10 +27,12 @@ class Capture(models.Model):
         DRAFT = 'draft', _('Draft')
         VERIFIED = 'verified', _('Verified')
         ARCHIVED = 'archived', _('Archived')
+        WAITING = 'waiting', _('Waiting')
         DELETED = 'deleted', _('Deleted')
 
     STATUS_EDITABLE = 'editable'
     STATUS_ALL = 'all'
+    STATUS_ERROR = 'error'
 
     base_dir = 'static'
     static_dir = 'captures'
@@ -46,6 +48,7 @@ class Capture(models.Model):
     changed = models.BooleanField(default=False)
     version_detect = models.IntegerField(null=True, default=None)
     version_classify = models.IntegerField(null=True, default=None)
+    errors = models.IntegerField(null=True, default=None)
     train_all = models.BooleanField(default=False)
     train_chons = models.BooleanField(default=False)
 
@@ -58,7 +61,8 @@ class Capture(models.Model):
     def write(self, frame: cv2.typing.MatLike, date: datetime, annotations: list[Signal],
               version_detect: int,
               version_classify: int,
-              source: Agent_Source):
+              source: Agent_Source,
+              errors: int = 0):
         self.status = Capture.Statuses.DRAFT
         self.date = date
         self.photo_file = f"{self.date.strftime('%Y-%m-%d_%H-%M-%S-%f')}.jpg"
@@ -66,6 +70,7 @@ class Capture(models.Model):
         self.version_detect = version_detect
         self.version_classify = version_classify
         self.source = source
+        self.errors = errors
 
         photo_dir = f"{self.file_dir(None, True)}{self.images_dir}"
 
@@ -95,9 +100,25 @@ class Capture(models.Model):
         file.write_text("\n".join([annotation.line for annotation in annotations]))
 
     def check_changed(self):
-        detections = Detection.objects.all().filter(capture_id=self.id)
+        detections = Detection.objects.filter(capture_id=self.id)
         self.changed = any([d.score is None or d.score == 0 for d in detections])
         self.save()
+
+    def calc_errors(self):
+        detections_guineapig = Detection.objects.filter(capture_id=self.id, family_id=1)
+        detections_chons = Detection.objects.filter(capture_id=self.id).exclude(family_id=1)
+
+        if self.errors is None:
+            self.errors = 0
+
+            # @TODO Rendre les valeurs dynamiques
+            if len(detections_guineapig) > 2:
+                self.errors = self.errors + 1
+
+            if len(detections_guineapig) > len(detections_chons):
+                self.errors = self.errors + 1
+
+            self.save()
 
     def save_image(self, image):
         cv2.imwrite(
