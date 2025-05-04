@@ -113,10 +113,11 @@ class Capture(models.Model):
 
             # @TODO Rendre les valeurs dynamiques
             if len(detections_guineapig) > 2:
-                self.errors = self.errors + 1
-
-            if len(detections_guineapig) > len(detections_chons):
-                self.errors = self.errors + 1
+                self.errors = 3
+            elif len(detections_guineapig) > len(detections_chons):
+                self.errors = 2
+            if len(detections_guineapig) == 1:
+                self.errors = 1
 
             self.save()
 
