@@ -46,11 +46,11 @@ class FamilyViewSet(ReadOnlyViewSet):
                         'detections',
                         queryset=Detection.objects.filter(
                             capture__source=Agent_Source.VISION,
-                            capture__status__ne=Capture.Statuses.DELETED,
                             capture__date__range=[
                                 date.replace(hour=0, minute=0, second=0),
                                 date.replace(hour=23, minute=59, second=59)
                             ])
+                        .exclude(capture__status=Capture.Statuses.DELETED)
                         .order_by('capture__date')
                     )
                 )
@@ -58,8 +58,8 @@ class FamilyViewSet(ReadOnlyViewSet):
                 queryset = Family.objects.prefetch_related(
                     Prefetch(
                         'detections',
-                        queryset=Detection.objects.filter(capture__source=Agent_Source.VISION,
-                                                          capture__status__ne=Capture.Statuses.DELETED)
+                        queryset=Detection.objects.filter(capture__source=Agent_Source.VISION)
+                        .exclude(capture__status=Capture.Statuses.DELETED)
                         .filter(capture__date__gte=datetime(2025, 2, 17))
                     )
                 )

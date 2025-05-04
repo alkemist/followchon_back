@@ -78,7 +78,8 @@ class CaptureViewSet(UpdateViewSet):
     def statistics_by_day(self, request, *args, **kwargs):
         captures = (
             Capture.objects.all()
-            .filter(source=Agent_Source.VISION, status__ne=Capture.Statuses.DELETED)
+            .filter(source=Agent_Source.VISION)
+            .exclude(status=Capture.Statuses.DELETED)
             # .filter(date__gte=datetime(2024, 9, 4))
             .filter(date__gte=datetime(2025, 2, 17))
             .annotate(
