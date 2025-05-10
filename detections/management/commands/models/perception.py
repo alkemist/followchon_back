@@ -92,7 +92,7 @@ class Perception:
                 self.frame_with_detections = signal.trace(self.frame_with_detections)
 
             else:
-                self.errors = self.errors + 1
+                # self.errors = self.errors + 1
                 self.send_log('process', f'unknown family with index "{signal.cls}"', Log_Level.LOCAL)
 
         if self.is_triggered and not self.is_empty:

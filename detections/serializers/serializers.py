@@ -32,7 +32,7 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Capture
-        fields = ['id', 'date', 'status', 'detections', 'detections_ids', 'photo_path', 'size', 'changed']
+        fields = ['id', 'date', 'status', 'detections', 'detections_ids', 'photo_path', 'size', 'changed', 'errors']
 
     def update(self, instance: Capture, validated_data):
         zones = Zone.objects.all().filter(is_enabled=True)
