@@ -53,7 +53,7 @@ class CaptureViewSet(UpdateViewSet):
                 queryset = queryset.filter(status=Capture.Statuses.DRAFT)
 
             if status == Capture.STATUS_ERROR:
-                queryset = queryset.filter(errors__gt=1)
+                queryset = queryset.filter(errors__gt=0)
             else:
                 if sort_field is not None and sort_field and sort_value is not None:
                     if sort_value == 'desc':

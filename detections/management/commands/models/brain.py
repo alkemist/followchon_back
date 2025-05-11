@@ -60,16 +60,17 @@ class Brain:
         )
 
         detect_signals = self.neuron_detect.process(frame)
-        signals = detect_signals.copy()
+        signals = []
 
         if self.memory.source == Agent_Source.VISION:
-
             detect_safes_cls = list()
             detect_others = list()
             detect_unsafes_by_family = {}
             self.memory.perception.detections_count = len(detect_signals)
 
             for detect_result in detect_signals:
+                signals.append(detect_result)
+
                 image_result = frame[
                                detect_result.ortho_tl_y:detect_result.ortho_br_y,
                                detect_result.ortho_tl_x:detect_result.ortho_br_x
@@ -82,14 +83,14 @@ class Brain:
                             family = self.memory.classify_families_dict[slug]
                             classify_yolo_result = detect_result.clone(family.index, score)
 
-                            if not family.is_unique:
-                                detect_safes_cls.append(family.index)
-                                signals.append(classify_yolo_result)
-                            else:
-                                if family.index not in detect_unsafes_by_family:
-                                    detect_unsafes_by_family[family.index] = []
+                            # if not family.is_unique:
+                            #    detect_safes_cls.append(family.index)
+                            # else:
 
-                                detect_unsafes_by_family[family.index].append(classify_yolo_result)
+                            if family.index not in detect_unsafes_by_family:
+                                detect_unsafes_by_family[family.index] = []
+
+                            detect_unsafes_by_family[family.index].append(classify_yolo_result)
                         else:
                             self.send_log('process_neurons', f'unknown family with slug "{slug}"')
                 else:
@@ -106,12 +107,14 @@ class Brain:
 
             # @TODO Prendre en compte les detections autres que guinea-pigs
 
-            if len(detect_signals) > len(self.memory.classify_families_dict.keys()):
-                self.memory.perception.errors = 3
-            elif len(detect_others) > 0:
-                self.memory.perception.errors = 2
+            if len(detect_signals) == 1:
+                self.memory.perception.errors = 1
 
-                if len(detect_others) > 0:
+            if len(detect_others) > 0:
+                self.memory.perception.errors = 6
+
+                if len(detect_safes_cls) > 0:
+                    self.memory.perception.errors = 4
                     detect_others = sorted(detect_others, key=lambda result: result.score, reverse=True)
 
                     for slug, family in self.memory.classify_families_dict.items():
@@ -122,9 +125,14 @@ class Brain:
 
                         if len(detect_others) == 0 \
                                 or len(detect_safes_cls) == len(self.memory.classify_families_dict.keys()):
+                            self.memory.perception.errors = 3
                             break
-            elif len(detect_signals) == 1:
-                self.memory.perception.errors = 1
+
+            if len(detect_signals) != len(detect_safes_cls):
+                self.memory.perception.errors = 8
+
+            if len(detect_signals) > len(self.memory.classify_families_dict.keys()):
+                self.memory.perception.errors = 10
 
         if len(signals) > 0:
             signals = sorted(signals, key=lambda signal: signal.cls)

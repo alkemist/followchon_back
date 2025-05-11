@@ -63,12 +63,17 @@ def copy_to(df, dist_dir, min_width, min_height):
             f"{dist_dir}/images/" + df.loc[index, 'filename'] + "." + df.loc[index, 'ext']
         )
 
-        filter_yolo_file(
+        shutil.copy(
             str(df.loc[index, 'label_path']),
-            f"{dist_dir}/labels/" + df.loc[index, 'filename'] + f".txt",
-            min_width,
-            min_height,
+            f"{dist_dir}/labels/" + df.loc[index, 'filename'] + ".txt"
         )
+
+        # filter_yolo_file(
+        #    str(df.loc[index, 'label_path']),
+        #    f"{dist_dir}/labels/" + df.loc[index, 'filename'] + f".txt",
+        #    min_width,
+        #    min_height,
+        # )
 
 
 def chunk_list(lst, chunk_size):
