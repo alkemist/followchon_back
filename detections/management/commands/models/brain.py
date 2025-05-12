@@ -81,16 +81,18 @@ class Brain:
                     for [slug, score] in classify_signals:
                         if slug in self.memory.classify_families_dict:
                             family = self.memory.classify_families_dict[slug]
-                            classify_yolo_result = detect_result.clone(family.index, score)
 
-                            # if not family.is_unique:
-                            #    detect_safes_cls.append(family.index)
-                            # else:
+                            if family.is_listed and family.is_unique:
+                                classify_yolo_result = detect_result.clone(family.index, score)
 
-                            if family.index not in detect_unsafes_by_family:
-                                detect_unsafes_by_family[family.index] = []
+                                # if not family.is_unique:
+                                #    detect_safes_cls.append(family.index)
+                                # else:
 
-                            detect_unsafes_by_family[family.index].append(classify_yolo_result)
+                                if family.index not in detect_unsafes_by_family:
+                                    detect_unsafes_by_family[family.index] = []
+
+                                detect_unsafes_by_family[family.index].append(classify_yolo_result)
                         else:
                             self.send_log('process_neurons', f'unknown family with slug "{slug}"')
                 else:
@@ -118,7 +120,7 @@ class Brain:
                     detect_others = sorted(detect_others, key=lambda result: result.score, reverse=True)
 
                     for slug, family in self.memory.classify_families_dict.items():
-                        if family.index not in detect_safes_cls:
+                        if family.is_listed and family.is_unique and family.index not in detect_safes_cls:
                             detect_safes_cls.append(family.index)
                             signals.append(detect_others[0].clone(family.index, 0))
                             detect_others = detect_others[1:]
@@ -127,9 +129,9 @@ class Brain:
                                 or len(detect_safes_cls) == len(self.memory.classify_families_dict.keys()):
                             self.memory.perception.errors = 3
                             break
-
-            if len(detect_signals) != len(detect_safes_cls):
-                self.memory.perception.errors = 8
+            else:
+                if len(detect_signals) != len(detect_safes_cls):
+                    self.memory.perception.errors = 8
 
             if len(detect_signals) > len(self.memory.classify_families_dict.keys()):
                 self.memory.perception.errors = 10
