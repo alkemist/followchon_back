@@ -46,7 +46,8 @@ class DetectionCountByDayFamilySerializer(serializers.ModelSerializer):
 class DetectionDistanceByDayFamilySerializer(serializers.ModelSerializer):
     id = serializers.DateField()
     total = serializers.FloatField()
+    avg_7 = serializers.FloatField()
 
     class Meta:
         model = Detection
-        fields = ['id', 'total']
+        fields = ['id', 'total', 'avg_7']
