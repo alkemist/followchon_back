@@ -37,4 +37,4 @@ if __name__ == '__main__':
 
     purge_cache(train_dataset_path, ['train', 'val', 'test'], ['noisette', 'sundae'])
 
-    end(is_ok)
+    end(os.getenv('TRAIN_CLASSIFY_SHUTDOWN'),is_ok)

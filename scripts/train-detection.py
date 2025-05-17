@@ -51,4 +51,4 @@ if __name__ == '__main__':
 
     purge_cache(train_dataset_path, ['train', 'val', 'test'], ['images'])
 
-    end(is_ok)
+    end(os.getenv('TRAIN_DETECT_SHUTDOWN'), is_ok)

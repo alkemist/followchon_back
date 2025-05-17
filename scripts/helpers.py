@@ -217,8 +217,8 @@ def execute(cmd):
         raise subprocess.CalledProcessError(return_code, cmd)
 
 
-def end(is_ok):
-    if os.getenv('TRAIN_SHUTDOWN') and is_ok:
+def end(shutdown, is_ok):
+    if shutdown and is_ok:
         print(f"-- Shutdown")
         os.system("shutdown /s /t 600")
 
