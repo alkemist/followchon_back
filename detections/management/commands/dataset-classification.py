@@ -86,13 +86,20 @@ def get_extension(path):
 class Command(BaseCommand):
     help = ""
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--confirm",
+            action="store_true",
+            help="Confirm",
+        )
+
     def handle(self, *args, **options):
         load_dotenv()
 
         chunk_number = int(os.getenv('DATASET_CHUNK_FIRST')) if os.getenv('DATASET_CHUNK_FIRST') else None
         dataset_base_result_dir = os.getenv('DATASET_RESULT_DIR')
         dataset_min_count = float(os.getenv('DATASET_MIN_COUNT'))
-        changed_percent = float(os.getenv('DATASET_CHANGED_PERCENT'))
+        changed_percent = float(os.getenv('DATASET_CLASSIFICATION_CHANGED_PERCENT'))
         active = os.getenv('DATASET_CLASSIFICATION_ACTIVE', False)
         dataset_first = os.getenv('DATASET_CLASSIFICATION_FIRST', False)
         min_width = float(os.getenv('DETECTION_MIN_WIDTH_NORM', 0.02))
@@ -102,6 +109,9 @@ class Command(BaseCommand):
         test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
         train_percent = 1 - test_percent - val_percent
         unchanged_percent = 1 - changed_percent
+
+        if options["confirm"]:
+            active = True
 
         if not chunk_number or chunk_number == 0 or isnan(chunk_number):
             parameters = Parameter.objects.all()
@@ -248,8 +258,9 @@ class Command(BaseCommand):
                 Capture.objects.filter(id__in=df_all['id'].to_list()) \
                     .update(**{family_type_db: True})
 
-        if active:
-            self.stdout.write(
-                self.style.SUCCESS(
-                    ('[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished')
-            )
+                print(f"\n=> Save to {dataset_dir}\n")
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                ('[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished')
+        )

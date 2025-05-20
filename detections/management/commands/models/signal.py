@@ -130,7 +130,7 @@ class Signal:
         clone.ortho_br_y = self.ortho_br_y
 
         clone.line \
-            = (f"{self.cls} {self.norm_x_center} {self.norm_y_center} " +
+            = (f"{cls} {self.norm_x_center} {self.norm_y_center} " +
                f"{self.norm_width} {self.norm_height}")
 
         return clone

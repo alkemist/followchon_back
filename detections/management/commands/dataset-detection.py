@@ -114,19 +114,26 @@ def get_extension(path):
 class Command(BaseCommand):
     help = ""
 
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--confirm",
+            action="store_true",
+            help="Confirm",
+        )
+
     def handle(self, *args, **options):
         load_dotenv()
 
         chunk_number = int(os.getenv('DATASET_CHUNK_FIRST')) if os.getenv('DATASET_CHUNK_FIRST') else None
         dataset_base_result_dir = os.getenv('DATASET_RESULT_DIR')
-        active = os.getenv('DATASET_DETECTION_ACTIVE', False)
+        active = options["confirm"]
 
         min_width = float(os.getenv('DETECTION_MIN_WIDTH_NORM', 0.02))
         min_height = float(os.getenv('DETECTION_MIN_HEIGHT_NORM', 0.04))
         test_percent = float(os.getenv('DATASET_TEST_PERCENT'))
         val_percent = float(os.getenv('DATASET_VAL_PERCENT'))
         video_percent = float(os.getenv('DATASET_VIDEO_PERCENT'))
-        changed_percent = float(os.getenv('DATASET_CHANGED_PERCENT'))
+        changed_percent = float(os.getenv('DATASET_DETECTION_CHANGED_PERCENT'))
         dataset_min_count = float(os.getenv('DATASET_MIN_COUNT'))
         dataset_first = os.getenv('DATASET_DETECTION_FIRST', False)
         train_percent = 1 - test_percent - val_percent
@@ -275,7 +282,6 @@ class Command(BaseCommand):
             # print("\n[TRAIN] Répartition des CHANGED dans:\n", df_train['changed'].value_counts(normalize=False))
 
             dataset_dir = f'{dataset_base_result_dir}{chunk_number}-{family_type}'
-            print(f"\n=> Save to {dataset_dir}\n")
 
             if active:
                 if not os.path.exists(dataset_dir):
@@ -294,11 +300,13 @@ class Command(BaseCommand):
                 Capture.objects.filter(id__in=df_all['id'].to_list()) \
                     .update(**{family_type_db: True})
 
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        (
-                            '[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished')
-                )
+                print(f"\n=> Save to {dataset_dir}\n")
+
+            self.stdout.write(
+                self.style.SUCCESS(
+                    (
+                        '[DEMO]' if not active else '') + f'[{chunk_number}] Successfully finished')
+            )
         else:
             print("[All] Video count : ", video_count, '/', df_video.shape[0])
             print("[All] Vision count : ", vision_count, '/', df_vision.shape[0])
