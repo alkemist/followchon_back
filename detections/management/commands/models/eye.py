@@ -1,9 +1,6 @@
 import os
-import random
-import re
 import time
 from datetime import datetime
-from pathlib import Path
 from time import sleep
 
 import cv2
@@ -30,33 +27,13 @@ class Eye:
     def send_log(self, event: str, infos: str = '', level: Log_Level = None):
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.EYE, event=event, infos=infos, level=level)
 
-    def watch(self):
-        vision_date = datetime.now()
-        path = None
-
+    def watch(self, path: str, vision_date=datetime.now()):
         if self.memory.source == Agent_Source.VISION or self.memory.source == Agent_Source.VIDEO:
-            path = self.memory.get_last_memory()
-
             if path is None:
                 return
 
             self.memory.last_record_seconds = time.time()
             self.memory.eye_start = time.time()
-
-            if self.memory.source == Agent_Source.VISION:
-                file_date = Path(path).stem
-                date_values = re.split('[-_]', file_date)
-                vision_date = datetime(
-                    int(date_values[0]),
-                    int(date_values[1]),
-                    int(date_values[2]),
-                    int(date_values[3]),
-                    int(date_values[4]),
-                    int(date_values[5]),
-                    random.randint(0, 500)
-                )
-            else:
-                self.memory.last_detections = {}
 
             cap = cv2.VideoCapture(path)
             frames_total = 0
@@ -144,7 +121,6 @@ class Eye:
                     self.memory.log_popcorn(vision_date, frames_saved)
 
         elif self.memory.source == Agent_Source.PHOTO:
-            path = self.memory.get_last_memory()
             self.send_log('watch', path)
 
             frame = cv2.imread(path)

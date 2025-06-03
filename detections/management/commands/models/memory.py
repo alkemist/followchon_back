@@ -80,15 +80,14 @@ class Memory():
 
         if self.source == Agent_Source.VISION:
             last_detections = Detection.objects.raw('''
-                SELECT * FROM (
-                    SELECT d.*
-                    FROM detections_detection d
-                    LEFT JOIN configuration_family f ON d.family_id = f.id
-                    WHERE f.is_tracked = true
-                    ORDER BY d.id DESC
-                 ) d 
-                 GROUP BY d.family_id
-            ''')
+                                                    SELECT *
+                                                    FROM (SELECT d.*
+                                                          FROM detections_detection d
+                                                                   LEFT JOIN configuration_family f ON d.family_id = f.id
+                                                          WHERE f.is_tracked = true
+                                                          ORDER BY d.id DESC) d
+                                                    GROUP BY d.family_id
+                                                    ''')
 
             last_detections_dict: dict[int, Detection] = (
                 ArrayHelper.object_list_to_dict(last_detections, 'family_id')
@@ -126,7 +125,8 @@ class Memory():
             self.terminate('check')
 
     def get_memories(self):
-        return FileHelper.list_files(self.records_directory, r'.*\.(' + self.record_exts + ')$')
+        memories = FileHelper.list_files(self.records_directory, r'.*\.(' + self.record_exts + ')$')
+        return memories[::-1]
 
     def get_last_memory(self):
         memories = self.get_memories()
@@ -160,8 +160,8 @@ class Memory():
         return (self.hour_max > self.hour_min and self.hour_min <= self.date.hour < self.hour_max) \
             or (self.hour_max < self.hour_min and (self.date.hour >= self.hour_max or self.date.hour < self.hour_min))
 
-    def is_lost(self):
-        capture_time_elapsed = round(time.time() - self.last_record_seconds)
+    def is_lost(self, vision_delay):
+        capture_time_elapsed = vision_delay.total_seconds()
         return capture_time_elapsed >= self.record_time + self.record_time_delay
 
     def add_temperature(self, force: bool = False):
@@ -178,11 +178,11 @@ class Memory():
 
         return temperature
 
-    def record(self, reason: str = ''):
+    def record(self, reason: str = '', vision_date: datetime = None):
         self.send_log('record', reason)
 
         if self.recording:
-            self.log_restart_recording()
+            self.log_restart_recording(vision_date)
         else:
             self.log_start_recording()
 
@@ -250,14 +250,11 @@ class Memory():
         )
 
     def log_stop_recording(self, reason: str = ''):
-        infos = ''
-
-        if reason:
-            infos = (
-                    f"records={self.queue}/{self.records_max} " +
-                    f"frame_seconds={self.frames_classified_step}s " +
-                    f"pause_capture={self.pause_capture_seconds}s "
-            )
+        infos = (
+                f"records={self.queue}/{self.records_max} " +
+                f"frame_seconds={self.frames_classified_step}s " +
+                f"pause_capture={self.pause_capture_seconds}s "
+        )
 
         self.send_log(
             'Stop recording',
@@ -265,10 +262,12 @@ class Memory():
             Log_Level.WARNING if reason else Log_Level.INFO
         )
 
-    def log_restart_recording(self):
+    def log_restart_recording(self, vision_date: datetime = None):
         self.send_log(
             'Restart recording',
-            f"records={self.queue}/{self.records_max} ",
+            (f"records={self.queue}/{self.records_max} " +
+             f"last={vision_date.strftime('%H:%M:%S')} "
+             ),
             Log_Level.WARNING
         )
 
