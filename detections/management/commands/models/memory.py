@@ -1,7 +1,6 @@
 import math
 import os
 import statistics
-import time
 from datetime import datetime
 
 import psutil
@@ -41,7 +40,7 @@ class Memory():
         self.queue = 0
         self.record_time = 60
         self.record_time_delay = 50
-        self.last_record_seconds = time.time()
+        self.last_record_date = datetime.now()
         self.recording = False
         self.vcgm = None
         self.temperature = 0
@@ -125,8 +124,15 @@ class Memory():
             self.terminate('check')
 
     def get_memories(self):
-        memories = FileHelper.list_files(self.records_directory, r'.*\.(' + self.record_exts + ')$')
-        return memories[::-1]
+        return FileHelper.list_files(self.records_directory, r'.*\.(' + self.record_exts + ')$')
+
+    def get_first_memory(self):
+        memories = self.get_memories()
+
+        if len(memories) > 0:
+            return f"{self.records_directory}/{memories[-1]}"
+
+        return None
 
     def get_last_memory(self):
         memories = self.get_memories()
@@ -191,7 +197,7 @@ class Memory():
                       f"-segment_time {self.record_time} -segment_format mkv -segment_atclocktime 1 -strftime 1 "
                       f"{self.records_directory}/%Y-%m-%d_%H-%M-%S.mkv"))
 
-        self.last_record_seconds = time.time()
+        self.last_record_date = datetime.now()
         self.recording = True
 
     def terminate(self, reason: str):
@@ -263,11 +269,14 @@ class Memory():
         )
 
     def log_restart_recording(self, vision_date: datetime = None):
+        details = f"records={self.queue}/{self.records_max} "
+
+        if vision_date is not None:
+            details = details + f"last={vision_date.strftime('%H:%M:%S')} "
+
         self.send_log(
             'Restart recording',
-            (f"records={self.queue}/{self.records_max} " +
-             f"last={vision_date.strftime('%H:%M:%S')} "
-             ),
+            details,
             Log_Level.WARNING
         )
 

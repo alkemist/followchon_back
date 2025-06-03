@@ -157,7 +157,7 @@ class Brain:
 
         self.neuron_detect.release()
         time.sleep(time_minutes * 60)
-        self.memory.last_record_seconds = time.time()
+        self.memory.last_record_date = datetime.now()
 
         self.send_log('end sleep', time_minutes, Log_Level.LOCAL)
         self.check('sleep')

@@ -1,7 +1,4 @@
-import random
-import re
 from datetime import datetime
-from pathlib import Path
 
 from loguru import logger
 from pubsub import pub
@@ -15,6 +12,7 @@ from detections.management.commands.models.enums.event_type import Event_Type
 from detections.management.commands.models.enums.log_level import Log_Level
 from detections.management.commands.models.eye import Eye
 from detections.management.commands.models.memory import Memory
+from utils.date import DateHelper
 
 
 class Agent:
@@ -63,6 +61,7 @@ class Agent:
             print(message)
 
     def start(self):
+
         self.brain.start()
         self.brain.check('start')
         self.memory.log_start()
@@ -71,7 +70,6 @@ class Agent:
 
         while self.memory.brain_enabled:
             now = datetime.now()
-            vision_date = datetime.now()
 
             if self.memory.date.hour != now.hour and self.memory.is_awake() and self.source == Agent_Source.VISION:
                 self.memory.log_hour()
@@ -79,30 +77,34 @@ class Agent:
             self.memory.date = now
             self.memory.add_temperature()
 
-            path = self.memory.get_last_memory()
-
             if self.memory.source == Agent_Source.VISION or self.memory.source == Agent_Source.VIDEO:
                 if self.source == Agent_Source.VISION:
-                    if path is not None:
-                        file_date = Path(path).stem
-                        date_values = re.split('[-_]', file_date)
-                        print(date_values)
-                        vision_date = datetime(
-                            int(date_values[0]),
-                            int(date_values[1]),
-                            int(date_values[2]),
-                            int(date_values[3]),
-                            int(date_values[4]),
-                            int(date_values[5]),
-                            random.randint(0, 500)
-                        )
+                    path = self.memory.get_first_memory()
+                    vision_date = DateHelper.filenameToDate(path) if path is not None else None
 
                     if not self.memory.is_awake() and self.memory.is_empty():
                         self.brain.sleep(60)
                     if not self.memory.recording and self.memory.is_low() and self.memory.is_awake():
                         self.memory.record('start')
                         self.brain.check('start')
-                    elif self.memory.recording and self.memory.is_lost(now - vision_date):
+                    elif self.memory.recording and \
+                            self.memory.is_lost(now - self.memory.last_record_date) and \
+                            (path is None or self.memory.is_lost(now - vision_date)):
+                        
+                        lost_details = (
+                                'now : ' + now.strftime('%H:%M:%S') +
+                                ' last record : ' + self.memory.last_record_date.strftime('%H:%M:%S') + ' ' +
+                                str((now - self.memory.last_record_date).total_seconds())
+                        )
+
+                        if vision_date is not None:
+                            lost_details = (
+                                    lost_details +
+                                    ' vision : ' + vision_date.strftime('%H:%M:%S') + ' ' +
+                                    str((now - vision_date).total_seconds())
+                            )
+
+                        self.send_log('lost', lost_details, Log_Level.LOCAL)
                         self.memory.record('lost', vision_date)
                     if self.memory.recording:
                         if self.memory.is_full():
@@ -115,7 +117,7 @@ class Agent:
 
             if not self.memory.is_low() or not self.memory.is_awake() and not self.memory.recording \
                     or self.source != Agent_Source.VISION:
-                self.eye.watch(path, vision_date)
+                self.eye.watch()
 
                 if self.memory.brain_enabled and self.source != Agent_Source.PHOTO:
                     self.brain.check('watch')

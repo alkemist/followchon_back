@@ -27,13 +27,22 @@ class Eye:
     def send_log(self, event: str, infos: str = '', level: Log_Level = None):
         pub.sendMessage(Event_Type.AGENT_LOG, source=Event_Source.EYE, event=event, infos=infos, level=level)
 
-    def watch(self, path: str, vision_date=datetime.now()):
+    def watch(self):
+        vision_date = datetime.now()
+        path = None
+
         if self.memory.source == Agent_Source.VISION or self.memory.source == Agent_Source.VIDEO:
+            path = self.memory.get_last_memory()
+
             if path is None:
                 return
 
-            self.memory.last_record_seconds = time.time()
             self.memory.eye_start = time.time()
+
+            if self.memory.source == Agent_Source.VISION:
+                vision_date = DateHelper.filenameToDate(path)
+            else:
+                self.memory.last_detections = {}
 
             cap = cv2.VideoCapture(path)
             frames_total = 0
@@ -121,6 +130,7 @@ class Eye:
                     self.memory.log_popcorn(vision_date, frames_saved)
 
         elif self.memory.source == Agent_Source.PHOTO:
+            path = self.memory.get_last_memory()
             self.send_log('watch', path)
 
             frame = cv2.imread(path)
