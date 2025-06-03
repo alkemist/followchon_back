@@ -39,7 +39,7 @@ class Memory():
         self.eye_start = None
         self.queue = 0
         self.record_time = 60
-        self.record_time_delay = 50
+        self.record_time_delay = 110
         self.last_record_date = datetime.now()
         self.recording = False
         self.vcgm = None
