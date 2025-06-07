@@ -1,8 +1,8 @@
-# 10/10 iterations complete ✅ (2628.43s)
-# Results saved to runs\guinea-pig-11n-v77-chons-tune
-# Best fitness=0.99804 observed at iteration 1
-# Best fitness metrics are {'metrics/accuracy_top1': 0.99608, 'metrics/accuracy_top5': 1.0, 'val/loss': 0.01233, 'fitness': 0.99804}
-# Best fitness model is runs\train31
+# 10/10 iterations complete ✅ (1626.55s)
+# Results saved to runs\guinea-pig-11n-v78-chons-tune
+# Best fitness=0.99571 observed at iteration 1
+# Best fitness metrics are {'metrics/accuracy_top1': 0.99143, 'metrics/accuracy_top5': 1.0, 'val/loss': 0.05131, 'fitness': 0.99571}
+# Best fitness model is runs\train41
 # Best fitness hyperparameters are printed below.
 
 lr0: 0.01
