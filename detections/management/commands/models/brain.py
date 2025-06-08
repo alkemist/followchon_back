@@ -62,7 +62,7 @@ class Brain:
         detect_signals = self.neuron_detect.process(frame)
         signals = []
 
-        if self.memory.source == Agent_Source.VISION:
+        if self.memory.source == Agent_Source.VISION or self.memory.force_classification:
             detect_safes_cls = list()
             detect_others = list()
             detect_unsafes_by_family = {}

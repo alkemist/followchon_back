@@ -24,6 +24,11 @@ class Command(BaseCommand):
             help="Source video",
         )
         parser.add_argument(
+            "--chons",
+            action="store_true",
+            help="Classification",
+        )
+        parser.add_argument(
             "--photo",
             action="store_true",
             help="Source photo",
@@ -51,7 +56,7 @@ class Command(BaseCommand):
                    rotation="00:00", retention="1 month")
 
         try:
-            agent = Agent(archi, source)
+            agent = Agent(archi, source, options["chons"])
             agent.start()
             agent.end()
 

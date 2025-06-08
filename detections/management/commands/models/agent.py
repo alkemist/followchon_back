@@ -17,7 +17,7 @@ from utils.date import DateHelper
 
 class Agent:
 
-    def __init__(self, architecture: Architecture, source: Agent_Source):
+    def __init__(self, architecture: Architecture, source: Agent_Source, force_classification: bool):
         self.architecture = architecture
         self.source = source
 
@@ -28,6 +28,7 @@ class Agent:
         self.memory = Memory(
             architecture,
             source,
+            force_classification
         )
 
         self.brain = Brain(
@@ -90,7 +91,7 @@ class Agent:
                     elif self.memory.recording and \
                             self.memory.is_lost(now - self.memory.last_record_date) and \
                             (path is None or self.memory.is_lost(now - vision_date)):
-                        
+
                         lost_details = (
                                 'now : ' + now.strftime('%H:%M:%S') +
                                 ' last record : ' + self.memory.last_record_date.strftime('%H:%M:%S') + ' ' +

@@ -24,8 +24,10 @@ class Memory():
             self,
             architecture: Architecture,
             source: Agent_Source,
+            force_classification: bool,
     ):
         self.perception = None
+        self.force_classification = force_classification
 
         self.source = source
         self.stream_path = os.getenv('LIVE_STREAM_PATH')
