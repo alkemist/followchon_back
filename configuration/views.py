@@ -5,6 +5,7 @@ from django.db.models.functions import TruncDate
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
+from rest_framework.serializers import FloatField
 
 from api.models import ReadOnlyViewSet, CustomPageNumberPagination, UpdateViewSet
 from configuration.models import Family, Zone, Parameter
@@ -15,6 +16,10 @@ from detections.management.commands.models.enums.agent_source import Agent_Sourc
 from detections.models import Detection, Capture
 from detections.serializers.detection_family import DetectionCountByDayFamilySerializer, \
     DetectionDistanceByDayFamilySerializer
+
+from django.db.models import F, Window
+from django.db.models.functions import TruncDate, Cast
+from django.db.models import Avg
 
 
 class ParameterViewSet(ReadOnlyViewSet):
@@ -75,13 +80,38 @@ class FamilyViewSet(ReadOnlyViewSet):
     @action(detail=True)
     def detections_by_day(self, request, pk=None, *args, **kwargs):
         family = self.get_object()
-        detections_count_by_day = (
-            family.detections.all()
-            .annotate(date_only=TruncDate('capture__date'))
-            .values('date_only').distinct()
-            .annotate(count=Count('id'))
-            .order_by('date_only')
-        )
+        # detections_count_by_day = (
+        #     family.detections.all()
+        #     .annotate(date_only=TruncDate('capture__date'))
+        #     .values('date_only').distinct()
+        #     .annotate(count=Count('id'))
+        #     .order_by('date_only')
+        # )
+
+        detections_count_by_day = Detection.objects.raw(f'''
+            SELECT 
+                id, 
+                count,
+                AVG("count") OVER (ORDER BY "id" ASC ROWS BETWEEN 6 PRECEDING AND CURRENT ROW) AS "avg_7"
+                FROM (
+                    SELECT 
+                        id, 
+                        COUNT("capture_id") AS "count"
+                        FROM (
+                            SELECT 
+                                 detections_capture.id as "capture_id",
+                                 date(detections_capture.date) AS "id"
+                            FROM detections_detection
+                                 INNER JOIN detections_capture 
+                                 ON (detections_detection.capture_id = detections_capture.id) 
+                            WHERE detections_capture.source = "{Agent_Source.VISION}"
+                                AND detections_capture.status != "{Capture.Statuses.DELETED}"
+                                AND detections_capture.date >= "2025-02-17 00:00:00" 
+                                AND detections_detection.family_id = {family.id}
+                        ) AS count
+                        GROUP BY id
+                ) AS count_with_avg
+        ''')
 
         return Response(DetectionCountByDayFamilySerializer(detections_count_by_day, many=True, read_only=True).data)
 

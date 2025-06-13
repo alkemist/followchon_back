@@ -39,9 +39,20 @@ class CaptureHydratedSerializer(serializers.ModelSerializer):
         lines = list()
 
         for detection in instance.detections.all():
+            # Stocker info pour comparer
+            # Faire tableaux avec :
+            # - class + positions
+            # - positions
             detection.delete()
 
         for index, detection in enumerate(validated_data.get('detections')):
+            # Verifier si :
+            # - Pas le même nombre de detections :
+            #   - changed_detection = True
+            #   - changed_classify = True
+            # - Même nombre et class/position diff mais position similaire :
+            #   - changed_detection = False
+            #   - changed_classify = True
             family_id = detection.get('family_id')
 
             new_detection = Detection()
