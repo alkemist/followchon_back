@@ -1,30 +1,30 @@
-# 10/10 iterations complete ✅ (3087.44s)
-# Results saved to runs\guinea-pig-11n-v82-all-tune
-# Best fitness=0.89798 observed at iteration 1
-# Best fitness metrics are {'metrics/precision(B)': 0.93465, 'metrics/recall(B)': 0.96732, 'metrics/mAP50(B)': 0.98714, 'metrics/mAP50-95(B)': 0.88807, 'val/box_loss': 0.53384, 'val/cls_loss': 0.32117, 'val/dfl_loss': 0.87288, 'fitness': 0.89798}
-# Best fitness model is runs\train91
+# 10/10 iterations complete ✅ (3426.44s)
+# Results saved to runs\guinea-pig-11n-v83-all-tune
+# Best fitness=0.88273 observed at iteration 9
+# Best fitness metrics are {'metrics/precision(B)': 0.95554, 'metrics/recall(B)': 0.94938, 'metrics/mAP50(B)': 0.97457, 'metrics/mAP50-95(B)': 0.87252, 'val/box_loss': 0.6941, 'val/cls_loss': 0.30744, 'val/dfl_loss': 1.03177, 'fitness': 0.88273}
+# Best fitness model is runs\train119
 # Best fitness hyperparameters are printed below.
 
-lr0: 0.01
-lrf: 0.01
-momentum: 0.937
-weight_decay: 0.0005
-warmup_epochs: 3.0
-warmup_momentum: 0.8
-box: 7.5
-cls: 0.5
-dfl: 1.5
-hsv_h: 0.015
-hsv_s: 0.7
-hsv_v: 0.4
+lr0: 0.00924
+lrf: 0.0097
+momentum: 0.94671
+weight_decay: 0.00053
+warmup_epochs: 3.30111
+warmup_momentum: 0.93979
+box: 9.28916
+cls: 0.46069
+dfl: 1.79605
+hsv_h: 0.01058
+hsv_s: 0.63541
+hsv_v: 0.48738
 degrees: 0.0
 translate: 0.1
-scale: 0.5
+scale: 0.48351
 shear: 0.0
 perspective: 0.0
 flipud: 0.0
-fliplr: 0.5
+fliplr: 0.36945
 bgr: 0.0
-mosaic: 1.0
+mosaic: 0.88181
 mixup: 0.0
 copy_paste: 0.0
