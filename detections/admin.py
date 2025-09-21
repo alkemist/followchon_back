@@ -52,7 +52,7 @@ class CaptureAdmin(admin.ModelAdmin):
                 updated,
             )
             % updated,
-            messages.SUCCESS,
+            messages.SUCCESS if updated > 0 else messages.ERROR,
         )
 
     @admin.action(description="Migrate")
@@ -70,51 +70,17 @@ class CaptureAdmin(admin.ModelAdmin):
                 updated,
             )
             % updated,
-            messages.SUCCESS,
-        )
-
-    @admin.action(description="Mark selected captures as draft")
-    def mark_as_draft(self, request, queryset):
-        for item in queryset.iterator():
-            item.mark_as(Capture.Statuses.DRAFT, True)
-
-        updated = queryset.update(status=Capture.Statuses.DRAFT)
-
-        self.message_user(
-            request,
-            ngettext(
-                "%d capture was successfully marked as draft.",
-                "%d captures were successfully marked as draft.",
-                updated,
-            )
-            % updated,
-            messages.SUCCESS,
-        )
-
-    @admin.action(description="Mark selected captures as verified")
-    def mark_as_verified(self, request, queryset):
-        for item in queryset.iterator():
-            item.mark_as(Capture.Statuses.VERIFIED, True)
-
-        updated = queryset.update(status=Capture.Statuses.VERIFIED)
-
-        self.message_user(
-            request,
-            ngettext(
-                "%d capture was successfully marked as verified.",
-                "%d captures were successfully marked as verified.",
-                updated,
-            )
-            % updated,
-            messages.SUCCESS,
+            messages.SUCCESS if updated > 0 else messages.ERROR,
         )
 
     @admin.action(description="Mark selected captures as archived")
     def mark_as_archived(self, request, queryset):
         for item in queryset.iterator():
-            item.mark_as(Capture.Statuses.ARCHIVED, True)
+            if item.status == Capture.Statuses.VERIFIED:
+                item.mark_as(Capture.Statuses.ARCHIVED, True)
 
-        updated = queryset.update(status=Capture.Statuses.ARCHIVED)
+        updated = queryset.filter(status=Capture.Statuses.VERIFIED) \
+            .update(status=Capture.Statuses.ARCHIVED)
 
         self.message_user(
             request,
@@ -124,15 +90,17 @@ class CaptureAdmin(admin.ModelAdmin):
                 updated,
             )
             % updated,
-            messages.SUCCESS,
+            messages.SUCCESS if updated > 0 else messages.ERROR,
         )
 
     @admin.action(description="Mark selected captures as waiting")
     def mark_as_waiting(self, request, queryset):
         for item in queryset.iterator():
-            item.mark_as(Capture.Statuses.WAITING, True)
+            if item.status == Capture.Statuses.DRAFT:
+                item.mark_as(Capture.Statuses.WAITING, True)
 
-        updated = queryset.update(status=Capture.Statuses.WAITING)
+        updated = queryset.filter(status=Capture.Statuses.DRAFT) \
+            .update(status=Capture.Statuses.WAITING)
 
         self.message_user(
             request,
@@ -142,32 +110,27 @@ class CaptureAdmin(admin.ModelAdmin):
                 updated,
             )
             % updated,
-            messages.SUCCESS,
-        )
-
-    @admin.action(description="Mark selected captures as deleted")
-    def mark_as_deleted(self, request, queryset):
-        for item in queryset.iterator():
-            item.mark_as(Capture.Statuses.DELETED, True)
-
-        updated = queryset.update(status=Capture.Statuses.DELETED)
-
-        self.message_user(
-            request,
-            ngettext(
-                "%d capture was successfully marked as deleted.",
-                "%d captures were successfully marked as deleted.",
-                updated,
-            )
-            % updated,
-            messages.SUCCESS,
+            messages.SUCCESS if updated > 0 else messages.ERROR,
         )
 
     def delete_queryset(self, request, queryset):
         for item in queryset.iterator():
-            item.remove_files()
+            if item.status == Capture.Statuses.DELETED:
+                item.remove_files()
 
-        queryset.delete()
+        deleted = queryset.filter(status=Capture.Statuses.DELETED) \
+            .delete()
+
+        self.message_user(
+            request,
+            ngettext(
+                "%d capture was successfully deleted.",
+                "%d captures were successfully deleted.",
+                deleted[0],
+            )
+            % deleted[0],
+            messages.SUCCESS if deleted[0] > 0 else messages.ERROR,
+        )
 
 
 @admin.register(Detection)
